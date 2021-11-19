@@ -1,0 +1,76 @@
+package de.hpi.temporal_ind.data.wikipedia
+
+import de.hpi.temporal_ind.data.column.{ColumnHistory, ColumnVersion}
+import de.hpi.temporal_ind.util.Util
+import org.jsoup.Jsoup
+
+import java.time.Instant
+import java.time.temporal.ChronoUnit
+import scala.collection.mutable.ArrayBuffer
+
+class WikipediaDataPreparer {
+
+
+  def removeTableHeader(tableHistory: TableHistory):TableHistory = {
+    tableHistory.withoutHeader
+  }
+
+  def extractColumnLineagesFromTableHistory(tableHistory: TableHistory) = {
+    val colHistories = removeTableHeader(tableHistory)
+      .extractColumnHistories
+    //Preparation pipeline for column histories:
+    colHistories
+      .map(ch => ch.transformValueset(removeHTMLBoilerplate))
+      .map(ch => ch.transformValueset(removeNullSymbols))
+      .map(ch => filterVandalism(ch))
+      .map(ch => removeDuplicateVersions(ch))
+      .filter(ch => !mostlyNumeric(ch))
+  }
+
+  def removeHTMLBoilerplate(strings:Set[String]):Set[String] = {
+    strings.map(s => Jsoup.parse(s).text())
+  }
+
+  def durationLongEnough(revisionDate: Instant, revisionDate1: Instant): Boolean = {
+    val days = ChronoUnit.DAYS.between(revisionDate,revisionDate1)
+    days >=1
+  }
+
+  def removeDuplicateVersions(ch:ColumnHistory) = {
+    val withIndex = ch
+      .columnVersions
+      .zipWithIndex
+    val withOutDuplicates = withIndex
+      .withFilter{case (cv,i) => i==0 || cv.values!=withIndex(i-1)._1.values}
+      .map(_._1)
+    ColumnHistory(ch.id,ch.tableId,ch.pageID,ch.pageTitle,withOutDuplicates)
+  }
+
+  def filterVandalism(ch: ColumnHistory) = {
+    val withoutVandalism = ch.columnVersions
+      .zipWithIndex
+      .withFilter{case (cv,i) => {
+        i==ch.columnVersions.size-1 || durationLongEnough(cv.timestamp,ch.columnVersions(i+1).timestamp)
+      }}
+      .map(_._1)
+    ColumnHistory(ch.id,ch.tableId,ch.pageID,ch.pageTitle,withoutVandalism)
+  }
+
+  def removeNullSymbols(strings: Set[String]):Set[String] = {
+    strings.filter(s => !GLOBAL_CONFIG.NULL_VALUE_EQUIVALENTS.contains(s))
+  }
+
+  def isNumeric(values: Set[String]): Boolean = {
+    values.forall(s => s.matches(Util.numberRegex))
+  }
+
+  def mostlyNumeric(ch:ColumnHistory) = {
+    //if 90% of the alive time the column is purely numeric we consider this a numeric column
+    var timeValid = 0
+    var totalTime = ChronoUnit.SECONDS.between(ch.columnVersions.head.timestamp,GLOBAL_CONFIG.latestInstantWikipedia)
+    val numericTime = ch.versionsWithAliveTime(GLOBAL_CONFIG.latestInstantWikipedia)
+      .map{case (cv,aliveTime) => if(isNumeric(cv.values)) aliveTime else 0L}
+      .sum
+    numericTime/totalTime.toDouble>=0.9
+  }
+}
