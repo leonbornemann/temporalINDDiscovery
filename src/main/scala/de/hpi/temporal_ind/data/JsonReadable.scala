@@ -24,13 +24,18 @@ trait JsonReadable[T <: AnyRef] extends StrictLogging{
     json.extract[T]
   }
 
-  def iterableFromJsonObjectPerLineFile(path: String,logAfterCompletion:Boolean=false)(implicit m: Manifest[T]) = {
-    new JsonObjectPerLineFileIterator(path,logAfterCompletion)(m)
+  def iterableFromJsonObjectPerLineFile(path: String,
+                                        logAfterCompletion:Boolean=false,
+                                        fileNumber:Int= -1,
+                                        totalFileCount:Int= -1)(implicit m: Manifest[T]) = {
+    new JsonObjectPerLineFileIterator(path,logAfterCompletion,fileNumber,totalFileCount)(m)
   }
 
   def iterableFromJsonObjectPerLineDir(dir: File,logFileProgress:Boolean)(implicit m: Manifest[T]) = {
+    val fileCount = dir.listFiles().size
     val iterators = dir.listFiles().toIndexedSeq
-      .map(f => iterableFromJsonObjectPerLineFile(f.getAbsolutePath,logFileProgress))
+      .zipWithIndex
+      .map{case (f,i) => iterableFromJsonObjectPerLineFile(f.getAbsolutePath,logFileProgress,i+1,fileCount)}
     iterators.foldLeft(Iterator[T]())(_ ++ _)
   }
 
@@ -43,7 +48,10 @@ trait JsonReadable[T <: AnyRef] extends StrictLogging{
     result
   }
 
-  class JsonObjectPerLineFileIterator(path: String,logAfterCompletion:Boolean=false)(implicit m: Manifest[T]) extends Iterator[T] {
+  class JsonObjectPerLineFileIterator(path: String,
+                                      logAfterCompletion:Boolean=false,
+                                      fileNumber:Int= -1,
+                                      totalFileCount:Int= -1)(implicit m: Manifest[T]) extends Iterator[T] {
     val it = Source.fromFile(path).getLines()
 
     override def hasNext: Boolean = it.hasNext
@@ -51,7 +59,7 @@ trait JsonReadable[T <: AnyRef] extends StrictLogging{
     override def next(): T = {
       val res = fromJsonString(it.next())
       if(!hasNext && logAfterCompletion) {
-        logger.debug(s"Finished File $path")
+        logger.debug(s"Finished File $path ($fileNumber / $totalFileCount)")
       }
       res
     }

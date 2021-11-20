@@ -6,8 +6,9 @@ import java.time.Instant
 
 object GLOBAL_CONFIG {
 
-  def earliestInstantWikipedia: Instant = Util.instantFromWikipediaDateTimeString("Thu Mar 21 22:19:05 CET 2002")
-  def latestInstantWikipedia: Instant = Util.instantFromWikipediaDateTimeString("Thu Mar 21 22:19:05 CET 2019")
+  (Some(),Some())
+  def earliestInstantWikipedia: Instant = Instant.parse("2001-04-02T12:55:44Z")
+  def latestInstantWikipedia: Instant = Instant.parse("2017-11-04T03:57:33Z")
 
   val NULL_VALUE_EQUIVALENTS = Set("","—","-","–","N/A","?","Unknown","- -","n/a","•","- - -",".","??","(n/a)")
 
