@@ -31,12 +31,16 @@ trait JsonReadable[T <: AnyRef] extends StrictLogging{
     new JsonObjectPerLineFileIterator(path,logAfterCompletion,fileNumber,totalFileCount)(m)
   }
 
-  def iterableFromJsonObjectPerLineDir(dir: File,logFileProgress:Boolean)(implicit m: Manifest[T]) = {
-    val fileCount = dir.listFiles().size
-    val iterators = dir.listFiles().toIndexedSeq
+  def iterableFromJsonObjectPerLineFiles(files: IndexedSeq[File], logFileProgress: Boolean) (implicit m: Manifest[T]) = {
+    val fileCount = files.size
+    val iterators = files
       .zipWithIndex
       .map{case (f,i) => iterableFromJsonObjectPerLineFile(f.getAbsolutePath,logFileProgress,i+1,fileCount)}
     iterators.foldLeft(Iterator[T]())(_ ++ _)
+  }
+
+  def iterableFromJsonObjectPerLineDir(dir: File, logFileProgress:Boolean)(implicit m: Manifest[T]) = {
+    iterableFromJsonObjectPerLineFiles(dir.listFiles(),logFileProgress)(m)
   }
 
   def fromJsonObjectPerLineFile(path: String)(implicit m: Manifest[T]): collection.Seq[T] = {

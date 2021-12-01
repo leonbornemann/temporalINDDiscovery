@@ -21,7 +21,7 @@ class WikipediaDataPreparer {
     //Preparation pipeline for column histories:
     colHistories
       .map(ch => ch.transformValueset(removeHTMLBoilerplate))
-      .map(ch => ch.transformValueset(removeNullSymbols))
+      .map(ch => ch.transformValueset(unifyNullSymbols))
       .map(ch => filterVandalism(ch))
       .map(ch => removeDuplicateVersions(ch))
       .filter(ch => !mostlyNumeric(ch))
@@ -41,7 +41,7 @@ class WikipediaDataPreparer {
       .columnVersions
       .zipWithIndex
     val withOutDuplicates = withIndex
-      .withFilter{case (cv,i) => i==0 || cv.values!=withIndex(i-1)._1.values}
+      .withFilter{case (cv,i) => i==0 || (cv.values!=withIndex(i-1)._1.values || cv.isDelete!=withIndex(i-1)._1.isDelete) }
       .map(_._1)
     ColumnHistory(ch.id,ch.tableId,ch.pageID,ch.pageTitle,withOutDuplicates)
   }
@@ -56,8 +56,8 @@ class WikipediaDataPreparer {
     ColumnHistory(ch.id,ch.tableId,ch.pageID,ch.pageTitle,withoutVandalism)
   }
 
-  def removeNullSymbols(strings: Set[String]):Set[String] = {
-    strings.filter(s => !GLOBAL_CONFIG.NULL_VALUE_EQUIVALENTS.contains(s))
+  def unifyNullSymbols(strings: Set[String]):Set[String] = {
+    strings.map(s => if(GLOBAL_CONFIG.NULL_VALUE_EQUIVALENTS.contains(s)) GLOBAL_CONFIG.CANONICAL_NULL_VALUE else s)
   }
 
   def isNumeric(values: Set[String]): Boolean = {

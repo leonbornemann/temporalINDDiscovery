@@ -12,7 +12,7 @@ object ColumnHistoryExtractMain extends App {
   histories.foreach(th => {
     val columnHistories = preparer.extractColumnLineagesFromTableHistory(th)
     columnHistories
-      .withFilter(ch => ch.columnVersions.exists(cv => !cv.isEmpty))
+      .withFilter(ch => ch.columnVersions.exists(cv => !cv.values.isEmpty))
       .foreach(_.appendToWriter(pr))
   })
   pr.close()

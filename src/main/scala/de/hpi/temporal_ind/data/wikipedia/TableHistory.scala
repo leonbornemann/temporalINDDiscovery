@@ -21,7 +21,7 @@ case class TableHistory(pageID:String,
     val colIDToColHistory = mutable.HashMap[String, ArrayBuffer[ColumnVersion]]()
     tables.foreach(tv => {
       val columnVersions = tv.getColumns()
-        .map(values => ColumnVersion(tv.revisionID, tv.revisionDate, values.toSet))
+        .map(values => ColumnVersion(tv.revisionID, tv.revisionDate, values.toSet,false))
       assert(columnVersions.size == tv.artificialColumnHeaders.size)
       tv.artificialColumnHeaders
         .zip(columnVersions)
@@ -30,12 +30,15 @@ case class TableHistory(pageID:String,
           if (curHistory.isEmpty || curHistory.last.values != version.values)
             curHistory.append(version)
         }
-      //process non-present columns
+      //process non-present columns in this version
       val curColumnIds = tv.artificialColumnHeaders.toSet
       colIDToColHistory.keySet.diff(curColumnIds).foreach(id => {
+        if(id=="cc3b43ad-0a4f-42ef-92b5-4e902a0672d3"){
+          println()
+        }
         val history = colIDToColHistory(id)
-        if (!history.last.isEmpty) {
-          history.append(ColumnVersion.EMPTY(tv.revisionID, tv.revisionDate))
+        if (!history.last.isDelete) {
+          history.append(ColumnVersion.COLUMN_DELETE(tv.revisionID, tv.revisionDate))
         }
       })
     })
