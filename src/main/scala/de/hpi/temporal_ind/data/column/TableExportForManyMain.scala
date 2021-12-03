@@ -36,7 +36,9 @@ object TableExportForManyMain extends App with StrictLogging{
           val headerMap = colList.map(t => (t._1,t._1.id)).toMap
           val colListSorted = colList.sortBy(_._2).toIndexedSeq
           val headersOrdered = colListSorted.map(t => headerMap(t._1))
-          ColumnVersion.serializeToTable(colListSorted.map(_._1.versionAt(inputTimestamp)),headersOrdered,new File(resultDir + s"/${tID}_$pID.csv"))
+          val tableVersion = colListSorted.map(_._1.versionAt(inputTimestamp))
+          if(tableVersion.exists(_.values.size!=0))
+            ColumnVersion.serializeToTable(tableVersion,headersOrdered,new File(resultDir + s"/${tID}_$pID.csv"))
         }
   }
 
