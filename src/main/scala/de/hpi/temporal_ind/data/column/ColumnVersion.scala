@@ -1,5 +1,6 @@
 package de.hpi.temporal_ind.data.column
 
+import de.hpi.temporal_ind.data.column.io.Dictionary
 import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
 import de.hpi.temporal_ind.util.Util
 
@@ -10,6 +11,10 @@ case class ColumnVersion(revisionID: String,
                          revisionDate: String,
                          values: Set[String],
                          columnNotPresent:Boolean){
+  def applyDictionary(dict: Dictionary): ColumnVersionEncoded = {
+    ColumnVersionEncoded(revisionID,revisionDate,values.map(v => dict.allValues(v)),columnNotPresent)
+  }
+
 
   if(columnNotPresent)
     assert(values.isEmpty)

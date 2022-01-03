@@ -1,5 +1,6 @@
 package de.hpi.temporal_ind.data.column
 
+import de.hpi.temporal_ind.data.column.io.Dictionary
 import de.hpi.temporal_ind.data.column.wikipedia.{WikipediaColumnHistoryIndex, WikipediaPageRange}
 import de.hpi.temporal_ind.data.{JsonReadable, JsonWritable}
 
@@ -14,6 +15,11 @@ case class ColumnHistory(id: String,
                          pageTitle: String,
                          columnVersions: ArrayBuffer[ColumnVersion]
                         ) extends JsonWritable[ColumnHistory]{
+
+  def applyDictionary(dict:Dictionary) = {
+    ColumnHistoryEncoded(id,tableId, pageID, pageTitle, columnVersions.map(cv => cv.applyDictionary(dict)))
+  }
+
   def asOrderedVersionMap = new OrderedColumnHistory(id,
     tableId,
     pageID,
