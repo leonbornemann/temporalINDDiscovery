@@ -1,6 +1,7 @@
 package de.hpi.temporal_ind.data.column
 
 import com.typesafe.scalalogging.StrictLogging
+import de.hpi.temporal_ind.data.column.statistics.ColumnHistoryStatRow
 import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
 
 import java.io.File
@@ -8,7 +9,7 @@ import java.time.temporal.ChronoUnit
 import java.time.{Duration, Instant, LocalDate}
 import scala.util.Random
 
-object TableExportForManyMain extends App with StrictLogging{
+object ExportForManyMain extends App with StrictLogging{
   println(s"Called with ${args.toIndexedSeq}")
   val inputDir = args(0)
   val outputDirRootDir = args(1)

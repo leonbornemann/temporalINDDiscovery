@@ -1,9 +1,8 @@
-package de.hpi.temporal_ind.data.column
+package de.hpi.temporal_ind.data.column.statistics
 
+import de.hpi.temporal_ind.data.column.{ColumnHistory, statistics}
 import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
 import de.hpi.temporal_ind.util.Util
-
-import java.time.temporal.ChronoUnit
 
 case class ColumnHistoryStatRow(ch: ColumnHistory) {
 
@@ -20,7 +19,7 @@ case class ColumnHistoryStatRow(ch: ColumnHistory) {
   val inverseJaccardSimilarities = valueSetsWithIndex
     .withFilter(t => t._2!=0)
     .map{case (values,i) => 1.0 - Util.Jaccard_Similarity(valueSetsWithIndex(i-1)._1,values)}
-  val changeAmountStatistics = ValueSequenceStatistics(inverseJaccardSimilarities)
+  val changeAmountStatistics = statistics.ValueSequenceStatistics(inverseJaccardSimilarities)
 
   def toCSVLine = {
     val values = Seq(

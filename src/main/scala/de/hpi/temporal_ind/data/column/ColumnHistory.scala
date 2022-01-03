@@ -1,7 +1,9 @@
 package de.hpi.temporal_ind.data.column
 
+import de.hpi.temporal_ind.data.column.wikipedia.{WikipediaColumnHistoryIndex, WikipediaPageRange}
 import de.hpi.temporal_ind.data.{JsonReadable, JsonWritable}
 
+import java.io.File
 import java.time.temporal.ChronoUnit
 import java.time.{Duration, Instant}
 import scala.collection.mutable.ArrayBuffer
@@ -12,6 +14,12 @@ case class ColumnHistory(id: String,
                          pageTitle: String,
                          columnVersions: ArrayBuffer[ColumnVersion]
                         ) extends JsonWritable[ColumnHistory]{
+  def asOrderedVersionMap = new OrderedColumnHistory(id,
+    tableId,
+    pageID,
+    pageTitle,
+    new OrderdColumnVersionList(collection.mutable.TreeMap[Instant,ColumnVersion]() ++ columnVersions.map(cv => (cv.timestamp,cv))))
+
 
   def firstInsertToLastDeleteTimeInDays(endTimeData: Instant) = {
     if(columnVersions.last.isDelete)
@@ -98,4 +106,20 @@ case class ColumnHistory(id: String,
     }
   }
 }
-object ColumnHistory extends JsonReadable[ColumnHistory]
+object ColumnHistory extends JsonReadable[ColumnHistory] {
+
+  def getIndexForFilesInDir(file:File) = {
+    val byBucket = file.listFiles
+      .map(f => {
+        val tokens = f.getName.split("_")(0)
+          .split("xml-p")(1)
+          .split("p")
+        val lowerID=tokens(0)
+        val upperID=tokens(1)
+        (WikipediaPageRange(BigInt(lowerID),BigInt(upperID)),f)
+      })
+      .toMap
+    WikipediaColumnHistoryIndex(byBucket)
+  }
+
+}

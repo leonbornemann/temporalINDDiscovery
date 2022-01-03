@@ -1,0 +1,3 @@
+Time	1	2	3	4	5	Strict Valid	Variant 1 Valid	Variant 3 Valid	Variant 4 Valid
+A	a	b	c	d	c	FALSE	TRUE	FALSE	FALSE
+B	b	a	d	c	e	FALSE	TRUE	FALSE	FALSE
