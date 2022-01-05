@@ -29,19 +29,19 @@ class StrictTemporalIND[T <% Ordered[T]](lhs: AbstractOrderedColumnHistory[T], r
   def totalActiveTimeInDays = {
     val nonEmptyIntervalsLeft = lhs.nonEmptyIntervals
     val nonEmptyIntervalsRight = rhs.nonEmptyIntervals
-    nonEmptyIntervalsLeft.union(nonEmptyIntervalsRight).summedDuration.toSeconds /(60*60*24)
+    nonEmptyIntervalsLeft.union(nonEmptyIntervalsRight).summedDuration.getSeconds /(60*60*24)
   }
 
   def overlapTimeInDays = {
     val nonEmptyIntervalsLeft = lhs.nonEmptyIntervals
     val nonEmptyIntervalsRight = rhs.nonEmptyIntervals
-    nonEmptyIntervalsLeft.intersect(nonEmptyIntervalsRight).summedDuration.toSeconds /(60*60*24)
+    nonEmptyIntervalsLeft.intersect(nonEmptyIntervalsRight).summedDuration.getSeconds /(60*60*24)
   }
 
   def nonOverlapTimeInDays = {
     val nonEmptyIntervalsLeft = lhs.nonEmptyIntervals
     val nonEmptyIntervalsRight = rhs.nonEmptyIntervals
-    nonEmptyIntervalsLeft.unionOfDiffs(nonEmptyIntervalsRight).summedDuration.toSeconds /(60*60*24)
+    nonEmptyIntervalsLeft.unionOfDiffs(nonEmptyIntervalsRight).summedDuration.getSeconds /(60*60*24)
 
   }
 }
