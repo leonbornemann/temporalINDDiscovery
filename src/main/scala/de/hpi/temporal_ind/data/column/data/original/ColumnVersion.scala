@@ -1,27 +1,20 @@
-package de.hpi.temporal_ind.data.column
+package de.hpi.temporal_ind.data.column.data.original
 
+import de.hpi.temporal_ind.data.column.data.AbstractColumnVersion
+import de.hpi.temporal_ind.data.column.data.encoded.ColumnVersionEncoded
 import de.hpi.temporal_ind.data.column.io.Dictionary
-import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
 import de.hpi.temporal_ind.util.Util
 
 import java.io.{File, PrintWriter}
-import java.time.Instant
 
 case class ColumnVersion(revisionID: String,
                          revisionDate: String,
                          values: Set[String],
-                         columnNotPresent:Boolean){
+                         columnNotPresent:Boolean) extends AbstractColumnVersion[String]{
+
   def applyDictionary(dict: Dictionary): ColumnVersionEncoded = {
     ColumnVersionEncoded(revisionID,revisionDate,values.map(v => dict.allValues(v)),columnNotPresent)
   }
-
-
-  if(columnNotPresent)
-    assert(values.isEmpty)
-
-  def timestamp = Util.instantFromWikipediaDateTimeString(revisionDate)
-
-  def isDelete = columnNotPresent
 
 }
 
@@ -47,8 +40,6 @@ object ColumnVersion {
       pr.close()
     }
   }
-
-  def INITIALEMPTYID: String = "-1"
 
   def COLUMN_DELETE(revisionID: String, revisionDate: String): ColumnVersion = ColumnVersion(revisionID,revisionDate,Set(),true)
 }

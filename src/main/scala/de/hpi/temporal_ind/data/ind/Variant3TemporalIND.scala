@@ -1,10 +1,11 @@
 package de.hpi.temporal_ind.data.ind
 
-import de.hpi.temporal_ind.data.column.OrderedColumnHistory
+import de.hpi.temporal_ind.data.column.data.AbstractOrderedColumnHistory
+import de.hpi.temporal_ind.data.column.data.original.OrderedColumnHistory
 
 import java.time.Duration
 
-class Variant3TemporalIND(lhs: OrderedColumnHistory, rhs: OrderedColumnHistory, deltaInDays: Int)  extends TemporalIND(lhs,rhs) {
+class Variant3TemporalIND[T <% Ordered[T]](lhs: AbstractOrderedColumnHistory[T], rhs: AbstractOrderedColumnHistory[T], deltaInDays: Int)  extends TemporalIND(lhs,rhs) {
 
   override def toString: String =  s"Variant3TemporalIND(${lhs.id},${rhs.id},$deltaInDays)"
 
@@ -15,7 +16,7 @@ class Variant3TemporalIND(lhs: OrderedColumnHistory, rhs: OrderedColumnHistory, 
     var allValid = !rhs.history.versions.firstKey.minus(Duration.ofDays(deltaInDays)).isAfter(lhs.history.versions.firstKey) //change this logic if we allow empty version matches
     while(timestampIterator.hasNext && allValid){
       val t = timestampIterator.next()
-      var valuesToCover = collection.mutable.HashSet[String]() ++ lhs.versionAt(t).values
+      var valuesToCover = collection.mutable.HashSet[T]() ++ lhs.versionAt(t).values
       val rangeStart = Seq(lastUsedTimestamp,t.minus(Duration.ofDays(deltaInDays))).max
       val rangeEnd = t.plus(Duration.ofDays(deltaInDays))
       assert(rangeEnd.isAfter(rangeStart))

@@ -1,6 +1,7 @@
 package de.hpi.temporal_ind.data.column
 
 import com.typesafe.scalalogging.StrictLogging
+import de.hpi.temporal_ind.data.column.data.original.{ColumnHistory, ColumnVersion}
 import de.hpi.temporal_ind.data.column.statistics.ColumnHistoryStatRow
 import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
 

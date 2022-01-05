@@ -1,6 +1,6 @@
 package de.hpi.temporal_ind.data.column.io
 
-import de.hpi.temporal_ind.data.column.{ColumnHistory, OrderedColumnHistory}
+import de.hpi.temporal_ind.data.column.data.original.{ColumnHistory, OrderedColumnHistory}
 
 import java.io.File
 

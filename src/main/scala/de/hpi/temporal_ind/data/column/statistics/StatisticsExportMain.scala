@@ -1,6 +1,7 @@
 package de.hpi.temporal_ind.data.column.statistics
 
-import de.hpi.temporal_ind.data.column.{ColumnHistory, statistics}
+import de.hpi.temporal_ind.data.column.data.original.ColumnHistory
+import de.hpi.temporal_ind.data.column.statistics
 
 import java.io.{File, PrintWriter}
 

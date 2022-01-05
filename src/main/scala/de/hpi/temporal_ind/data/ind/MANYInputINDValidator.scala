@@ -1,37 +1,57 @@
 package de.hpi.temporal_ind.data.ind
 
-import de.hpi.temporal_ind.data.column.ColumnHistory
+import com.typesafe.scalalogging.StrictLogging
+import de.hpi.temporal_ind.data.column.data.encoded.ColumnHistoryEncoded
+import de.hpi.temporal_ind.data.column.data.original.ColumnHistory
 import de.hpi.temporal_ind.data.column.io.ColumnHistoryBuffer
+import de.hpi.temporal_ind.data.column.statistics.TemporalINDStatRow
+import de.hpi.temporal_ind.data.ind.variant4.Variant4TemporalIND
 
-import java.io.File
+import java.io.{File, PrintWriter}
 
-object MANYInputINDValidator extends App {
+object MANYInputINDValidator extends App with StrictLogging{
   val manyInputFIle = new File(args(0))
-  val columnHistoryDir = new File(args(1))
+  val columnHistoriesByID = ColumnHistoryEncoded.loadIntoMap(new File(args(1)))
   val outputDir = new File(args(2))
+  val deltaInDays = args(3).toInt
+  val pr = new PrintWriter(args(4))
+  //val maxEpsilon = args(4).toInt
+//  val ids = Vector("00008b30-68c2-437d-ab2f-b69e49db5be1", "00013074-0ce6-4413-93d9-dd30fcaed09b", "00014168-9042-4ca6-a62f-9f798eb2ecf3", "000442d8-b182-4090-a270-3c50becc289f")
+//  implicit class Crossable[X](xs: Traversable[X]) {
+//    def cross[Y](ys: Traversable[Y]) = for { x <- xs; y <- ys } yield (x, y)
+//  }
+//  TemporalINDStatRow.appendSchemaToFile(pr)
+//  val inds = (ids cross ids).foreach { case (lhsCol, rhsCol) =>
+//    val lhs = columnHistoriesByID(lhsCol).asOrderedVersionMap
+//    val rhs = columnHistoriesByID(rhsCol).asOrderedVersionMap
+//    val strictTemporalIND = new StrictTemporalIND(lhs, rhs)
+//    val variant1TemporalIND = new Variant1TemporalIND(lhs,rhs,deltaInDays)
+//    val variant3TemporalIND = new Variant3TemporalIND(lhs,rhs,deltaInDays)
+//    val statRow = new TemporalINDStatRow(lhs,rhs,strictTemporalIND,variant1TemporalIND,variant3TemporalIND,deltaInDays)
+//    statRow.appendToCSVFile(pr)
+//    //val variant4 = new Variant4TemporalIND(lhs,rhs,deltaInDays,maxEpsilon)
+//  }
   val inds = StaticInclusionDependency.readFromMANYOutputFile(manyInputFIle)
-  //filter into buckets according to pageID
-  val byPageIDCombination: Map[(String, String), IndexedSeq[StaticInclusionDependency]] = inds.groupBy(ind => (ind.lhsPageID, ind.rhsPageID))
-  val rangeToFileIndex = ColumnHistory.getIndexForFilesInDir(columnHistoryDir)
-  val buffer = new ColumnHistoryBuffer()
+  var counter = 0
   inds
-    .take(100)
     .foreach(ind => {
-      val fileLHS = rangeToFileIndex.getFileForPage(BigInt(ind.lhsPageID))
-      val fileRHS = rangeToFileIndex.getFileForPage(BigInt(ind.rhsPageID))
-      val ch1 = buffer.getOrLoadHistory(fileLHS)(ind.lhsColumnID)
-      val ch2 = buffer.getOrLoadHistory(fileRHS)(ind.rhsColumnID)
-      val temporalInd = new StrictTemporalIND(ch1, ch2)
-      val variant1 = new Variant1TemporalIND(ch1,ch2,30)
-      val variant3 = new Variant3TemporalIND(ch1,ch2,30)
-      val isValid = temporalInd.isValid
-      println(temporalInd.getTabularEventLineageString)
-      println(variant1.getTabularEventLineageString)
-      println(variant3.getTabularEventLineageString)
-      println()
-  })
+      val lhsCol = ind.lhsColumnID
+      val rhsCol = ind.rhsColumnID
+      val lhs = columnHistoriesByID(lhsCol).asOrderedVersionMap
+      val rhs = columnHistoriesByID(rhsCol).asOrderedVersionMap
+      val strictTemporalIND = new StrictTemporalIND(lhs, rhs)
+      val variant1TemporalIND = new Variant1TemporalIND(lhs,rhs,deltaInDays)
+      val variant3TemporalIND = new Variant3TemporalIND(lhs,rhs,deltaInDays)
+      val statRow = new TemporalINDStatRow(lhs,rhs,strictTemporalIND,variant1TemporalIND,variant3TemporalIND,deltaInDays)
+      statRow.appendToCSVFile(pr)
+      counter += 1
+      if(counter %1000000==0)
+        logger.debug(s"Processed $counter")
 
-//  byPageIDCombination
+  })
+  pr.close()
+
+  //  byPageIDCombination
 //    .foreach{case (lhsPageID,rhsPageID) => {
 //
 //    }}

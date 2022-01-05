@@ -1,12 +1,14 @@
-package de.hpi.temporal_ind.data.column
+package de.hpi.temporal_ind.data.column.data.original
 
+import de.hpi.temporal_ind.data.column.data.AbstractColumnVersion
+import de.hpi.temporal_ind.data.column.data.encoded.ColumnHistoryEncoded
 import de.hpi.temporal_ind.data.column.io.Dictionary
 import de.hpi.temporal_ind.data.column.wikipedia.{WikipediaColumnHistoryIndex, WikipediaPageRange}
 import de.hpi.temporal_ind.data.{JsonReadable, JsonWritable}
 
 import java.io.File
+import java.time.Instant
 import java.time.temporal.ChronoUnit
-import java.time.{Duration, Instant}
 import scala.collection.mutable.ArrayBuffer
 
 case class ColumnHistory(id: String,
@@ -24,7 +26,7 @@ case class ColumnHistory(id: String,
     tableId,
     pageID,
     pageTitle,
-    new OrderdColumnVersionList(collection.mutable.TreeMap[Instant,ColumnVersion]() ++ columnVersions.map(cv => (cv.timestamp,cv))))
+    new OrderedColumnVersionList(collection.mutable.TreeMap[Instant,ColumnVersion]() ++ columnVersions.map(cv => (cv.timestamp,cv))))
 
 
   def firstInsertToLastDeleteTimeInDays(endTimeData: Instant) = {
@@ -73,7 +75,7 @@ case class ColumnHistory(id: String,
   def versionAt(inputTimestamp: Instant):ColumnVersion = {
     assert(columnVersionsSorted)
     if(columnVersions.head.timestamp.isAfter(inputTimestamp))
-      ColumnVersion.COLUMN_DELETE(ColumnVersion.INITIALEMPTYID,inputTimestamp.toString)
+      ColumnVersion.COLUMN_DELETE(AbstractColumnVersion.INITIALEMPTYID,inputTimestamp.toString)
     else {
       val withIndex = columnVersions
         .zipWithIndex
@@ -106,7 +108,7 @@ case class ColumnHistory(id: String,
   def prependEmptyVersionIfNotPResent(startTime:Instant) = {
     assert(!startTime.isBefore(columnVersions.head.timestamp))
     if(columnVersions.head.timestamp != startTime) {
-      ColumnHistory(id,tableId,pageID,pageTitle,ArrayBuffer(ColumnVersion.COLUMN_DELETE(ColumnVersion.INITIALEMPTYID,startTime.toString)) ++ columnVersions)
+      ColumnHistory(id,tableId,pageID,pageTitle,ArrayBuffer(ColumnVersion.COLUMN_DELETE(AbstractColumnVersion.INITIALEMPTYID,startTime.toString)) ++ columnVersions)
     } else {
       this
     }

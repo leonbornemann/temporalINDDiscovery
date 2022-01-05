@@ -1,13 +1,14 @@
 package de.hpi.temporal_ind.data.ind.variant4
 
-import de.hpi.temporal_ind.data.column.{ColumnVersion, OrderedColumnHistory}
+import de.hpi.temporal_ind.data.column.data.AbstractOrderedColumnHistory
+import de.hpi.temporal_ind.data.column.data.original.{ColumnVersion, OrderedColumnHistory}
 import de.hpi.temporal_ind.util.TableFormatter
 
 import java.time.{Duration, Instant}
 import java.time.temporal.ChronoUnit
 import scala.collection.mutable.ArrayBuffer
 
-class Variant4DynamicProgrammingSolver(lhs: OrderedColumnHistory, rhs: OrderedColumnHistory, deltaInDays: Int, costFunction: EpsilonCostFunction) {
+class Variant4DynamicProgrammingSolver[T <% Ordered[T]](lhs: AbstractOrderedColumnHistory[T], rhs: AbstractOrderedColumnHistory[T], deltaInDays: Int, costFunction: EpsilonCostFunction) {
 
   def getOptimalMappingFunction = {
     var curRowIndex = axis.size-1

@@ -1,19 +1,20 @@
 package de.hpi.temporal_ind.data.ind.variant4
 
-import de.hpi.temporal_ind.data.column.OrderedColumnHistory
+import de.hpi.temporal_ind.data.column.data.AbstractOrderedColumnHistory
+import de.hpi.temporal_ind.data.column.data.original.OrderedColumnHistory
 import de.hpi.temporal_ind.data.ind.TemporalIND
 
 import java.time.Instant
 
-class Variant4TemporalIND(lhs:OrderedColumnHistory,
-                          rhs:OrderedColumnHistory,
+class Variant4TemporalIND[T <% Ordered[T]](lhs: AbstractOrderedColumnHistory[T],
+                                           rhs: AbstractOrderedColumnHistory[T],
                           deltaInDays:Int,
                           maxEpsilon:Int,
                           costFunction:EpsilonCostFunction) extends TemporalIND(lhs,rhs) {
 
   override def toString: String =  s"Variant4TemporalIND(${lhs.id},${rhs.id},$deltaInDays,$maxEpsilon)"
 
-  var solver:Option[Variant4DynamicProgrammingSolver] = None
+  var solver:Option[Variant4DynamicProgrammingSolver[T]] = None
 
   def getOrCeateSolver() = {
     if (!solver.isDefined)

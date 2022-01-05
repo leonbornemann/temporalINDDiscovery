@@ -1,4 +1,4 @@
-import de.hpi.temporal_ind.data.column.{ColumnVersion, OrderdColumnVersionList, OrderedColumnHistory}
+import de.hpi.temporal_ind.data.column.data.original.{ColumnVersion, OrderedColumnHistory, OrderedColumnVersionList}
 import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
 
 import java.io.File
@@ -46,7 +46,7 @@ object TemporalINDTestCase {
             .map(_._1)
         }
         val asMap = collection.mutable.TreeMap[Instant,ColumnVersion]() ++ res
-        val list = new OrderdColumnVersionList(asMap)
+        val list = new OrderedColumnVersionList(asMap)
         new OrderedColumnHistory(columnID,"dummyTAbleID","dummyPageID","dummyPageTitle",list)
       })
     assert(histories.size==2)

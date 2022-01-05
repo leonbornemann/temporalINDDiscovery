@@ -1,6 +1,7 @@
 package de.hpi.temporal_ind.data.column.io
 
-import de.hpi.temporal_ind.data.column.{ColumnHistory, ColumnHistoryEncoded}
+import de.hpi.temporal_ind.data.column.data.encoded.ColumnHistoryEncoded
+import de.hpi.temporal_ind.data.column.data.original.ColumnHistory
 
 import java.io.File
 import scala.io.Source

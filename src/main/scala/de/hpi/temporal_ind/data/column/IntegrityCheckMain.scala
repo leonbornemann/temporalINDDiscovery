@@ -1,5 +1,7 @@
 package de.hpi.temporal_ind.data.column
 
+import de.hpi.temporal_ind.data.column.data.original.ColumnHistory
+
 import java.io.File
 import java.time.temporal.ChronoUnit
 

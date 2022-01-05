@@ -1,12 +1,13 @@
 package de.hpi.temporal_ind.data.ind
 
-import de.hpi.temporal_ind.data.column.OrderedColumnHistory
+import de.hpi.temporal_ind.data.column.data.AbstractOrderedColumnHistory
+import de.hpi.temporal_ind.data.column.data.original.OrderedColumnHistory
 import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
 import de.hpi.temporal_ind.util.TableFormatter
 
 import java.time.Duration
 
-abstract class TemporalIND(val lhs: OrderedColumnHistory, val rhs: OrderedColumnHistory) {
+abstract class TemporalIND[T <% Ordered[T]](lhs: AbstractOrderedColumnHistory[T], rhs: AbstractOrderedColumnHistory[T]) {
 
   def isValid:Boolean
 

@@ -1,6 +1,6 @@
 package de.hpi.temporal_ind.data.column.io
 
-import de.hpi.temporal_ind.data.column.ColumnHistory
+import de.hpi.temporal_ind.data.column.data.original.ColumnHistory
 import de.hpi.temporal_ind.data.column.io.MemoryConsumptionTest.args
 
 import java.io.File

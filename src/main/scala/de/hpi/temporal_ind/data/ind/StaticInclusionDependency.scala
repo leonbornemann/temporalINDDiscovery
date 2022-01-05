@@ -1,6 +1,6 @@
 package de.hpi.temporal_ind.data.ind
 
-import de.hpi.temporal_ind.data.column.ColumnHistory
+import de.hpi.temporal_ind.data.column.data.original.ColumnHistory
 
 import java.io.File
 import scala.io.Source
@@ -35,10 +35,10 @@ object StaticInclusionDependency{
     ???
   }
 
-  def readFromMANYOutputFile(file :File):IndexedSeq[StaticInclusionDependency] = {
+  def readFromMANYOutputFile(file :File):Iterator[StaticInclusionDependency] = {
     Source.fromFile(file).getLines()
-      .toIndexedSeq
       .map(s => {
+        println(s"processing $s")
         val endIndex = s.indexOf("][=[")
         val lhs = s.substring(1,endIndex)
         val rhs = s.substring(endIndex+4,s.size-1)
