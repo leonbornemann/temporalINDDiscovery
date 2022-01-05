@@ -31,6 +31,7 @@ object MANYInputINDValidator extends App with StrictLogging{
 //    //val variant4 = new Variant4TemporalIND(lhs,rhs,deltaInDays,maxEpsilon)
 //  }
   val inds = StaticInclusionDependency.readFromMANYOutputFile(manyInputFIle)
+  //val inds = Seq(StaticInclusionDependency.fromManyOutputString("[92428275-10_8140886.csv.f23238b8-82cb-444b-9c43-f0c8c115bf78][=[98091879-1_8730532.csv.01400e3f-0f4e-4bfd-af5e-98774d87bfd9]"))
   var counter = 0
   inds
     .foreach(ind => {

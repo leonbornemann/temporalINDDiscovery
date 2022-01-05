@@ -9,6 +9,7 @@ object FileFinder extends App {
   val pageIDs = args(1).split(";")
   val index = ColumnHistory.getIndexForFilesInDir(new File(dir))
   pageIDs.foreach(s => {
+    println(s)
     println(index.getFileForPage(BigInt(s)).getAbsolutePath)
   })
 

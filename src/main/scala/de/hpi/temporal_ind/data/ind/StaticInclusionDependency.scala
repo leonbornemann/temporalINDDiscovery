@@ -30,19 +30,18 @@ case class StaticInclusionDependency(lhsID:String, rhsID:String) {
 }
 object StaticInclusionDependency{
 
-  def holdsOn(ch1:ColumnHistory,ch2:ColumnHistory):Boolean = {
-    //ch1
-    ???
-  }
-
   def readFromMANYOutputFile(file :File):Iterator[StaticInclusionDependency] = {
     Source.fromFile(file).getLines()
       .map(s => {
         println(s"processing $s")
-        val endIndex = s.indexOf("][=[")
-        val lhs = s.substring(1,endIndex)
-        val rhs = s.substring(endIndex+4,s.size-1)
-        StaticInclusionDependency(lhs,rhs)
+        fromManyOutputString(s)
       })
+  }
+
+  def fromManyOutputString(s: String) = {
+    val endIndex = s.indexOf("][=[")
+    val lhs = s.substring(1, endIndex)
+    val rhs = s.substring(endIndex + 4, s.size - 1)
+    StaticInclusionDependency(lhs, rhs)
   }
 }
