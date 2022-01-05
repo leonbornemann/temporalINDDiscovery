@@ -12,9 +12,8 @@ import java.io.{File, PrintWriter}
 object MANYInputINDValidator extends App with StrictLogging{
   val manyInputFIle = new File(args(0))
   val columnHistoriesByID = ColumnHistoryEncoded.loadIntoMap(new File(args(1)))
-  val outputDir = new File(args(2))
-  val deltaInDays = args(3).toInt
-  val pr = new PrintWriter(args(4))
+  val deltaInDays = args(2).toInt
+  val pr = new PrintWriter(args(3))
   //val maxEpsilon = args(4).toInt
 //  val ids = Vector("00008b30-68c2-437d-ab2f-b69e49db5be1", "00013074-0ce6-4413-93d9-dd30fcaed09b", "00014168-9042-4ca6-a62f-9f798eb2ecf3", "000442d8-b182-4090-a270-3c50becc289f")
 //  implicit class Crossable[X](xs: Traversable[X]) {
