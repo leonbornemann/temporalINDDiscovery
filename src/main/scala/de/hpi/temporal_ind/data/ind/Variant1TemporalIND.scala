@@ -12,7 +12,6 @@ class Variant1TemporalIND[T <% Ordered[T]](lhs: AbstractOrderedColumnHistory[T],
   override def isValid: Boolean = {
     allRelevantDeltaTimestamps(deltaInDays).forall{case (t) =>
       val lhsVersion = lhs.versionAt(t).values
-      println(t)
       val values = rhs.valuesInWindow(t.minus(Duration.ofDays(deltaInDays)),t.plus(Duration.ofDays(deltaInDays)))
       val allContained = lhsVersion.forall(v => values.contains(v))
       allContained
