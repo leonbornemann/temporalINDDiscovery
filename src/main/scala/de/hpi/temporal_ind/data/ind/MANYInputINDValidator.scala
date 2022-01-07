@@ -3,7 +3,6 @@ package de.hpi.temporal_ind.data.ind
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.temporal_ind.data.column.data.encoded.ColumnHistoryEncoded
 import de.hpi.temporal_ind.data.column.data.original.ColumnHistory
-import de.hpi.temporal_ind.data.column.io.ColumnHistoryBuffer
 import de.hpi.temporal_ind.data.column.statistics.TemporalINDStatRow
 import de.hpi.temporal_ind.data.ind.variant4.Variant4TemporalIND
 
