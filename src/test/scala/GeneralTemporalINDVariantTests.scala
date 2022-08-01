@@ -4,9 +4,9 @@ import org.scalatest.flatspec.AnyFlatSpec
 
 import java.io.File
 
-class TemporalINDVariantTests extends AnyFlatSpec{
+class GeneralTemporalINDVariantTests extends AnyFlatSpec{
 
-  def basePath = "src/main/resources/temporalINDTestExamples/"
+  def basePath = "src/main/resources/generalTemporalINDTestExamples/"
 
   private def runTestCase(file: File) = {
     val tc = TemporalINDTestCase.readFromFile(file)

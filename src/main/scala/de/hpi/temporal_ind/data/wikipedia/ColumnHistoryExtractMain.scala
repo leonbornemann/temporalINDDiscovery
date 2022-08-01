@@ -3,8 +3,9 @@ package de.hpi.temporal_ind.data.wikipedia
 import java.io.{File, PrintWriter}
 
 object ColumnHistoryExtractMain extends App {
-  val inputFile = args(0)
-  val outputDir = args(1)
+  GLOBAL_CONFIG.setSettingsForDataSource(args(0))
+  val inputFile = args(1)
+  val outputDir = args(2)
   val outputFile = new File(outputDir).getAbsolutePath + "/" + new File(inputFile).getName
   val pr = new PrintWriter(outputFile)
   val histories = TableHistory.iterableFromJsonObjectPerLineFile(inputFile)

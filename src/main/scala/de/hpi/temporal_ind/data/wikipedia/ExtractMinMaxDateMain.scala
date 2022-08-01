@@ -4,7 +4,8 @@ import java.io.File
 import java.time.Instant
 
 object ExtractMinMaxDateMain extends App {
-  val inputDir = new File(args(0))
+  GLOBAL_CONFIG.setSettingsForDataSource(args(0))
+  val inputDir = new File(args(1))
   val allTHs = TableHistory.iterableFromJsonObjectPerLineDir(inputDir,true)
   var minTimestamp:Option[Instant] = None
   var maxTimestamp:Option[Instant] = None

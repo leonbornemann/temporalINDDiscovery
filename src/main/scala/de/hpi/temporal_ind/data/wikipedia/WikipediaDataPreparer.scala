@@ -6,7 +6,6 @@ import org.jsoup.Jsoup
 
 import java.time.Instant
 import java.time.temporal.ChronoUnit
-import scala.collection.mutable.ArrayBuffer
 
 class WikipediaDataPreparer {
 
@@ -61,16 +60,17 @@ class WikipediaDataPreparer {
   }
 
   def isNumeric(values: Set[String]): Boolean = {
-    values.forall(s => s.matches(Util.numberRegex))
+    values.forall(s => s.trim.matches(Util.numberRegex))
   }
 
   def mostlyNumeric(ch:ColumnHistory) = {
-    //if 90% of the alive time the column is purely numeric we consider this a numeric column
-    var timeValid = 0
-    var totalTime = ChronoUnit.SECONDS.between(ch.columnVersions.head.timestamp,GLOBAL_CONFIG.latestInstantWikipedia)
-    val numericTime = ch.versionsWithAliveTime(GLOBAL_CONFIG.latestInstantWikipedia)
+    //if 50% of the alive time the column is purely numeric we consider this a numeric column
+    val numericTime = ch.nonDeleteVersionsWithAliveTime(GLOBAL_CONFIG.lastInstant)
       .map{case (cv,aliveTime) => if(isNumeric(cv.values)) aliveTime else 0L}
       .sum
-    numericTime/totalTime.toDouble>=0.9
+    val totalTime = ch.nonDeleteVersionsWithAliveTime(GLOBAL_CONFIG.lastInstant)
+      .map(_._2)
+      .sum
+    numericTime/totalTime.toDouble>0.5
   }
 }

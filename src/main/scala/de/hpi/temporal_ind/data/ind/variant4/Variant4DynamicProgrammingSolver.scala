@@ -1,32 +1,104 @@
 package de.hpi.temporal_ind.data.ind.variant4
 
 import de.hpi.temporal_ind.data.column.data.AbstractOrderedColumnHistory
-import de.hpi.temporal_ind.data.column.data.original.{ColumnVersion, OrderedColumnHistory}
+import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
 import de.hpi.temporal_ind.util.TableFormatter
 
-import java.time.{Duration, Instant}
 import java.time.temporal.ChronoUnit
+import java.time.{Duration, Instant}
 import scala.collection.mutable.ArrayBuffer
+import scala.collection.{SortedSet, mutable}
 
-class Variant4DynamicProgrammingSolver[T <% Ordered[T]](lhs: AbstractOrderedColumnHistory[T], rhs: AbstractOrderedColumnHistory[T], deltaInDays: Int, costFunction: EpsilonCostFunction) {
+class Variant4DynamicProgrammingSolver[T <% Ordered[T]](lhs: AbstractOrderedColumnHistory[T],
+                                                        rhs: AbstractOrderedColumnHistory[T],
+                                                        deltaInDays: Int,
+                                                        costFunction: EpsilonCostFunction) {
+
+  def addMaximalWindowSizeMappingsTillEnd(mapping: mutable.TreeMap[(Instant, Instant), (Instant, Instant)],
+                                          beginInclusive: Instant,
+                                          endExclusive: Instant) = {
+    var curStart = beginInclusive
+    var curEnd:Option[Instant]=None
+    if(beginInclusive!=endExclusive) {
+      while(curEnd.isEmpty || curEnd.get != endExclusive){
+        curEnd = Some(Seq(curStart.plus(Duration.ofDays(deltaInDays)).plusNanos(1),endExclusive).min)
+        if(curEnd.get.isBefore(curStart) || curEnd.get.isAfter(endExclusive)) {
+          assert(false)
+        }
+        val curInterval = (curStart, curEnd.get)
+        mapping.put(curInterval,curInterval)
+        curStart = curEnd.get
+      }
+    } else {
+      //empty range - nothing to do
+    }
+
+  }
+
+  private def completeMappingForMappingTimepoint(mapping: mutable.TreeMap[(Instant, Instant), (Instant, Instant)],
+                                                 lhsTimestampIndex: Int,
+                                                 rhsBegin:Instant,
+                                                 rhsEndExclusive:Instant) = {
+    val lhsBegin = axis(lhsTimestampIndex)._1
+//    if(lhsTimestampIndex==axis.size-1) {
+//      val lhsEndExclusive = GLOBAL_CONFIG.latestInstantWikipedia
+//      addMaximalWindowSizeMappingsTillEnd(mapping,axis(lhsTimestampIndex)._1,lhsEndExclusive)
+//    } else {
+      //rest of the timestamps are mapped to their same versions:
+      //to speed things up we make maximal windows until the end of time:
+    val toCompleteToExclusive = if(lhsTimestampIndex==axis.size-1) GLOBAL_CONFIG.lastInstant else axis(lhsTimestampIndex+1)._1
+    //the following code line is a little bit of a hack that increases the duration of the delta window from x to x + (1Day-1nanosecond)
+    //this fixes an issue with the mapping that occurs because we have our timestamps at certain granularity, for example daily
+    // A timestamp t in the LHS could otherwise only exactly be mapped to t-delta and the following time period until t+1 could not be mapped to that
+    // (even though that is legal, because the version from the RHS also does not change from t-delta until t-delta+1)
+    val maxMappedWindowEndExclusive = rhsBegin.plus(Duration.ofDays(deltaInDays)).plus(Duration.ofDays(1))
+    val rhsInterval = (rhsBegin,rhsEndExclusive)
+    if(maxMappedWindowEndExclusive.isAfter(toCompleteToExclusive)){
+      val lhsInterval = (lhsBegin, toCompleteToExclusive)
+      mapping.put(lhsInterval,rhsInterval)
+    } else {
+      val lhsInterval = (lhsBegin, maxMappedWindowEndExclusive)
+      mapping.put(lhsInterval,rhsInterval)
+      addMaximalWindowSizeMappingsTillEnd(mapping,maxMappedWindowEndExclusive,toCompleteToExclusive)
+    }
+//    }
+  }
 
   def getOptimalMappingFunction = {
     var curRowIndex = axis.size-1
-    val mapping = collection.mutable.TreeMap[Instant,Duration]()
-    (axis.size-1 to 0 by -1).foreach(j => {
-      val curEnd = axis(curRowIndex)._1.plusNanos(1)
-      val curStartIndex = predecessorMatrix(j)(curRowIndex)
-      val curStart = axis(curStartIndex)
-      mapping.put(axis(j)._1,Duration.between(curStart._1,curEnd))
-      curRowIndex=curStartIndex
+    val mapping = collection.mutable.TreeMap[(Instant,Instant),(Instant,Instant)]()
+    (axis.size-1 to 0 by -1).foreach(lhsTimepointIndex => {
+      val rhsEnd = axis(curRowIndex)._1
+      val rhsStartIndex = predecessorMatrix(curRowIndex)(lhsTimepointIndex) //TODO: this is more tricky if we implement the same version may cross alternative!
+      var rhsStart:Instant = Instant.MIN
+      if(rhsStartIndex== -1 ){
+        assert(lhsTimepointIndex==0)
+        rhsStart = axis(0)._1
+      } else {
+        rhsStart = axis(rhsStartIndex)._1
+      }
+      if(ChronoUnit.DAYS.between(rhsStart,rhsEnd)>deltaInDays){
+        rhsStart = rhsEnd.minus(Duration.ofDays(deltaInDays))
+      }
+      val mappedPeriod = (rhsStart,rhsEnd.plusNanos(1))
+      //complete the mapping
+      completeMappingForMappingTimepoint(mapping,lhsTimepointIndex,mappedPeriod._1,mappedPeriod._2)
+      curRowIndex=rhsStartIndex
     })
-    //TODO: return mapping as a class!
     TimestampMappingFunction(mapping.toMap)
   }
 
   def bestMappingCost = matrix(axis.size-1)(axis.size-1)
 
-  val axis = (lhs.history.versions.keySet ++ rhs.history.versions.keySet)
+  def isInDatasetBounds(t: Instant): Boolean = !t.isBefore(GLOBAL_CONFIG.earliestInstant) && !t.isAfter(GLOBAL_CONFIG.lastInstant)
+
+  def deltaExtension(keySet: SortedSet[Instant]) = {
+    keySet
+      .flatMap(t => Set(t.minus(Duration.ofDays(deltaInDays)),t,t.plus(Duration.ofDays(deltaInDays+1))))
+      .filter(t => isInDatasetBounds(t))
+  }
+
+  val axis = (lhs.history.versions.keySet ++ deltaExtension(rhs.history.versions.keySet))
     .toIndexedSeq
     .sorted
     .zipWithIndex
@@ -51,13 +123,14 @@ class Variant4DynamicProgrammingSolver[T <% Ordered[T]](lhs: AbstractOrderedColu
   initialize()
   fillMatrix()
   assert(bestMappingCost >=0)
-  printMatrix
 
   private def printMatrix() = {
     TableFormatter.printTable(axis.map(_._1), matrix.toSeq.map(_.toSeq))
   }
 
-  true==true
+  private def printPredecessorMatrix() = {
+    TableFormatter.printTable(axis.map(_._1), predecessorMatrix.toSeq.map(_.toSeq))
+  }
 
   def getDeltaIndexWindow(index: Int) = {
     var lowerExclusiveIndex = index
@@ -80,16 +153,15 @@ class Variant4DynamicProgrammingSolver[T <% Ordered[T]](lhs: AbstractOrderedColu
     axis.tail.foreach{case (t,j) => {
       val (lowerInclusive,upperInclusive) = getDeltaIndexWindow(j)
       (lowerInclusive to upperInclusive).foreach(i => {
+        printMatrix()
         val lowerInclusive = getDeltaIndexWindow(j)._1
         val upperInclusivePredecessor = if(matrix(i)(j-1)==NON_EXISTANT) i-1 else i
         val potentialPredecessors = lowerInclusive to upperInclusivePredecessor
-        if(j==1 && i ==2) {
-          printMatrix()
-          println()
-        }
         val costs = potentialPredecessors
           .map{case (iPrime) =>
             val predecessorCost = matrix(iPrime)(j - 1)
+            if(j==5 && iPrime==4)
+              println()
             val costOfThisMapping = costFunction.cost(lhs, rhs, axis(j)._1, axis(iPrime)._1, axis(i)._1)
             val minCost = predecessorCost + costOfThisMapping
             (minCost,iPrime)

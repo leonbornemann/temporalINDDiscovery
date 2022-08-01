@@ -1,11 +1,17 @@
-package de.hpi.temporal_ind.data.ind
+package de.hpi.temporal_ind.data.column.data.many
 
-import de.hpi.temporal_ind.data.column.data.original.ColumnHistory
+import de.hpi.temporal_ind.data.column.data.IndexedColumnHistories
+import de.hpi.temporal_ind.data.column.data.original.INDCandidate
 
 import java.io.File
 import scala.io.Source
 
-case class StaticInclusionDependency(lhsID:String, rhsID:String) {
+case class InclusionDependencyFromMany(lhsID:String, rhsID:String) {
+
+  def toCandidate(indexed: IndexedColumnHistories) = {
+    INDCandidate[String](indexed.multiLevelIndex(lhsPageID)(lhsColumnID).asOrderedHistory,indexed.multiLevelIndex(rhsPageID)(rhsColumnID).asOrderedHistory)
+  }
+
 
   private def getColumnID(str: String) = {
     val tokens = str.split("\\.")
@@ -28,9 +34,9 @@ case class StaticInclusionDependency(lhsID:String, rhsID:String) {
   }
 
 }
-object StaticInclusionDependency{
+object InclusionDependencyFromMany{
 
-  def readFromMANYOutputFile(file :File):Iterator[StaticInclusionDependency] = {
+  def readFromMANYOutputFile(file :File):Iterator[InclusionDependencyFromMany] = {
     Source.fromFile(file).getLines()
       .map(s => {
         println(s"processing $s")
@@ -42,6 +48,6 @@ object StaticInclusionDependency{
     val endIndex = s.indexOf("][=[")
     val lhs = s.substring(1, endIndex)
     val rhs = s.substring(endIndex + 4, s.size - 1)
-    StaticInclusionDependency(lhs, rhs)
+    InclusionDependencyFromMany(lhs, rhs)
   }
 }

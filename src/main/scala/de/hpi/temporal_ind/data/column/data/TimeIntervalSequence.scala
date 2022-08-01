@@ -2,9 +2,12 @@ package de.hpi.temporal_ind.data.column.data
 
 import java.time.{Duration, Instant}
 
-class TimeIntervalSequence(var intervals: IndexedSeq[(Instant, Instant)]) {
+class TimeIntervalSequence(var intervals: IndexedSeq[(Instant, Instant)],consolidate:Boolean = false) {
 
   intervals = intervals.sorted
+  if(consolidate){
+    intervals = this.union(new TimeIntervalSequence(IndexedSeq(),false)).intervals
+  }
 
   def isDisjoint(intervals: IndexedSeq[(Instant, Instant)]): Boolean = {
     intervals.sorted.zipWithIndex.forall{case ((s,e),i) => i == intervals.size-1 || !e.isAfter(intervals(i+1)._1)}
@@ -19,7 +22,7 @@ class TimeIntervalSequence(var intervals: IndexedSeq[(Instant, Instant)]) {
     val iterator = intervalsNew.tail.iterator
     while(iterator.hasNext){
       val (s,e) = iterator.next()
-      if(!curInterval._2.isAfter(s)){
+      if(curInterval._2.isBefore(s)){
         consolidated += curInterval
         curInterval = (s,e)
       } else {

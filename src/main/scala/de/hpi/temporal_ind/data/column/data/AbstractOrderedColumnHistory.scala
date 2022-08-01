@@ -1,11 +1,25 @@
 package de.hpi.temporal_ind.data.column.data
 
-import de.hpi.temporal_ind.data.column.data.original.ColumnVersion
 import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
 
 import java.time.Instant
 
 abstract class AbstractOrderedColumnHistory[T] {
+
+  def activeRevisionURLAtTimestamp(version: Instant) = {
+    //https://en.wikipedia.org/?curid=368629&oldid=1084266355
+    val revisionID = if(history.versions.contains(version)){
+      history.versions(version).revisionID
+    } else {
+      history
+        .versions
+        .maxBefore(version)
+        .get._2
+        .revisionID
+    }
+    s"https://en.wikipedia.org/?curid=$pageID&oldid=$revisionID"
+  }
+
 
   /***
    *
@@ -14,7 +28,7 @@ abstract class AbstractOrderedColumnHistory[T] {
   def nonEmptyIntervals = {
     val withIndex = history.versions.toIndexedSeq.zipWithIndex
     val intervals = withIndex.filter(!_._1._2.isDelete).map{case ((t,_),i) =>
-      val endPoint = if(i == withIndex.size-1) GLOBAL_CONFIG.latestInstantWikipedia else withIndex(i+1)._1._1
+      val endPoint = if(i == withIndex.size-1) GLOBAL_CONFIG.lastInstant else withIndex(i+1)._1._1
       (t,endPoint)
     }
     new TimeIntervalSequence(intervals)

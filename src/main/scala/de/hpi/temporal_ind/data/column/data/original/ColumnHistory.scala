@@ -18,11 +18,16 @@ case class ColumnHistory(id: String,
                          columnVersions: ArrayBuffer[ColumnVersion]
                         ) extends JsonWritable[ColumnHistory]{
 
+  def numericTimeShare = {
+
+  }
+
+
   def applyDictionary(dict:Dictionary) = {
     ColumnHistoryEncoded(id,tableId, pageID, pageTitle, columnVersions.map(cv => cv.applyDictionary(dict)))
   }
 
-  def asOrderedVersionMap = new OrderedColumnHistory(id,
+  def asOrderedHistory = new OrderedColumnHistory(id,
     tableId,
     pageID,
     pageTitle,
@@ -89,7 +94,11 @@ case class ColumnHistory(id: String,
 
 
   def versionsWithAliveTime(lastDate:Instant) = {
-    val withIndex = columnVersions
+    withAliveTime(columnVersions,lastDate)
+  }
+
+  private def withAliveTime(versions:ArrayBuffer[ColumnVersion],lastDate:Instant) = {
+    val withIndex = versions
       .zipWithIndex
     withIndex
       .map{case (cv,i)=> {
@@ -98,6 +107,11 @@ case class ColumnHistory(id: String,
         else
           (cv,ChronoUnit.SECONDS.between(cv.timestamp,withIndex(i+1)._1.timestamp))
       }}
+  }
+
+  def nonDeleteVersionsWithAliveTime(lastDate:Instant) = {
+    withAliveTime(columnVersions,lastDate)
+      .filter(!_._1.isDelete)
   }
 
 

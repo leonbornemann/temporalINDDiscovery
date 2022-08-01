@@ -1,7 +1,6 @@
 package de.hpi.temporal_ind.data.ind
 
 import de.hpi.temporal_ind.data.column.data.AbstractOrderedColumnHistory
-import de.hpi.temporal_ind.data.column.data.original.OrderedColumnHistory
 import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
 import de.hpi.temporal_ind.util.TableFormatter
 
@@ -21,7 +20,7 @@ abstract class TemporalIND[T <% Ordered[T]](lhs: AbstractOrderedColumnHistory[T]
     val duration = Duration.ofDays(deltaInDays)
     lhs.history.versions.keySet.flatMap(t => Set(t.minus(duration),t,t.plus(duration)))
       .union(rhs.history.versions.keySet.flatMap(t => Set(t.minus(duration),t,t.plus(duration))))
-      .filter(t => !t.isAfter(GLOBAL_CONFIG.latestInstantWikipedia) && !t.isBefore(GLOBAL_CONFIG.earliestInstantWikipedia))
+      .filter(t => !t.isAfter(GLOBAL_CONFIG.lastInstant) && !t.isBefore(GLOBAL_CONFIG.earliestInstant))
   }
 
   def getTabularEventLineageString = {

@@ -9,9 +9,9 @@ case class ColumnHistoryStatRow(ch: ColumnHistory) {
 
   val nVersions = ch.columnVersions.size
   val valueChangeVersions = ch.versionsWithNonDeleteChanges
-  val durationInDays = ch.firstInsertToLastDeleteTimeInDays(GLOBAL_CONFIG.latestInstantWikipedia)
+  val durationInDays = ch.firstInsertToLastDeleteTimeInDays(GLOBAL_CONFIG.lastInstant)
   val nVersionsWithChanges = valueChangeVersions.size
-  val lifetimeInDays = ch.totalLifeTimeInDays(GLOBAL_CONFIG.latestInstantWikipedia)
+  val lifetimeInDays = ch.totalLifeTimeInDays(GLOBAL_CONFIG.lastInstant)
   val valueSets = valueChangeVersions.map(_.values)
   val valueSetSizes = valueSets.map(_.size)
   val sizeStatistics = ValueSequenceStatistics(valueSetSizes.map(_.toDouble))

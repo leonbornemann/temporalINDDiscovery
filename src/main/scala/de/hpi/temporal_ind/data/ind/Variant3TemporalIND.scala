@@ -1,7 +1,6 @@
 package de.hpi.temporal_ind.data.ind
 
 import de.hpi.temporal_ind.data.column.data.AbstractOrderedColumnHistory
-import de.hpi.temporal_ind.data.column.data.original.OrderedColumnHistory
 import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
 
 import java.time.Duration
@@ -17,7 +16,7 @@ class Variant3TemporalIND[T <% Ordered[T]](lhs: AbstractOrderedColumnHistory[T],
     val lhsLastTimestamp = lhs.history.versions.lastKey
     val timestampIterator = allRelevantDeltaTimestamps(deltaInDays)
       .iterator
-      .withFilter(t => !t.isBefore(lhsFirstTimestamp) && !t.isAfter(GLOBAL_CONFIG.latestInstantWikipedia))
+      .withFilter(t => !t.isBefore(lhsFirstTimestamp) && !t.isAfter(GLOBAL_CONFIG.lastInstant))
     var allValid = !rhs.history.versions.firstKey.minus(Duration.ofDays(deltaInDays)).isAfter(lhsFirstTimestamp) //change this logic if we allow empty version matches
     while (timestampIterator.hasNext && allValid) {
       val t = timestampIterator.next()
