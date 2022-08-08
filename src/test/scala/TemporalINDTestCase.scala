@@ -60,7 +60,7 @@ object TemporalINDTestCase {
         var res = (collection.mutable.TreeMap[Instant, ColumnVersion]() ++ timeaxis.zip(values)
           .map { case (t, v) => {
             val values = if (v.size == 1 && v.head == "Ø") Set[String]() else v
-            (t, new ColumnVersion(t.toString, t.toString, values, v.isEmpty))
+            (t, new ColumnVersion(t.toString, t.toString, values,None,None, v.isEmpty))
           }
           })
           .toIndexedSeq

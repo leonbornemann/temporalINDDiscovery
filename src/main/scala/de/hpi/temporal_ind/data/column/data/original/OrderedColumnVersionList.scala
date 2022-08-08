@@ -7,4 +7,6 @@ import scala.collection.mutable
 
 class OrderedColumnVersionList(val versions : mutable.TreeMap[Instant, _ <: AbstractColumnVersion[String]]) extends AbstractOrderdColumnVersionList[String]{
 
+  def versionsSorted= versions.toIndexedSeq.sortBy(_._1).map(_._2)
+
 }

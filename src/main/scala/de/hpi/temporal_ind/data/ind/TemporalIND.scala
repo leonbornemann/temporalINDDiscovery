@@ -10,17 +10,9 @@ abstract class TemporalIND[T <% Ordered[T]](lhs: AbstractOrderedColumnHistory[T]
 
   def isValid:Boolean
 
-  def allRelevantTimestamps = {
+  def lhsAndRhsVersionTimestamps = {
     //lhs
     lhs.history.versions.keySet.union(rhs.history.versions.keySet)
-  }
-
-  def allRelevantDeltaTimestamps(deltaInDays:Int) = {
-    //lhs
-    val duration = Duration.ofDays(deltaInDays)
-    lhs.history.versions.keySet.flatMap(t => Set(t.minus(duration),t,t.plus(duration)))
-      .union(rhs.history.versions.keySet.flatMap(t => Set(t.minus(duration),t,t.plus(duration))))
-      .filter(t => !t.isAfter(GLOBAL_CONFIG.lastInstant) && !t.isBefore(GLOBAL_CONFIG.earliestInstant))
   }
 
   def getTabularEventLineageString = {

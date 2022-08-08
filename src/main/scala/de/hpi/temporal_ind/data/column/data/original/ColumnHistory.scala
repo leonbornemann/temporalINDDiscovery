@@ -18,9 +18,16 @@ case class ColumnHistory(id: String,
                          columnVersions: ArrayBuffer[ColumnVersion]
                         ) extends JsonWritable[ColumnHistory]{
 
-  def numericTimeShare = {
-
+  //def transformValueset(f:(Set[String]) => Set[String]) = {
+  //    ColumnHistory(id,tableId,pageID,pageTitle,columnVersions.map(cv => ColumnVersion(cv.revisionID,cv.revisionDate,f(cv.values),cv.columnNotPresent)))
+  //  }
+  def transformHeader(f: Set[String] => Set[String]) = {
+    ColumnHistory(id,tableId,pageID,pageTitle,columnVersions.map{cv =>
+      val newHeader = if(cv.header.isEmpty) cv.header else Some(f(Set(cv.header.get)).head)
+      ColumnVersion(cv.revisionID,cv.revisionDate,cv.values,newHeader,cv.position,cv.columnNotPresent)
+    })
   }
+
 
 
   def applyDictionary(dict:Dictionary) = {
@@ -116,7 +123,7 @@ case class ColumnHistory(id: String,
 
 
   def transformValueset(f:(Set[String]) => Set[String]) = {
-    ColumnHistory(id,tableId,pageID,pageTitle,columnVersions.map(cv => ColumnVersion(cv.revisionID,cv.revisionDate,f(cv.values),cv.columnNotPresent)))
+    ColumnHistory(id,tableId,pageID,pageTitle,columnVersions.map(cv => ColumnVersion(cv.revisionID,cv.revisionDate,f(cv.values),cv.header,cv.position,cv.columnNotPresent)))
   }
 
   def prependEmptyVersionIfNotPResent(startTime:Instant) = {

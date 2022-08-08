@@ -10,6 +10,8 @@ import java.io.{File, PrintWriter}
 case class ColumnVersion(revisionID: String,
                          revisionDate: String,
                          values: Set[String],
+                         header:Option[String],
+                         position:Option[Int],
                          columnNotPresent:Boolean) extends AbstractColumnVersion[String]{
 
   def applyDictionary(dict: Dictionary): ColumnVersionEncoded = {
@@ -41,5 +43,5 @@ object ColumnVersion {
     }
   }
 
-  def COLUMN_DELETE(revisionID: String, revisionDate: String): ColumnVersion = ColumnVersion(revisionID,revisionDate,Set(),true)
+  def COLUMN_DELETE(revisionID: String, revisionDate: String): ColumnVersion = ColumnVersion(revisionID,revisionDate,Set(),None,None,true)
 }

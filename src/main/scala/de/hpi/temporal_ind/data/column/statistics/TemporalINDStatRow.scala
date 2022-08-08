@@ -1,15 +1,14 @@
 package de.hpi.temporal_ind.data.column.statistics
 
 import de.hpi.temporal_ind.data.column.data.encoded.OrderedEncodedColumnHistory
-import de.hpi.temporal_ind.data.ind.{StrictTemporalIND, Variant1TemporalIND, Variant3TemporalIND}
+import de.hpi.temporal_ind.data.ind.{StrictTemporalIND, SimpleTimeWindowTemporalIND}
 
 import java.io.PrintWriter
 
 class TemporalINDStatRow(lhs: OrderedEncodedColumnHistory,
                          rhs: OrderedEncodedColumnHistory,
                          strictTemporalIND: StrictTemporalIND[Long],
-                         variant1TemporalIND: Variant1TemporalIND[Long],
-                         variant3TemporalIND: Variant3TemporalIND[Long],
+                         variant1TemporalIND: SimpleTimeWindowTemporalIND[Long],
                          deltaInDays:Int) {
 
   def appendToCSVFile(pr:PrintWriter) = {
@@ -20,8 +19,7 @@ class TemporalINDStatRow(lhs: OrderedEncodedColumnHistory,
     //val nonOverlapTime = strictTemporalIND.nonOverlapTimeInDays
     val strictIsValid = strictTemporalIND.isValid
     val variant1IsValid = variant1TemporalIND.isValid
-    val variant3IsValid = variant3TemporalIND.isValid
-    val csvString = Seq(lhsID,rhsID,totalActiveTime,overlapTime,/*nonOverlapTime,*/strictIsValid,variant1IsValid,variant3IsValid,deltaInDays).mkString(",")
+    val csvString = Seq(lhsID,rhsID,totalActiveTime,overlapTime,/*nonOverlapTime,*/strictIsValid,variant1IsValid,deltaInDays).mkString(",")
     pr.println(csvString)
   }
 
@@ -40,7 +38,6 @@ object TemporalINDStatRow {
         //"nonOverlapTime",
         "strictIsValid",
         "variant1IsValid",
-        "variant3IsValid",
         "deltaInDays")
   }
 }

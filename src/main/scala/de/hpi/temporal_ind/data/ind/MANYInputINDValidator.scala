@@ -38,9 +38,8 @@ object MANYInputINDValidator extends App with StrictLogging{
       val lhs = columnHistoriesByID(lhsCol).asOrderedVersionMap
       val rhs = columnHistoriesByID(rhsCol).asOrderedVersionMap
       val strictTemporalIND = new StrictTemporalIND(lhs, rhs)
-      val variant1TemporalIND = new Variant1TemporalIND(lhs,rhs,deltaInDays)
-      val variant3TemporalIND = new Variant3TemporalIND(lhs,rhs,deltaInDays)
-      val statRow = new TemporalINDStatRow(lhs,rhs,strictTemporalIND,variant1TemporalIND,variant3TemporalIND,deltaInDays)
+      val variant1TemporalIND = new SimpleTimeWindowTemporalIND(lhs,rhs,deltaInDays)
+      val statRow = new TemporalINDStatRow(lhs,rhs,strictTemporalIND,variant1TemporalIND,deltaInDays)
       statRow.appendToCSVFile(pr)
       counter += 1
       if(counter %1000000==0)

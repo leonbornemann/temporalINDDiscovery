@@ -20,8 +20,10 @@ case class TableHistory(pageID:String,
   def extractColumnHistories = {
     val colIDToColHistory = mutable.HashMap[String, ArrayBuffer[ColumnVersion]]()
     tables.foreach(tv => {
-      val columnVersions = tv.getColumns()
-        .map(values => ColumnVersion(tv.revisionID, tv.revisionDate, values.toSet,false))
+      val headers = if(tv.hasHeader) tv.header.map(Some(_)) else List.fill(tv.ncols)(None)
+      val columnVersions = tv.getColumnsWithColPosition()
+        .zip(headers)
+        .map{case ((values,position),header) => ColumnVersion(tv.revisionID, tv.revisionDate, values.toSet,header,Some(position),false)}
       assert(columnVersions.size == tv.artificialColumnHeaders.size)
       tv.artificialColumnHeaders
         .zip(columnVersions)

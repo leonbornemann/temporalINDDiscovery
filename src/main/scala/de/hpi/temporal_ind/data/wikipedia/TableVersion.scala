@@ -11,7 +11,11 @@ case class TableVersion(revisionID: String,
                         globalNaturalKeys: IndexedSeq[String],
                         localNaturalKeys: IndexedSeq[String],
                        ) {
+  def header = cells.head.map(_.content)
+
   def timestamp = Util.instantFromWikipediaDateTimeString(revisionDate)
+
+  def hasHeader = cells.size>0
 
   def withOutHeader = {
     //just remove the first row for now
@@ -24,8 +28,8 @@ case class TableVersion(revisionID: String,
       cells(rowIndex)(colIndex).content
     })
 
-  def getColumns() = {
-    (0 until ncols).map(colIndex => getColumn(colIndex))
+  def getColumnsWithColPosition() = {
+    (0 until ncols).map(colIndex => (getColumn(colIndex),colIndex))
   }
 
   def get_table_cell(ir: Int, ic: Int) = cells(ir)(ic)

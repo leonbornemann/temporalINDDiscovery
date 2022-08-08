@@ -20,7 +20,7 @@ object Util {
 
   def numberRegex = "-?[0-9]+[\\.,][0-9]+"//"TODO: Borrow from natural key discovery"
 
-  val wikipediaDateTimeFormatter = DateTimeFormatter.ofPattern("E MMM dd HH:mm:ss z yyyy")
+  val wikipediaDateTimeFormatter = DateTimeFormatter.ofPattern("E MMM dd HH:mm:ss[.SSSSSSSSS] z yyyy")
 
   def instantFromWikipediaDateTimeString(str:String) = {
     val dateTime = LocalDateTime.parse(str,wikipediaDateTimeFormatter)

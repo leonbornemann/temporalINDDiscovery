@@ -1,8 +1,9 @@
-import de.hpi.temporal_ind.data.ind.variant4.{Variant4TemporalIND, Variant4_1_CostFunction}
-import de.hpi.temporal_ind.data.ind.{StrictTemporalIND, Variant1TemporalIND, Variant3TemporalIND}
+import de.hpi.temporal_ind.data.ind.variant4.TimeShiftedRelaxedTemporalIND
+import de.hpi.temporal_ind.data.ind.{StrictTemporalIND, SimpleTimeWindowTemporalIND}
 import org.scalatest.flatspec.AnyFlatSpec
 
 import java.io.File
+import java.time.temporal.ChronoUnit
 
 class GeneralTemporalINDVariantTests extends AnyFlatSpec{
 
@@ -22,11 +23,11 @@ class GeneralTemporalINDVariantTests extends AnyFlatSpec{
   }
 
   private def createTemporalINDVariants(tc: TemporalINDTestCase) = {
+    val nanosPerDay = 86400000000000L
     IndexedSeq(
       new StrictTemporalIND(tc.lhs, tc.rhs),
-      new Variant1TemporalIND(tc.lhs, tc.rhs, 1),
-      new Variant3TemporalIND(tc.lhs, tc.rhs, 1),
-      new Variant4TemporalIND(tc.lhs, tc.rhs, 1,1,new Variant4_1_CostFunction)
+      new SimpleTimeWindowTemporalIND(tc.lhs, tc.rhs,  nanosPerDay),
+      new TimeShiftedRelaxedTemporalIND(tc.lhs, tc.rhs, nanosPerDay,nanosPerDay)
     )
   }
 

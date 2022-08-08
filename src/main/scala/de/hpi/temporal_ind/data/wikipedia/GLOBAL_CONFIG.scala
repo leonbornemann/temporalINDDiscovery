@@ -1,8 +1,11 @@
 package de.hpi.temporal_ind.data.wikipedia
 
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 
 object GLOBAL_CONFIG {
+  def totalTimeInNanos = ChronoUnit.NANOS.between(earliestInstant,lastInstant)
+
   val CANONICAL_NULL_VALUE: String = "⊥NULL⊥"
 
   var earliestInstant: Instant = null
@@ -23,4 +26,5 @@ object GLOBAL_CONFIG {
   (Some(),Some())
   val NULL_VALUE_EQUIVALENTS = Set("","—","-","–","N/A","?","Unknown","- -","n/a","•","- - -",".","??","(n/a)")
 
+  val nanosPerDay = 86400000000000L
 }

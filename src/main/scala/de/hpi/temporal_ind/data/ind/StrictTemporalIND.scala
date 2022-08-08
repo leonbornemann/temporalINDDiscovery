@@ -12,7 +12,7 @@ class StrictTemporalIND[T <% Ordered[T]](lhs: AbstractOrderedColumnHistory[T], r
   override def toString: String = s"StrictTemporalIND(${lhs.id},${rhs.id})"
 
   override def isValid:Boolean = {
-    allRelevantTimestamps.forall(t => {
+    lhsAndRhsVersionTimestamps.forall(t => {
       val lhsAtT = lhs.versionAt(t)
       val rhsAtT = rhs.versionAt(t)
       lhsAtT.values.forall(v => rhsAtT.values.contains(v))

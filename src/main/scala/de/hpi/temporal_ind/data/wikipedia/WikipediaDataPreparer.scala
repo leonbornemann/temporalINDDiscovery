@@ -15,19 +15,33 @@ class WikipediaDataPreparer {
   }
 
   def extractColumnLineagesFromTableHistory(tableHistory: TableHistory) = {
-    val colHistories = removeTableHeader(tableHistory)
+    tableHistory
       .extractColumnHistories
-    //Preparation pipeline for column histories:
-    colHistories
-      .map(ch => ch.transformValueset(removeHTMLBoilerplate))
+      .map(ch => ch.transformValueset(removeHTMLBoilerplateAndExtractLinkTargets))
+      .map(ch => ch.transformHeader(removeHTMLBoilerplateAndExtractLinkTargets))
       .map(ch => ch.transformValueset(unifyNullSymbols))
       .map(ch => filterVandalism(ch))
       .map(ch => removeDuplicateVersions(ch))
       .filter(ch => !mostlyNumeric(ch))
   }
 
-  def removeHTMLBoilerplate(strings:Set[String]):Set[String] = {
-    strings.map(s => Jsoup.parse(s).text())
+  def removeHTMLBoilerplateAndExtractLinkTargets(strings:Set[String]):Set[String] = {
+    strings.map(s => {
+      val doc = Jsoup.parse(s)
+      //get link targets:
+      val elemIt =doc.select("a").iterator()
+      while(elemIt.hasNext){
+        val elem = elemIt.next()
+        if(elem.hasAttr("title")){
+          val pageTitle = elem.attr("title")
+          elem.text(pageTitle)
+        } else if(elem.hasAttr("href")){
+          val targetPage = elem.attr("href")
+          elem.text(targetPage)
+        }
+      }
+      doc.text()
+    })
   }
 
   def durationLongEnough(revisionDate: Instant, revisionDate1: Instant): Boolean = {
