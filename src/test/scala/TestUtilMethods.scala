@@ -15,7 +15,7 @@ object TestUtilMethods {
     new OrderedColumnHistory("","","","",new OrderedColumnVersionList(collection.mutable.TreeMap[Instant,ColumnVersion]() ++ value.map(t => {
       val date = toInstant(t._1)
       val dateAsString = Util.wikipediaDateTimeFormatter.withZone(ZoneId.of("UTC")).format(date)
-      (date, ColumnVersion("", dateAsString, t._2,None,None, false))
+      (date, ColumnVersion("", dateAsString, t._2,None,None, t._2.isEmpty))
     })))
   }
 

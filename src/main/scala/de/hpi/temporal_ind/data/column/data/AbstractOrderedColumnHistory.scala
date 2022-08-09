@@ -41,10 +41,18 @@ abstract class AbstractOrderedColumnHistory[T] {
   def pageTitle: String
   def history: AbstractOrderdColumnVersionList[T]
 
-  def versionsInWindow(lowerInclusive: Instant, upperExclusive: Instant) = history
-    .versions
-    .rangeImpl(Some(lowerInclusive),Some(upperExclusive))
-    .keySet
+  def versionsInWindow(lowerInclusive: Instant, upperExclusive: Instant) = {
+    val res = history
+      .versions
+      .rangeImpl(Some(lowerInclusive),Some(upperExclusive))
+      .keySet
+    if (!history.versions.contains(lowerInclusive)) {
+      //add previous version because it lasted until lowerInclusive
+      res ++ history.versions.maxBefore(lowerInclusive).map(_._1).toSet
+    } else {
+      res
+    }
+  }
 
   def valuesInWindow(lowerInclusive: Instant, upperExclusive: Instant,limitToVersions:Option[collection.Set[Instant]]=None) :Set[T] = {
     val res = history.versions

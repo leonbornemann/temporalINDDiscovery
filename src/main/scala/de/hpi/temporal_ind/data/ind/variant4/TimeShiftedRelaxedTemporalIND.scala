@@ -6,7 +6,8 @@ import de.hpi.temporal_ind.data.ind.TemporalIND
 class TimeShiftedRelaxedTemporalIND[T <% Ordered[T]](lhs: AbstractOrderedColumnHistory[T],
                                                      rhs: AbstractOrderedColumnHistory[T],
                                                      deltaInNanos:Long,
-                                                     maxEpsilonInNanos:Long) extends TemporalIND(lhs,rhs) {
+                                                     maxEpsilonInNanos:Long,
+                                                     useWildcardLogic:Boolean) extends TemporalIND(lhs,rhs) {
 
   override def toString: String =  s"Variant4TemporalIND(${lhs.id},${rhs.id},$deltaInNanos,$maxEpsilonInNanos)"
 
@@ -14,7 +15,7 @@ class TimeShiftedRelaxedTemporalIND[T <% Ordered[T]](lhs: AbstractOrderedColumnH
 
   def getOrCeateSolver() = {
     if (!solver.isDefined)
-      solver = Some(new TimeShiftedRelaxedINDDynamicProgrammingSolver(lhs,rhs,deltaInNanos))
+      solver = Some(new TimeShiftedRelaxedINDDynamicProgrammingSolver(lhs,rhs,deltaInNanos,useWildcardLogic))
     solver.get
   }
 

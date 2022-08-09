@@ -7,18 +7,33 @@ import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
 
 import java.time.{Duration, Instant}
 
-class SimpleTimeWindowTemporalIND[T <% Ordered[T]](lhs: AbstractOrderedColumnHistory[T], rhs: AbstractOrderedColumnHistory[T], deltaInNanos: Long) extends TemporalIND(lhs,rhs){
+class SimpleTimeWindowTemporalIND[T <% Ordered[T]](lhs: AbstractOrderedColumnHistory[T],
+                                                   rhs: AbstractOrderedColumnHistory[T],
+                                                   deltaInNanos: Long,
+                                                   useWildcardLogic:Boolean) extends TemporalIND(lhs,rhs){
+
+  def rhsIsWildcardOnlyInRange(lower: Instant, upper: Instant): Boolean = {
+    val rhsVersions = rhs.versionsInWindow(lower,upper)
+    rhsVersions.size==1 && rhs.versionAt(rhsVersions.head).columnNotPresent
+  }
 
   def relativeViolationTime: Double = {
+    val violationTime: Long = absoluteViolationTime
+    TimeUtil.toRelativeTimeAmount(violationTime)
+  }
+
+  def absoluteViolationTime = {
     val violationTime = TimeUtil.withDurations(relevantTimestamps)
-      .map{case (t,dur) =>
+      .map { case (t, dur) =>
         val lhsVersion = lhs.versionAt(t).values
-        val values = rhs.valuesInWindow(t.minus(Duration.ofNanos(deltaInNanos)),t.plus(Duration.ofNanos(deltaInNanos)))
+        val lower = t.minus(Duration.ofNanos(deltaInNanos))
+        val upper = t.plus(Duration.ofNanos(deltaInNanos))
+        val values = rhs.valuesInWindow(lower, upper)
         val allContained = lhsVersion.forall(v => values.contains(v))
-        if(allContained) 0 else dur
+        if (allContained || (useWildcardLogic && rhsIsWildcardOnlyInRange(lower, upper))) 0 else dur
       }
       .sum
-    TimeUtil.toRelativeTimeAmount(violationTime)
+    violationTime
   }
 
   override def toString: String = s"Variant1TemporalIND(${lhs.id},${rhs.id},$deltaInNanos)"

@@ -19,7 +19,7 @@ class NewTemporalINDTest extends AnyFlatSpec{
     ))
     GLOBAL_CONFIG.lastInstant = toInstant(8)
     var delta = 3
-    var solver = new TimeShiftedRelaxedINDDynamicProgrammingSolver(history1,history2,delta)
+    var solver = new TimeShiftedRelaxedINDDynamicProgrammingSolver(history1,history2,delta,false)
     assert(solver.optimalMappingCost==2)
     val optimalMapping = solver.optimalMapping
     assert(optimalMapping.keySet.map(_.timestamp)==history1.history.versions.keySet)

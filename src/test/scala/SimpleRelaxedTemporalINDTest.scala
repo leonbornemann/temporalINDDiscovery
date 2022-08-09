@@ -19,8 +19,8 @@ class SimpleRelaxedTemporalINDTest extends AnyFlatSpec{
       (4,Set("e","f"))
     ))
     GLOBAL_CONFIG.lastInstant = toInstant(40)
-    var simpleRelaxedTemporalIND = new SimpleRelaxedTemporalIND(history1,history2,7)
-    assert(simpleRelaxedTemporalIND.summedViolationTime==5)
+    var simpleRelaxedTemporalIND = new SimpleRelaxedTemporalIND(history1,history2,7,false)
+    assert(simpleRelaxedTemporalIND.absoluteViolationTime==5)
     assert(simpleRelaxedTemporalIND.isValid)
     val history3 = toHistory(Map(
       (1,Set("a","b")),
@@ -28,9 +28,9 @@ class SimpleRelaxedTemporalINDTest extends AnyFlatSpec{
       (20,Set("a","f")),
       (30,Set("e","f"))
     ))
-    simpleRelaxedTemporalIND = new SimpleRelaxedTemporalIND(history1,history3,7)
+    simpleRelaxedTemporalIND = new SimpleRelaxedTemporalIND(history1,history3,7,false)
     assert(!simpleRelaxedTemporalIND.isValid)
-    assert(simpleRelaxedTemporalIND.summedViolationTime==17)
+    assert(simpleRelaxedTemporalIND.absoluteViolationTime==17)
   }
 
 }

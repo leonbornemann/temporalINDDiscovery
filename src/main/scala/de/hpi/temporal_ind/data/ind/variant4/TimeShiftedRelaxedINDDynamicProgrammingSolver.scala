@@ -11,11 +11,15 @@ import scala.collection.{SortedSet, mutable}
 
 class TimeShiftedRelaxedINDDynamicProgrammingSolver[T <% Ordered[T]](lhs: AbstractOrderedColumnHistory[T],
                                                                      rhs: AbstractOrderedColumnHistory[T],
-                                                                     deltaInNanos: Long) {
+                                                                     deltaInNanos: Long,
+                                                                     useWildcardLogic:Boolean) {
+
+  assert(!useWildcardLogic) //implementation does not yet make sense, because the algorithm can leave out versions
+
+
   def optimalMappingRelativeCost = {
     TimeUtil.toRelativeTimeAmount(optimalMappingCost)
   }
-
 
   def initLongMatrix() = {
     (0 until rhs.history.versions.keySet.size)
@@ -29,8 +33,18 @@ class TimeShiftedRelaxedINDDynamicProgrammingSolver[T <% Ordered[T]](lhs: Abstra
       .toArray
   }
 
+  def printMatrix() = {
+    TableFormatter.printTable(Seq("") ++ axisLHS, matrix
+      .zip(axisRHS)
+      .toSeq.map(t => Seq(t._2) ++ t._1.toSeq))
+  }
+
+  def printPredecessorMatrix() = {
+    TableFormatter.printTable(axisRHS, predecessorMatrix.toSeq.map(_.toSeq))
+  }
+
   var matrix:Array[Array[Long]] = initLongMatrix()
-  var precessorMatrix:Array[Array[Int]] = initIntMatrix()
+  var predecessorMatrix:Array[Array[Int]] = initIntMatrix()
   val axisLHS = lhs.history.versions.keySet.toIndexedSeq
   val axisRHS = rhs.history.versions.keySet.toIndexedSeq
   //initialize:
@@ -38,6 +52,11 @@ class TimeShiftedRelaxedINDDynamicProgrammingSolver[T <% Ordered[T]](lhs: Abstra
 
   def endOfVersion(axis: IndexedSeq[Instant], i: Int) = {
     if(i+1 == axis.size) GLOBAL_CONFIG.lastInstant else axis(i+1)
+  }
+
+  def rhsIsWildcardOnlyInRange(lower: Instant, upper: Instant): Boolean = {
+    val rhsVersions = rhs.versionsInWindow(lower,upper)
+    rhsVersions.size==1 && rhs.versionAt(rhsVersions.head).columnNotPresent
   }
 
   def costFunction(lhsBegin: Instant, rhsBeginInclusive: Instant, rhsEndExclusive: Instant): Long = {
@@ -52,10 +71,10 @@ class TimeShiftedRelaxedINDDynamicProgrammingSolver[T <% Ordered[T]](lhs: Abstra
     val relevantPKVersions = rhs.versionsInWindow(rhsBeginInclusive,rhsEndExclusive)
       .filter{v => !v.isBefore(lowerFKDeltaInclusive) && v.isBefore(upperFKDeltaExclusive)}
     val deltaExtensions = relevantPKVersions
-      .flatMap{i => Seq(i.minusNanos(deltaInNanos),i.plusNanos(deltaInNanos+1))}
+      .flatMap{i => Seq(i.minusNanos(deltaInNanos),i.plusNanos(deltaInNanos))}
       .filter{v => !v.isBefore(lowerFKDeltaInclusive) && v.isBefore(upperFKDeltaExclusive)}
 
-    val allInterestingTimestamps = (Set(lhsBegin) ++ relevantPKVersions ++ deltaExtensions)
+    val allInterestingTimestamps = (Set(lhsBegin) ++ deltaExtensions)
       .toIndexedSeq
       .filter(v => v.isBefore(lhsEnd) && !v.isBefore(lhsBegin))
       .sorted
@@ -63,18 +82,18 @@ class TimeShiftedRelaxedINDDynamicProgrammingSolver[T <% Ordered[T]](lhs: Abstra
     var totalCost:Long = 0
     var processedTime:Long = 0
     (0 until allInterestingTimestamps.size).foreach{ i =>
-      val currentWindowStart = allInterestingTimestamps(i)
-      val currentWindowEnd = if(i+1==allInterestingTimestamps.size ) lhsEnd else allInterestingTimestamps(i+1)
+      val currentTimespanOfLHSVersionStart = allInterestingTimestamps(i)
+      val currentTimespanOfLHSVersionEnd = if(i+1==allInterestingTimestamps.size ) lhsEnd else allInterestingTimestamps(i+1)
       //due to construction there can be no
-      val lower = currentWindowEnd.minusNanos(1).minusNanos(deltaInNanos)
-      val upper = currentWindowEnd.minusNanos(1).plusNanos(deltaInNanos)
-      val valuesInPk = rhs.valuesInWindow(lower,upper.plusNanos(1),Some(relevantPKVersions))
-      val timeDiff = ChronoUnit.NANOS.between(currentWindowStart,currentWindowEnd)
-      if(lhsVersion.diff(valuesInPk).size!=0){
-        //add costs
-        totalCost += timeDiff
-      } else {
+      val lowerDeltaWindowBorderInclusive = currentTimespanOfLHSVersionEnd.minusNanos(1).minusNanos(deltaInNanos)
+      val upperDeltaWindowBorderExclusive = currentTimespanOfLHSVersionEnd.minusNanos(1).plusNanos(deltaInNanos)
+      val valuesInPk = rhs.valuesInWindow(lowerDeltaWindowBorderInclusive,upperDeltaWindowBorderExclusive.plusNanos(1),Some(relevantPKVersions))
+      val timeDiff = ChronoUnit.NANOS.between(currentTimespanOfLHSVersionStart,currentTimespanOfLHSVersionEnd)
+      if(lhsVersion.diff(valuesInPk).size==0 || (useWildcardLogic && rhsIsWildcardOnlyInRange(lowerDeltaWindowBorderInclusive,upperDeltaWindowBorderExclusive))){
         //no costs to add
+      } else {
+        //add costs:
+        totalCost += timeDiff
       }
       processedTime += timeDiff
     }
@@ -96,7 +115,7 @@ class TimeShiftedRelaxedINDDynamicProgrammingSolver[T <% Ordered[T]](lhs: Abstra
           .map(iPrime => (iPrime,matrix(iPrime)(j-1) + costFunction(axisLHS(j),axisRHS(iPrime),endOfVersion(axisRHS,i))))
           .minBy{case (row,curCost) => (curCost,row)} // to make the mapping deterministic, we take the lowest row for now
         matrix(i)(j) = cost
-        precessorMatrix(i)(j) = pred
+        predecessorMatrix(i)(j) = pred
       }
     }
   }
@@ -108,7 +127,7 @@ class TimeShiftedRelaxedINDDynamicProgrammingSolver[T <% Ordered[T]](lhs: Abstra
     var curI = axisRHS.size-1
     (axisLHS.size-1 to 0 by -1)
       .foreach(j => {
-        val predI = precessorMatrix(curI)(j)
+        val predI = predecessorMatrix(curI)(j)
         mapping.put(lhs.history.versions(axisLHS(j)),VersionRange(rhs.history.versions(axisRHS(predI)),rhs.history.versions(axisRHS(curI))))
         curI = predI
       })

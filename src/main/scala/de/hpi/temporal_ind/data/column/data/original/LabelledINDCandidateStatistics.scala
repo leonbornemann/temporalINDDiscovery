@@ -14,30 +14,38 @@ case class LabelledINDCandidateStatistics[T <% Ordered[T]](label:String, candida
   def idCSVString = s"${lhs.pageID},${lhs.tableId},${lhs.id},${rhs.pageID},${rhs.tableId},${rhs.id}"
 
   def serializeSimpleRelaxedIND(pr: PrintWriter) = {
-    val simpleRelaxedTemporalIND = new SimpleRelaxedTemporalIND[T](lhs,rhs,1L)
+    val simpleRelaxedTemporalINDWildcardLogic = new SimpleRelaxedTemporalIND[T](lhs,rhs,1L,true)
+    val simpleVariantViolationTimeWildcardLogic = simpleRelaxedTemporalINDWildcardLogic.relativeViolationTime
+    val simpleRelaxedTemporalIND = new SimpleRelaxedTemporalIND[T](lhs,rhs,1L,false)
     val simpleVariantViolationTime = simpleRelaxedTemporalIND.relativeViolationTime
-    pr.println(s"$idCSVString,relaxedNoShift,0,$simpleVariantViolationTime")
+    pr.println(s"$idCSVString,relaxedNoShift,true,0,$simpleVariantViolationTimeWildcardLogic")
+    pr.println(s"$idCSVString,relaxedNoShift,false,0,$simpleVariantViolationTime")
   }
 
   def serializeTimeShiftedComplexRelaxedIND(pr: PrintWriter, deltas: Seq[Long]) = {
     deltas.foreach(d => {
-      val timeShiftedIND = new TimeShiftedRelaxedTemporalIND[T](lhs,rhs,d,1)
-      val violationTime = timeShiftedIND.getOrCeateSolver().optimalMappingRelativeCost
-      pr.println(s"$idCSVString,timeShiftedComplex,$d,$violationTime")
+      val violationTime = new TimeShiftedRelaxedTemporalIND[T](lhs,rhs,d,1,false)
+        .getOrCeateSolver()
+        .optimalMappingRelativeCost
+      pr.println(s"$idCSVString,timeShiftedComplex,false,$d,$violationTime")
     })
 
   }
 
   def serializeTimeShiftedSimpleRelaxedIND(pr: PrintWriter, deltas: Seq[Long]) = {
     deltas.map(d => {
-      val timeShiftedIND = new SimpleTimeWindowTemporalIND[T](lhs,rhs,d)
-      val violationTime:Double = timeShiftedIND.relativeViolationTime
-      pr.println(s"$idCSVString,timeShiftedSimple,$d,$violationTime")
+      val violationTimeNoWildcard = new SimpleTimeWindowTemporalIND[T](lhs,rhs,d,false)
+        .relativeViolationTime
+      val violationTimeWildcard = new SimpleTimeWindowTemporalIND[T](lhs,rhs,d,true)
+        .relativeViolationTime
+      pr.println(s"$idCSVString,timeShiftedSimple,false,$d,$violationTimeNoWildcard")
+      pr.println(s"$idCSVString,timeShiftedSimple,true,$d,$violationTimeWildcard")
 
     })
   }
 
   def serializeValidityStatistics(pr:PrintWriter) = {
+    serializeSimpleRelaxedIND(pr)
     serializeSimpleRelaxedIND(pr)
     val deltas = Seq(GLOBAL_CONFIG.nanosPerDay,
       GLOBAL_CONFIG.nanosPerDay*2,
@@ -64,7 +72,7 @@ object LabelledINDCandidateStatistics{
 
   def printCSVSchema(pr:PrintWriter) = {
     //s"${lhs.pageID},${lhs.tableId},${lhs.tableId},${rhs.pageID},${rhs.tableId},${rhs.tableId}"
-    val schema = "lhsPageID,lhsTableID,lhsColumnID,rhsPageID,rhsTableID,rhsColumnID,label,scoreName,delta,relativeViolationTime"
+    val schema = "lhsPageID,lhsTableID,lhsColumnID,rhsPageID,rhsTableID,rhsColumnID,label,scoreName,wildcardLogic,delta,relativeViolationTime"
     pr.println("")
   }
 
