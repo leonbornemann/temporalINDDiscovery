@@ -15,6 +15,10 @@ abstract class AbstractColumnVersion[T] {
   def revisionDate: String
   def values: Set[T]
   def columnNotPresent:Boolean
+  def header:Option[String]
+  def position:Option[Int]
+  //header:Option[String],
+  //                         position:Option[Int],
 }
 
 object AbstractColumnVersion {

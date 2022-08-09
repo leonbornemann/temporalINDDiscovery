@@ -18,8 +18,8 @@ case class LabelledINDCandidateStatistics[T <% Ordered[T]](label:String, candida
     val simpleVariantViolationTimeWildcardLogic = simpleRelaxedTemporalINDWildcardLogic.relativeViolationTime
     val simpleRelaxedTemporalIND = new SimpleRelaxedTemporalIND[T](lhs,rhs,1L,false)
     val simpleVariantViolationTime = simpleRelaxedTemporalIND.relativeViolationTime
-    pr.println(s"$idCSVString,relaxedNoShift,true,0,$simpleVariantViolationTimeWildcardLogic")
-    pr.println(s"$idCSVString,relaxedNoShift,false,0,$simpleVariantViolationTime")
+    pr.println(s"$idCSVString,$label,relaxedNoShift,true,0,$simpleVariantViolationTimeWildcardLogic")
+    pr.println(s"$idCSVString,$label,relaxedNoShift,false,0,$simpleVariantViolationTime")
   }
 
   def serializeTimeShiftedComplexRelaxedIND(pr: PrintWriter, deltas: Seq[Long]) = {
@@ -27,7 +27,7 @@ case class LabelledINDCandidateStatistics[T <% Ordered[T]](label:String, candida
       val violationTime = new TimeShiftedRelaxedTemporalIND[T](lhs,rhs,d,1,false)
         .getOrCeateSolver()
         .optimalMappingRelativeCost
-      pr.println(s"$idCSVString,timeShiftedComplex,false,$d,$violationTime")
+      pr.println(s"$idCSVString,$label,timeShiftedComplex,false,$d,$violationTime")
     })
 
   }
@@ -38,8 +38,8 @@ case class LabelledINDCandidateStatistics[T <% Ordered[T]](label:String, candida
         .relativeViolationTime
       val violationTimeWildcard = new SimpleTimeWindowTemporalIND[T](lhs,rhs,d,true)
         .relativeViolationTime
-      pr.println(s"$idCSVString,timeShiftedSimple,false,$d,$violationTimeNoWildcard")
-      pr.println(s"$idCSVString,timeShiftedSimple,true,$d,$violationTimeWildcard")
+      pr.println(s"$idCSVString,$label,timeShiftedSimple,false,$d,$violationTimeNoWildcard")
+      pr.println(s"$idCSVString,$label,timeShiftedSimple,true,$d,$violationTimeWildcard")
 
     })
   }
@@ -73,7 +73,7 @@ object LabelledINDCandidateStatistics{
   def printCSVSchema(pr:PrintWriter) = {
     //s"${lhs.pageID},${lhs.tableId},${lhs.tableId},${rhs.pageID},${rhs.tableId},${rhs.tableId}"
     val schema = "lhsPageID,lhsTableID,lhsColumnID,rhsPageID,rhsTableID,rhsColumnID,label,scoreName,wildcardLogic,delta,relativeViolationTime"
-    pr.println("")
+    pr.println(schema)
   }
 
 }

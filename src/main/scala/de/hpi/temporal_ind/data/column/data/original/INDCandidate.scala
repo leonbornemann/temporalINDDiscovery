@@ -39,9 +39,28 @@ case class INDCandidate[T](lhs: AbstractOrderedColumnHistory[T], rhs:AbstractOrd
     //remainsValidPercentage
     //remainsValidPercentageWildcardLogic
     //isValidForWhichDelta/Epsilon
-    Seq(versionURLFK,versionURLPK,"null",fkTableID,pkTableID,firstFKValuesAsString,firstPkValuesAsString,fkID,pkID,fkPageID,pkPageID,fkTitle,pkTitle) //substitute null for label for now
+    Seq(versionURLFK,
+      versionURLPK,
+      lhs.pageTitle,
+      lhs.history.versions.last._2.header.getOrElse(""),
+      lhs.history.versions.last._2.position.getOrElse(-1).toString,
+      rhs.pageTitle,
+      rhs.history.versions.last._2.header.getOrElse(""),
+      rhs.history.versions.last._2.position.getOrElse(-1).toString,
+      "null",
+      fkTableID,
+      pkTableID,
+      firstFKValuesAsString,
+      firstPkValuesAsString,
+      fkID,
+      pkID,
+      fkPageID,
+      pkPageID,
+      fkTitle,
+      pkTitle) //substitute null for label for now
       .map(s => Util.makeStringCSVSafe(s))
       .mkString(",")
+    //pageTitleFK,colHeaderFK,colPositionFK,pageTitlePK,colHeaderPK,colPositionPK
   }
 
   def remainsValidPercentage = new CommonPointOfInterestIterator(lhs,rhs)
@@ -58,6 +77,6 @@ object INDCandidate {
     INDCandidate(lhs.asOrderedHistory,rhs.asOrderedHistory)
   }
 
-  def csvSchema = "versionURLFK,versionURLPK,isGenuine,fkTableID,pkTableID,fkValues,pkValues,fkID,pkID,fkPageID,pkPageID,fkTitle,pkTitle"
+  def csvSchema = "versionURLFK,versionURLPK,pageTitleFK,colHeaderFK,colPositionFK,pageTitlePK,colHeaderPK,colPositionPK,isGenuine,fkTableID,pkTableID,fkValues,pkValues,fkID,pkID,fkPageID,pkPageID,fkTitle,pkTitle"
 
 }

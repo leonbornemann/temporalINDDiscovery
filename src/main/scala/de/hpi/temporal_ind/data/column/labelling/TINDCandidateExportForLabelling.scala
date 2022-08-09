@@ -19,6 +19,7 @@ object TINDCandidateExportForLabelling extends App {
   val pr = new PrintWriter(outputFileToLabel)
   pr.println(INDCandidate.csvSchema)
   val prStatistics = new PrintWriter(outputFileStatistics)
+  LabelledINDCandidateStatistics.printCSVSchema(prStatistics)
   val indexed = IndexedColumnHistories.fromColumnHistoryJsonPerLineDir(columnHistoryDir)
   InclusionDependencyFromMany.readFromMANYOutputFile(new File(inputFile))
     .take(sampleSize)
