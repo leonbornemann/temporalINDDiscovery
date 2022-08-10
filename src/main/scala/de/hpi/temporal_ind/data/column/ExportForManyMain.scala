@@ -34,7 +34,8 @@ object ExportForManyMain extends App with StrictLogging{
       val filtered = vhs.zipWithIndex
         .filter(vhs => {
           val stats = ColumnHistoryStatRow(vhs._1)
-          stats.sizeStatistics.median>=minMedianSize &&
+          !vhs._1.versionAt(inputTimestamp).isDelete &&
+            stats.sizeStatistics.median>=minMedianSize &&
             stats.lifetimeInDays >= minLifetimeDays &&
             vhs._1.versionsWithNonDeleteChanges.size >= minNonDeleteChanges &&
             !preparer.mostlyNumeric(vhs._1) &&
