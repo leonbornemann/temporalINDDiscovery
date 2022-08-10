@@ -20,33 +20,34 @@ case class TableHistory(pageID:String,
   def extractColumnHistories = {
     val colIDToColHistory = mutable.HashMap[String, ArrayBuffer[ColumnVersion]]()
     tables.foreach(tv => {
-      val headers = if(tv.hasHeader) tv.header.map(Some(_)) else List.fill(tv.ncols)(None)
-      val columnVersions = tv.getColumnsWithColPosition()
-        .zip(headers)
-        .map{case ((values,position),header) => ColumnVersion(tv.revisionID, tv.revisionDate, values.toSet,header,Some(position),false)}
-      assert(columnVersions.size == tv.artificialColumnHeaders.size)
-      tv.artificialColumnHeaders
-        .zip(columnVersions)
+      val expandedRatioHeader = tv.cells(0).filter(_.wasExpanded).size / tv.cells(0).size.toDouble
+      val expandedRatioMiddle = tv.cells(tv.cells.size / 2).filter(_.wasExpanded).size / tv.cells(0).size.toDouble
+      val expandedRatioEnd = tv.cells(tv.cells.size / 2).filter(_.wasExpanded).size / tv.cells(0).size.toDouble
+      val filterExpanded = expandedRatioHeader>0.5 && expandedRatioMiddle>0.5 && expandedRatioEnd > 0.5
+      val tableState = tv.getTableState(filterExpanded)
+      tableState.artificialHeaders
+        .zip(tableState.columns)
         .foreach { case (id, version) =>
           val curHistory = colIDToColHistory.getOrElseUpdate(id, ArrayBuffer[ColumnVersion]())
           if (curHistory.isEmpty || curHistory.last.values != version.values)
             curHistory.append(version)
         }
       //process non-present columns in this version
-      val curColumnIds = tv.artificialColumnHeaders.toSet
+      val curColumnIds = tableState.artificialHeaders.toSet
       colIDToColHistory.keySet.diff(curColumnIds).foreach(id => {
-        if(id=="cc3b43ad-0a4f-42ef-92b5-4e902a0672d3"){
-          println()
-        }
         val history = colIDToColHistory(id)
         if (!history.last.isDelete) {
           history.append(ColumnVersion.COLUMN_DELETE(tv.revisionID, tv.revisionDate))
         }
       })
     })
-    colIDToColHistory
+    val columnHistories = colIDToColHistory
       .map { case (id, history) => ColumnHistory(id, tableID, pageID, pageTitle, history)}
       .toIndexedSeq
+    if(colIDToColHistory.contains("e87339ca-aded-4806-8f62-40a6a14a73b6")){
+      println()
+    }
+    columnHistories
   }
 }
 object TableHistory extends JsonReadable[TableHistory]
