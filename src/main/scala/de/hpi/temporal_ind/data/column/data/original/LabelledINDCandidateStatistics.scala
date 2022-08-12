@@ -65,7 +65,7 @@ case class LabelledINDCandidateStatistics[T <% Ordered[T]](label:String, candida
 object LabelledINDCandidateStatistics{
 
   def fromCSVLine(index:IndexedColumnHistories,l:String) = {
-    val label = l.split(",")(2)
+    val label = l.split(",")(8)
     val indCandidate = INDCandidate.fromCSVLine(index,l)
     LabelledINDCandidateStatistics(label,indCandidate)
   }
