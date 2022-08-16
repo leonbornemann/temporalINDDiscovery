@@ -25,6 +25,4 @@ object GLOBAL_CONFIG {
 
   (Some(),Some())
   val NULL_VALUE_EQUIVALENTS = Set("","—","-","–","N/A","?","Unknown","- -","n/a","•","- - -",".","??","(n/a)")
-
-  val nanosPerDay = 86400000000000L
 }

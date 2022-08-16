@@ -2,7 +2,7 @@ package de.hpi.temporal_ind.data.column.data.original
 
 import de.hpi.temporal_ind.data.column.data.IndexedColumnHistories
 import de.hpi.temporal_ind.data.ind.{SimpleRelaxedTemporalIND, SimpleTimeWindowTemporalIND}
-import de.hpi.temporal_ind.data.ind.variant4.TimeShiftedRelaxedTemporalIND
+import de.hpi.temporal_ind.data.ind.variant4.{TimeShiftedRelaxedTemporalIND, TimeUtil}
 import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
 
 import java.io.PrintWriter
@@ -46,16 +46,15 @@ case class LabelledINDCandidateStatistics[T <% Ordered[T]](label:String, candida
 
   def serializeValidityStatistics(pr:PrintWriter) = {
     serializeSimpleRelaxedIND(pr)
-    serializeSimpleRelaxedIND(pr)
-    val deltas = Seq(GLOBAL_CONFIG.nanosPerDay,
-      GLOBAL_CONFIG.nanosPerDay*2,
-      GLOBAL_CONFIG.nanosPerDay*5,
-      GLOBAL_CONFIG.nanosPerDay*7,
-      GLOBAL_CONFIG.nanosPerDay*10,
-      GLOBAL_CONFIG.nanosPerDay*30,
-      GLOBAL_CONFIG.nanosPerDay*60,
-      GLOBAL_CONFIG.nanosPerDay*90,
-      GLOBAL_CONFIG.nanosPerDay*365)
+    val deltas = Seq(TimeUtil.nanosPerDay,
+      TimeUtil.nanosPerDay*2,
+      TimeUtil.nanosPerDay*5,
+      TimeUtil.nanosPerDay*7,
+      TimeUtil.nanosPerDay*10,
+      TimeUtil.nanosPerDay*30,
+      TimeUtil.nanosPerDay*60,
+      TimeUtil.nanosPerDay*90,
+      TimeUtil.nanosPerDay*365)
     serializeTimeShiftedComplexRelaxedIND(pr,deltas)
     serializeTimeShiftedSimpleRelaxedIND(pr,deltas)
 

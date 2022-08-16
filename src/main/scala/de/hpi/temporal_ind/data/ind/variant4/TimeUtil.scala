@@ -7,9 +7,11 @@ import java.time.temporal.ChronoUnit
 
 object TimeUtil {
 
+  val nanosPerDay = 86400000000000L
+
   def toRelativeTimeAmount(nanos: Long) = {
     val totalTime = GLOBAL_CONFIG.totalTimeInNanos
-    (nanos / GLOBAL_CONFIG.nanosPerDay) / (totalTime / GLOBAL_CONFIG.nanosPerDay).toDouble
+    (nanos / nanosPerDay) / (totalTime / nanosPerDay).toDouble
   }
 
   def withDurations(timestamps:Iterable[Instant]) = {
