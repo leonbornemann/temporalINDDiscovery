@@ -14,8 +14,13 @@ object ExportForManyMain extends App with StrictLogging{
   val inputDir = args(1)
   val outputRootDirLineages = args(2)
   val outputDirRootDir = args(3)
-  val inputTimestamp = Instant.parse(args(4))
-  val outputDir = outputDirRootDir + s"/$inputTimestamp/"
+  val (beginTimestamp,endTimestampExclusive) = if(args(4).contains(";"))
+    (Instant.parse(args(4).split(";")(0)),Some(Instant.parse(args(4).split(";")(1))))
+  else {
+    (Instant.parse(args(4)),None)
+  }
+  val outputDir = outputDirRootDir + s"/${beginTimestamp}_$endTimestampExclusive/"
+  val versonRangeEndExlcusive = endTimestampExclusive.getOrElse(beginTimestamp.plusNanos(1))
   //FILTER CONFIG:
   val minMedianSize = 5
   val minLifetimeDays = 30
@@ -34,7 +39,11 @@ object ExportForManyMain extends App with StrictLogging{
       val filtered = vhs.zipWithIndex
         .filter(vhs => {
           val stats = ColumnHistoryStatRow(vhs._1)
-          !vhs._1.versionAt(inputTimestamp).isDelete &&
+          val nonDelete:Boolean = if(endTimestampExclusive.isEmpty)
+            !vhs._1.versionAt(beginTimestamp).isDelete
+          else
+            vhs._1.existsNonDeleteInVersionRange(beginTimestamp,endTimestampExclusive.get)
+          nonDelete &&
             stats.sizeStatistics.median>=minMedianSize &&
             stats.lifetimeInDays >= minLifetimeDays &&
             vhs._1.versionsWithNonDeleteChanges.size >= minNonDeleteChanges &&
@@ -50,7 +59,10 @@ object ExportForManyMain extends App with StrictLogging{
           val headerMap = colList.map(t => (t._1,t._1.id)).toMap
           val colListSorted = colList.sortBy(_._2).toIndexedSeq
           val headersOrdered = colListSorted.map(t => headerMap(t._1))
-          val tableVersion = colListSorted.map(_._1.versionAt(inputTimestamp))
+          val tableVersion = if(!endTimestampExclusive.isDefined)
+            colListSorted.map(_._1.versionAt(beginTimestamp))
+          else
+            colListSorted.map(_._1.versionUnion(beginTimestamp,endTimestampExclusive.get))
           if(tableVersion.exists(_.values.size!=0))
             ColumnVersion.serializeToTable(tableVersion,headersOrdered,new File(resultDir + s"/${tID}_$pID.csv"))
         }

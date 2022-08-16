@@ -18,6 +18,33 @@ case class ColumnHistory(id: String,
                          columnVersions: ArrayBuffer[ColumnVersion]
                         ) extends JsonWritable[ColumnHistory]{
 
+  def existsNonDeleteInVersionRange(beginTimestamp:Instant,endTimestampExclusive:Instant) = {
+    val beginVersion = versionAt(beginTimestamp)
+    if(beginVersion.isDelete) {
+      columnVersions.exists{v => v.timestamp.isAfter(beginTimestamp) &&
+        v.timestamp.isBefore(endTimestampExclusive) &&
+        !v.isDelete}
+    } else
+      true
+  }
+
+  def versionUnion(beginTimestamp: Instant, endTimestampExclusive: Instant): ColumnVersion = {
+    val beginVersion = versionAt(beginTimestamp)
+    val otherVersions = columnVersions.filter(v => v.timestamp.isAfter(beginTimestamp) && v.timestamp.isBefore(endTimestampExclusive))
+    val unionedValues = beginVersion
+      .values
+      .union(otherVersions.flatMap(_.values).toSet)
+    val lastNonDeleteIndex = otherVersions.lastIndexWhere(!_.isDelete)
+    val latestNonDeleteRevisionVersion = if(lastNonDeleteIndex== -1) beginVersion else otherVersions(lastNonDeleteIndex)
+    ColumnVersion(latestNonDeleteRevisionVersion.revisionID,
+      latestNonDeleteRevisionVersion.revisionDate,
+      unionedValues,
+      latestNonDeleteRevisionVersion.header,
+      latestNonDeleteRevisionVersion.position,
+      latestNonDeleteRevisionVersion.columnNotPresent)
+  }
+
+
   //def transformValueset(f:(Set[String]) => Set[String]) = {
   //    ColumnHistory(id,tableId,pageID,pageTitle,columnVersions.map(cv => ColumnVersion(cv.revisionID,cv.revisionDate,f(cv.values),cv.columnNotPresent)))
   //  }
