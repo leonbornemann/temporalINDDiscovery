@@ -58,11 +58,14 @@ object ExportForManyMain extends App with StrictLogging{
         .foreach{case ((pID,tID),colList) =>
           val headerMap = colList.map(t => (t._1,t._1.id)).toMap
           val colListSorted = colList.sortBy(_._2).toIndexedSeq
-          val headersOrdered = colListSorted.map(t => headerMap(t._1))
+          val headersOrdered = if(!endTimestampExclusive.isDefined)
+            colListSorted.map(t => headerMap(t._1))
+          else
+            colListSorted.flatMap(t => Seq(headerMap(t._1) + "_union",headerMap(t._1) ))
           val tableVersion = if(!endTimestampExclusive.isDefined)
             colListSorted.map(_._1.versionAt(beginTimestamp))
           else
-            colListSorted.map(_._1.versionUnion(beginTimestamp,endTimestampExclusive.get))
+            colListSorted.flatMap(t => Seq(t._1.versionUnion(beginTimestamp,endTimestampExclusive.get),t._1.versionAt(beginTimestamp)))
           if(tableVersion.exists(_.values.size!=0))
             ColumnVersion.serializeToTable(tableVersion,headersOrdered,new File(resultDir + s"/${tID}_$pID.csv"))
         }
