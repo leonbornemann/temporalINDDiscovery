@@ -12,10 +12,6 @@ class SimpleRelaxedTemporalIND[T <% Ordered[T]](lhs: AbstractOrderedColumnHistor
                                                 maxEpsilonInNanos:Long,
                                                 useWildcardLogic:Boolean) extends TemporalIND[T](lhs,rhs){
 
-  def relativeViolationTime = {
-    TimeUtil.toRelativeTimeAmount(absoluteViolationTime)
-  }
-
   override def toString: String = s"SimpleRelaxedTemporalIND(${lhs.id},${rhs.id})"
 
   override def isValid:Boolean = {

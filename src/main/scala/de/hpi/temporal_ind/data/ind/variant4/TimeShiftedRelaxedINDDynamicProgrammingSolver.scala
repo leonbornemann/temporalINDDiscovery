@@ -17,10 +17,6 @@ class TimeShiftedRelaxedINDDynamicProgrammingSolver[T <% Ordered[T]](lhs: Abstra
   assert(!useWildcardLogic) //implementation does not yet make sense, because the algorithm can leave out versions
 
 
-  def optimalMappingRelativeCost = {
-    TimeUtil.toRelativeTimeAmount(optimalMappingCost)
-  }
-
   def initLongMatrix() = {
     (0 until rhs.history.versions.keySet.size)
       .map(_ => new Array[Long](lhs.history.versions.keySet.size))
@@ -69,10 +65,10 @@ class TimeShiftedRelaxedINDDynamicProgrammingSolver[T <% Ordered[T]](lhs: Abstra
     val lowerFKDeltaInclusive = lhsBegin.minus(deltaInNanos,ChronoUnit.NANOS)
     val upperFKDeltaExclusive = lhsEnd.plus(deltaInNanos,ChronoUnit.NANOS)
     val relevantPKVersions = rhs.versionsInWindow(rhsBeginInclusive,rhsEndExclusive)
-      .filter{v => !v.isBefore(lowerFKDeltaInclusive) && v.isBefore(upperFKDeltaExclusive)}
+      .filter{v => (!v.isBefore(lowerFKDeltaInclusive) || rhs.isLastVersionBefore(v,lowerFKDeltaInclusive.plusNanos(1)) ) && v.isBefore(upperFKDeltaExclusive)}
     val deltaExtensions = relevantPKVersions
       .flatMap{i => Seq(i.minusNanos(deltaInNanos),i.plusNanos(deltaInNanos))}
-      .filter{v => !v.isBefore(lowerFKDeltaInclusive) && v.isBefore(upperFKDeltaExclusive)}
+      .filter{v => (!v.isBefore(lowerFKDeltaInclusive) || rhs.isLastVersionBefore(v,lowerFKDeltaInclusive.plusNanos(1)) ) && v.isBefore(upperFKDeltaExclusive)}
 
     val allInterestingTimestamps = (Set(lhsBegin) ++ deltaExtensions)
       .toIndexedSeq
@@ -103,7 +99,9 @@ class TimeShiftedRelaxedINDDynamicProgrammingSolver[T <% Ordered[T]](lhs: Abstra
 
   def initialize() = {
     (0 until axisRHS.size)
-      .foreach( i => matrix(i)(0) = costFunction(axisLHS(0),axisRHS(0),endOfVersion(axisRHS,i)))
+      .foreach( i => {
+        matrix(i)(0) = costFunction(axisLHS(0),axisRHS(0),endOfVersion(axisRHS,i))
+      })
   }
 
   initialize()

@@ -9,8 +9,7 @@ object TimeUtil {
 
   val nanosPerDay = 86400000000000L
 
-  def toRelativeTimeAmount(nanos: Long) = {
-    val totalTime = GLOBAL_CONFIG.totalTimeInNanos
+  def toRelativeTimeAmount(nanos: Long,totalTime:Long) = {
     (nanos / nanosPerDay) / (totalTime / nanosPerDay).toDouble
   }
 

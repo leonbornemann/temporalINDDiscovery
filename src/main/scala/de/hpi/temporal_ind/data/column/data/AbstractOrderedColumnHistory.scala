@@ -6,6 +6,12 @@ import java.time.Instant
 
 abstract class AbstractOrderedColumnHistory[T] {
 
+  def isLastVersionBefore(version:Instant,upperExclusive: Instant): Boolean = {
+    val versionsInRange = history.versions.range(version,upperExclusive)
+    !versionsInRange.isEmpty && versionsInRange.last._1==version
+  }
+
+
   def activeRevisionURLAtTimestamp(version: Instant) = {
     //https://en.wikipedia.org/?curid=368629&oldid=1084266355
     val revisionID = if(history.versions.contains(version)){

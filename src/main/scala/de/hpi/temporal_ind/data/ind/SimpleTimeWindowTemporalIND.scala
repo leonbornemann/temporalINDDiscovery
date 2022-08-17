@@ -17,10 +17,6 @@ class SimpleTimeWindowTemporalIND[T <% Ordered[T]](lhs: AbstractOrderedColumnHis
     rhsVersions.size==1 && rhs.versionAt(rhsVersions.head).columnNotPresent
   }
 
-  def relativeViolationTime: Double = {
-    val violationTime: Long = absoluteViolationTime
-    TimeUtil.toRelativeTimeAmount(violationTime)
-  }
 
   def absoluteViolationTime = {
     val violationTime = TimeUtil.withDurations(relevantTimestamps)
@@ -46,6 +42,6 @@ class SimpleTimeWindowTemporalIND[T <% Ordered[T]](lhs: AbstractOrderedColumnHis
   }
 
   override def isValid: Boolean = {
-    relativeViolationTime == 0.0
+    absoluteViolationTime == 0
   }
 }

@@ -6,7 +6,9 @@ import de.hpi.temporal_ind.util.Util
 
 import java.time.Instant
 
-case class INDCandidate[T](lhs: AbstractOrderedColumnHistory[T], rhs:AbstractOrderedColumnHistory[T]) {
+case class INDCandidate[T <% Ordered[T]](lhs: AbstractOrderedColumnHistory[T], rhs:AbstractOrderedColumnHistory[T]) {
+  def toLabelledINDCandidateStatistics(label: String) = LabelledINDCandidateStatistics(label,this)
+
 
   def toLabelCSVString(version:Instant):String = {
     val pkVersion = rhs
@@ -68,6 +70,12 @@ case class INDCandidate[T](lhs: AbstractOrderedColumnHistory[T], rhs:AbstractOrd
 }
 
 object INDCandidate {
+  def fromIDs(index: IndexedColumnHistories, pageIDLHS: Long, lhsColumnID: String, pageIDRHS: Long, rhsColumnID: String) = {
+    val lhs = index.multiLevelIndex(pageIDLHS.toString)(lhsColumnID)
+    val rhs = index.multiLevelIndex(pageIDRHS.toString)(rhsColumnID)
+    INDCandidate(lhs.asOrderedHistory,rhs.asOrderedHistory)
+  }
+
   def fromCSVLine(index: IndexedColumnHistories, l: String) = {
     val tokens = csvSchema.split(",")
         .zip(l.split(",").toSeq)

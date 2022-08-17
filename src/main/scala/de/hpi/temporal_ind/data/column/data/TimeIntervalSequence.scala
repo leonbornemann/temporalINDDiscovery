@@ -1,5 +1,6 @@
 package de.hpi.temporal_ind.data.column.data
 
+import java.time.temporal.ChronoUnit
 import java.time.{Duration, Instant}
 
 class TimeIntervalSequence(var intervals: IndexedSeq[(Instant, Instant)],consolidate:Boolean = false) {
@@ -21,12 +22,14 @@ class TimeIntervalSequence(var intervals: IndexedSeq[(Instant, Instant)],consoli
     var curInterval = intervalsNew.head
     val iterator = intervalsNew.tail.iterator
     while(iterator.hasNext){
+      val curEnd = curInterval._2
+      val curStart = curInterval._1
       val (s,e) = iterator.next()
-      if(curInterval._2.isBefore(s)){
+      if(curEnd.isBefore(s)){
         consolidated += curInterval
         curInterval = (s,e)
       } else {
-        curInterval = (curInterval._1,e)
+        curInterval = (Seq(curStart,s).min,Seq(e,curEnd).max)
       }
     }
     consolidated += curInterval
@@ -39,11 +42,15 @@ class TimeIntervalSequence(var intervals: IndexedSeq[(Instant, Instant)],consoli
     var curInterval = intervalsNew.head
     val iterator = intervalsNew.tail.iterator
     while(iterator.hasNext){
+      val curEnd = curInterval._2
+      val curStart = curInterval._1
       val (s,e) = iterator.next()
-      if(curInterval._2.isAfter(s)){
-        consolidated.append((s,curInterval._2))
+      if(curEnd.isAfter(s)){
+        val maxBegin = Seq(s,curStart).max
+        val minEnd = Seq(e,curEnd).min
+        consolidated.append((maxBegin,minEnd))
       }
-      curInterval = (s,e)
+      curInterval = if(e.isAfter(curEnd)) (s,e) else curInterval
     }
     new TimeIntervalSequence(consolidated.toIndexedSeq)
   }
@@ -83,11 +90,11 @@ class TimeIntervalSequence(var intervals: IndexedSeq[(Instant, Instant)],consoli
   }
 
 
-  def summedDuration = if(intervals.size==0) Duration.ZERO
-  else if(intervals.size==1)
-    Duration.between(intervals(0)._1,intervals(0)._2)
-  else
-    intervals.map(t => Duration.between(t._1,t._2)).reduce(_.plus(_))
+  def summedDurationNanos = if(intervals.size==0) 0
+    else if(intervals.size==1)
+      ChronoUnit.NANOS.between(intervals(0)._1,intervals(0)._2)
+    else
+      intervals.map(t => ChronoUnit.NANOS.between(t._1,t._2)).reduce(_ +_)
 
   def unionOfDiffs(other: TimeIntervalSequence) = {
     val diff1 = this.diff(other)

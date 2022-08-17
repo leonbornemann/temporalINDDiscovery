@@ -28,4 +28,9 @@ class TimeShiftedRelaxedTemporalIND[T <% Ordered[T]](lhs: AbstractOrderedColumnH
     val matrix = getOrCeateSolver()
     matrix.optimalMapping
   }
+
+  override def absoluteViolationTime: Long = {
+    getOrCeateSolver()
+      .optimalMappingCost
+  }
 }

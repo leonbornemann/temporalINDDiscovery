@@ -13,6 +13,24 @@ class IndexedColumnHistories(histories:IndexedSeq[ColumnHistory]) {
 }
 object IndexedColumnHistories {
 
+  def lowerIDBound(f: File) = f.getName.split("xml-p")(1).split("p")(0).toLong
+
+  def upperIDBound(f: File) = f.getName.split("_")(0).split("p").last.toLong
+
+  def getFileForID(dir: File, id: Long):File = {
+    //enwiki-20171103-pages-meta-history1xml-p7841p9534_wikitableHistories.json
+    dir
+      .listFiles()
+      .find(f => id >= lowerIDBound(f) && id <= upperIDBound(f))
+      .get
+  }
+
+  def loadForPageIDS(dir:File, pageIDs:IndexedSeq[Long]) = {
+    val histories = pageIDs
+      .flatMap(id => ColumnHistory.fromJsonObjectPerLineFile(getFileForID(dir,id).getAbsolutePath).toIndexedSeq)
+    new IndexedColumnHistories(histories)
+  }
+
   def fromColumnHistoryJsonPerLineDir(dir:String) = {
     new IndexedColumnHistories(ColumnHistory.iterableFromJsonObjectPerLineDir(new File(dir),true).toIndexedSeq)
   }

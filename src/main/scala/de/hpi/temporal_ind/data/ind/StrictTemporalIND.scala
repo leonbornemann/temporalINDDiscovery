@@ -2,6 +2,7 @@ package de.hpi.temporal_ind.data.ind
 
 import de.hpi.temporal_ind.data.column.data.AbstractOrderedColumnHistory
 import de.hpi.temporal_ind.data.column.data.original.{ColumnHistory, OrderedColumnHistory}
+import de.hpi.temporal_ind.data.ind.variant4.TimeUtil
 import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
 
 import java.time.Duration
@@ -29,19 +30,21 @@ class StrictTemporalIND[T <% Ordered[T]](lhs: AbstractOrderedColumnHistory[T], r
   def totalActiveTimeInDays = {
     val nonEmptyIntervalsLeft = lhs.nonEmptyIntervals
     val nonEmptyIntervalsRight = rhs.nonEmptyIntervals
-    nonEmptyIntervalsLeft.union(nonEmptyIntervalsRight).summedDuration.getSeconds /(60*60*24)
+    nonEmptyIntervalsLeft.union(nonEmptyIntervalsRight).summedDurationNanos / TimeUtil.nanosPerDay
   }
 
   def overlapTimeInDays = {
     val nonEmptyIntervalsLeft = lhs.nonEmptyIntervals
     val nonEmptyIntervalsRight = rhs.nonEmptyIntervals
-    nonEmptyIntervalsLeft.intersect(nonEmptyIntervalsRight).summedDuration.getSeconds /(60*60*24)
+    nonEmptyIntervalsLeft.intersect(nonEmptyIntervalsRight).summedDurationNanos / TimeUtil.nanosPerDay
   }
 
   def nonOverlapTimeInDays = {
     val nonEmptyIntervalsLeft = lhs.nonEmptyIntervals
     val nonEmptyIntervalsRight = rhs.nonEmptyIntervals
-    nonEmptyIntervalsLeft.unionOfDiffs(nonEmptyIntervalsRight).summedDuration.getSeconds /(60*60*24)
+    nonEmptyIntervalsLeft.unionOfDiffs(nonEmptyIntervalsRight).summedDurationNanos / TimeUtil.nanosPerDay
 
   }
+
+  override def absoluteViolationTime: Long = if(isValid) 0 else GLOBAL_CONFIG.totalTimeInNanos
 }
