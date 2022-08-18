@@ -23,7 +23,7 @@ object TINDCandidateExportForLabelling extends App {
   InclusionDependencyFromMany.readFromMANYOutputFile(new File(inputFile))
     .withFilter(tind => !filterByUnion || (tind.rhsColumnID.contains("union") && !tind.lhsColumnID.contains("union")))
     .take(sampleSize)
-    .map(ind => ind.toCandidate(indexed))
+    .map(ind => ind.toCandidate(indexed,filterByUnion))
     .foreach(candidate => {
       pr.println(candidate.toLabelCSVString(version))
     })
