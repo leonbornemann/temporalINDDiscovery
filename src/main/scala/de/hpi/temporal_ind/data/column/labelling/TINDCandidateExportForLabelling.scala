@@ -13,22 +13,19 @@ object TINDCandidateExportForLabelling extends App {
   val inputFile = args(1)
   val columnHistoryDir = args(2)
   val outputFileToLabel = args(3)
-  val outputFileStatistics = args(4)
+  val filterByUnion = args(4).toBoolean
+  //val outputFileStatistics = args(4)
   val version = GLOBAL_CONFIG.lastInstant
   val sampleSize = 2000
   val pr = new PrintWriter(outputFileToLabel)
   pr.println(INDCandidate.csvSchema)
-  val prStatistics = new PrintWriter(outputFileStatistics)
-  LabelledINDCandidateStatistics.printCSVSchema(prStatistics)
   val indexed = IndexedColumnHistories.fromColumnHistoryJsonPerLineDir(columnHistoryDir)
   InclusionDependencyFromMany.readFromMANYOutputFile(new File(inputFile))
+    .withFilter(tind => !filterByUnion || (tind.rhsColumnID.contains("union") && !tind.lhsColumnID.contains("union")))
     .take(sampleSize)
     .map(ind => ind.toCandidate(indexed))
     .foreach(candidate => {
       pr.println(candidate.toLabelCSVString(version))
-      val labelledCandidate = LabelledINDCandidateStatistics("null",candidate)
-      labelledCandidate.serializeValidityStatistics(prStatistics)
     })
   pr.close()
-  prStatistics.close()
 }
