@@ -13,6 +13,14 @@ case class LabelledINDCandidateStatistics[T <% Ordered[T]](label:String, candida
   def rhs = candidate.rhs
   def idCSVString = s"${lhs.pageID},${lhs.tableId},${lhs.id},${rhs.pageID},${rhs.tableId},${rhs.id}"
 
+  def simpleAndComplexAreDifferentForDelta(delta:Long) = {
+    val violationTimeSimple = new TimeShiftedRelaxedTemporalIND[T](lhs,rhs,delta,1,false)
+      .absoluteViolationTime
+    val violationTimeComplex = new TimeShiftedRelaxedTemporalIND[T](lhs,rhs,delta,1,false)
+      .absoluteViolationTime
+    violationTimeSimple!=violationTimeComplex
+  }
+
   def serializeSimpleRelaxedIND(pr: PrintWriter,normalizationTypes: NormalizationVariant.ValueSet) = {
     for(normalizationVariant <- normalizationTypes) {
       val simpleRelaxedTemporalINDWildcardLogic = new SimpleRelaxedTemporalIND[T](lhs, rhs, 1L, true)
