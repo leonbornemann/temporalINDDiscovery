@@ -21,7 +21,7 @@ object TINDCandidateExportForLabelling extends App {
   pr.println(INDCandidate.csvSchema)
   val indexed = IndexedColumnHistories.fromColumnHistoryJsonPerLineDir(columnHistoryDir)
   InclusionDependencyFromMany.readFromMANYOutputFile(new File(inputFile))
-    .withFilter(tind => !filterByUnion || (tind.rhsColumnID.contains("union") && !tind.lhsColumnID.contains("union")))
+    .withFilter(tind => !filterByUnion || (tind.rhsColumnID.contains("union") && !tind.lhsColumnID.contains("union") && tind.rhsColumnID.replace("_union","")!=tind.lhsColumnID))
     .take(sampleSize)
     .map(ind => ind.toCandidate(indexed,filterByUnion))
     .foreach(candidate => {
