@@ -26,7 +26,6 @@ object IndexedColumnHistories {
       .listFiles()
       .find(f => id >= lowerIDBound(f) && id <= upperIDBound(f))
       .get
-    println(s"Loading file $file")
     file
   }
 
