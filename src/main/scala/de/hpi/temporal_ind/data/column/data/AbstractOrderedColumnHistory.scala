@@ -60,12 +60,12 @@ abstract class AbstractOrderedColumnHistory[T] {
     }
   }
 
-  def valuesInWindow(lowerInclusive: Instant, upperExclusive: Instant,limitToVersions:Option[collection.Set[Instant]]=None) :Set[T] = {
-    val res = history.versions
+  def valuesInWindow(lowerInclusive: Instant, upperExclusive: Instant,limitToVersions:Option[collection.Set[Instant]]=None) :collection.Set[T] = {
+    val res = collection.mutable.HashSet[T]()
+    history.versions
       .rangeImpl(Some(lowerInclusive), Some(upperExclusive))
       .withFilter(t => limitToVersions.isEmpty || limitToVersions.get.contains(t._1))
-      .flatMap(_._2.values)
-      .toSet
+      .foreach(t => res.addAll(t._2.values))
     if (!history.versions.contains(lowerInclusive)) {
       //add previous version because it lasted until lowerInclusive
       val toAdd = history.versions.maxBefore(lowerInclusive)

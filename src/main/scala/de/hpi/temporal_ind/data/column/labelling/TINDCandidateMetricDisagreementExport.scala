@@ -35,13 +35,13 @@ object TINDCandidateMetricDisagreementExport extends App with StrictLogging{
     .map(ind => ind.toCandidate(indexed,filterByUnion))
     .foreach(candidate => {
       if(deltas.exists(d => candidate.toLabelledINDCandidateStatistics("null").simpleAndComplexAreDifferentForDelta(d))){
-          found +=1
+        found +=1
         pr.println(candidate.toLabelCSVString(version))
         pr.flush()
       } else {
         discarded+=1
       }
-      if(found+discarded%1000==0)
+      if((found+discarded)%1000==0)
         logger.debug(s"Processed ${found+discarded}, found $found")
       if(found%10==0)
         logger.debug(s"Processed ${found+discarded}, found $found")

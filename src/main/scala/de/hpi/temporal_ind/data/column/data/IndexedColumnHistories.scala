@@ -9,7 +9,10 @@ class IndexedColumnHistories(histories:IndexedSeq[ColumnHistory]) {
   //index from pageID to columnID
   val multiLevelIndex = histories
     .groupBy(ch => ch.pageID)
-    .map{case (pID,histories) => (pID,histories.map(ch => (ch.id,ch)).toMap)}
+    .map{case (pID,histories) =>
+      if(pID=="49621038")
+        println()
+      (pID,histories.map(ch => (ch.id,ch)).toMap)}
 }
 object IndexedColumnHistories {
 
@@ -19,10 +22,12 @@ object IndexedColumnHistories {
 
   def getFileForID(dir: File, id: Long):File = {
     //enwiki-20171103-pages-meta-history1xml-p7841p9534_wikitableHistories.json
-    dir
+    val file = dir
       .listFiles()
       .find(f => id >= lowerIDBound(f) && id <= upperIDBound(f))
       .get
+    println(s"Loading file $file")
+    file
   }
 
   def loadForPageIDS(dir:File, pageIDs:IndexedSeq[Long]) = {

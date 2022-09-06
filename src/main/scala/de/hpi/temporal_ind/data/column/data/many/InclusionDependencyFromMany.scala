@@ -11,13 +11,12 @@ case class InclusionDependencyFromMany(lhsID:String, rhsID:String) {
   def toCandidate(indexed: IndexedColumnHistories,filterByUnion:Boolean=false) = {
     if(filterByUnion){
       val lhsColID = lhsColumnID.replace("_union","")
-      val rhsColID = lhsColumnID.replace("_union","")
+      val rhsColID = rhsColumnID.replace("_union","")
       INDCandidate[String](indexed.multiLevelIndex(lhsPageID)(lhsColID).asOrderedHistory,indexed.multiLevelIndex(rhsPageID)(rhsColID).asOrderedHistory)
     } else {
       INDCandidate[String](indexed.multiLevelIndex(lhsPageID)(lhsColumnID).asOrderedHistory,indexed.multiLevelIndex(rhsPageID)(rhsColumnID).asOrderedHistory)
     }
   }
-
 
   private def getColumnID(str: String) = {
     val tokens = str.split("\\.")

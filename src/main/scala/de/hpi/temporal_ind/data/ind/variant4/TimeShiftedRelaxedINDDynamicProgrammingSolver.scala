@@ -69,7 +69,6 @@ class TimeShiftedRelaxedINDDynamicProgrammingSolver[T <% Ordered[T]](lhs: Abstra
     val deltaExtensions = relevantPKVersions
       .flatMap{i => Seq(i.minusNanos(deltaInNanos),i.plusNanos(deltaInNanos))}
       .filter{v => (!v.isBefore(lowerFKDeltaInclusive) || rhs.isLastVersionBefore(v,lowerFKDeltaInclusive.plusNanos(1)) ) && v.isBefore(upperFKDeltaExclusive)}
-
     val allInterestingTimestamps = (Set(lhsBegin) ++ deltaExtensions)
       .toIndexedSeq
       .filter(v => v.isBefore(lhsEnd) && !v.isBefore(lhsBegin))
