@@ -24,12 +24,7 @@ object TINDCandidateMetricDisagreementExport extends App with StrictLogging{
   val indexed = IndexedColumnHistories.fromColumnHistoryJsonPerLineDir(columnHistoryDir)
   var discarded = 0
   var found = 0
-  val deltas = Seq(TimeUtil.nanosPerDay*7,
-    TimeUtil.nanosPerDay*10,
-    TimeUtil.nanosPerDay*30,
-    TimeUtil.nanosPerDay*60,
-    TimeUtil.nanosPerDay*90,
-    TimeUtil.nanosPerDay*365)
+  val deltas = Seq(TimeUtil.nanosPerDay*365)
   InclusionDependencyFromMany.readFromMANYOutputFile(new File(inputFile))
     .withFilter(tind => !filterByUnion || (tind.rhsColumnID.contains("union") && !tind.lhsColumnID.contains("union")))
     .map(ind => ind.toCandidate(indexed,filterByUnion))
