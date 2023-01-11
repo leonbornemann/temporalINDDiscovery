@@ -1,8 +1,8 @@
 package de.hpi.temporal_ind.data.ind
 
 import de.hpi.temporal_ind.data.column.data.AbstractOrderedColumnHistory
-import de.hpi.temporal_ind.data.column.data.original.NormalizationVariant
-import de.hpi.temporal_ind.data.column.data.original.NormalizationVariant.NormalizationVariant
+import de.hpi.temporal_ind.data.column.data.original.ValidationVariant
+import de.hpi.temporal_ind.data.column.data.original.ValidationVariant.NormalizationVariant
 import de.hpi.temporal_ind.data.ind.variant4.TimeUtil
 import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
 import de.hpi.temporal_ind.util.TableFormatter
@@ -13,13 +13,13 @@ abstract class TemporalIND[T <% Ordered[T]](lhs: AbstractOrderedColumnHistory[T]
 
   def absoluteViolationTime: Long
 
-  def relativeViolationTime(normalizationVariant: NormalizationVariant.Value) = {
+  def relativeViolationTime(normalizationVariant: ValidationVariant.Value) = {
     normalizationVariant match {
-      case NormalizationVariant.LHS_ONLY => TimeUtil.toRelativeTimeAmount(absoluteViolationTime,lhs.nonEmptyIntervals.summedDurationNanos)
-      case NormalizationVariant.RHS_ONLY => TimeUtil.toRelativeTimeAmount(absoluteViolationTime,rhs.nonEmptyIntervals.summedDurationNanos)
-      case NormalizationVariant.LHS_UNION_RHS => TimeUtil.toRelativeTimeAmount(absoluteViolationTime,lhs.nonEmptyIntervals.union(rhs.nonEmptyIntervals).summedDurationNanos)
-      case NormalizationVariant.LHS_INTERSECT_RHS => TimeUtil.toRelativeTimeAmount(absoluteViolationTime,lhs.nonEmptyIntervals.intersect(rhs.nonEmptyIntervals).summedDurationNanos)
-      case NormalizationVariant.FULL_TIME_PERIOD => TimeUtil.toRelativeTimeAmount(absoluteViolationTime,GLOBAL_CONFIG.totalTimeInNanos)
+      case ValidationVariant.LHS_ONLY => TimeUtil.toRelativeTimeAmount(absoluteViolationTime,lhs.nonEmptyIntervals.summedDurationNanos)
+      case ValidationVariant.RHS_ONLY => TimeUtil.toRelativeTimeAmount(absoluteViolationTime,rhs.nonEmptyIntervals.summedDurationNanos)
+      case ValidationVariant.LHS_UNION_RHS => TimeUtil.toRelativeTimeAmount(absoluteViolationTime,lhs.nonEmptyIntervals.union(rhs.nonEmptyIntervals).summedDurationNanos)
+      case ValidationVariant.LHS_INTERSECT_RHS => TimeUtil.toRelativeTimeAmount(absoluteViolationTime,lhs.nonEmptyIntervals.intersect(rhs.nonEmptyIntervals).summedDurationNanos)
+      case ValidationVariant.FULL_TIME_PERIOD => TimeUtil.toRelativeTimeAmount(absoluteViolationTime,GLOBAL_CONFIG.totalTimeInNanos)
       case _ => throw new AssertionError(s"Normalization Variant ${normalizationVariant} not supported")
     }
   }

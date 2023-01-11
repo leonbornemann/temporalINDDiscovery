@@ -8,7 +8,10 @@ import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
 import java.time.Duration
 import java.time.temporal.{ChronoUnit, TemporalUnit}
 
-class StrictTemporalIND[T <% Ordered[T]](lhs: AbstractOrderedColumnHistory[T], rhs: AbstractOrderedColumnHistory[T]) extends TemporalIND[T](lhs,rhs){
+class StrictTemporalIND[T <% Ordered[T]](lhs: AbstractOrderedColumnHistory[T],
+                                         rhs: AbstractOrderedColumnHistory[T],
+                                         wildcardLogic:Boolean,
+                                         validationPeriod:ValidationPeriod) extends TemporalIND[T](lhs,rhs){
 
   override def toString: String = s"StrictTemporalIND(${lhs.id},${rhs.id})"
 
@@ -16,7 +19,7 @@ class StrictTemporalIND[T <% Ordered[T]](lhs: AbstractOrderedColumnHistory[T], r
     lhsAndRhsVersionTimestamps.forall(t => {
       val lhsAtT = lhs.versionAt(t)
       val rhsAtT = rhs.versionAt(t)
-      lhsAtT.values.forall(v => rhsAtT.values.contains(v))
+      (rhsAtT.isDelete && wildcardLogic) || lhsAtT.values.forall(v => rhsAtT.values.contains(v))
     })
   }
 

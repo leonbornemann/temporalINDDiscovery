@@ -1,6 +1,6 @@
 package de.hpi.temporal_ind.data.column.data.original
 
-object NormalizationVariant extends Enumeration {
+object ValidationVariant extends Enumeration {
 
   // Define a new enumeration with a type alias and work with the full set of enumerated values
   type NormalizationVariant = Value
