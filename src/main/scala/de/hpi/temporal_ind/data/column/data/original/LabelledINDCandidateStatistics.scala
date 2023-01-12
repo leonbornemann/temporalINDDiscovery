@@ -55,11 +55,13 @@ case class LabelledINDCandidateStatistics[T <% Ordered[T]](label:String, candida
 
   def serializeStrictTemporalIND(pr: PrintWriter) = {
     for(validationType <- ValidationVariant.values) {
-      val strictTINDViolationTimeWildcardLogic = new StrictTemporalIND[T](lhs, rhs, true, validationType).relativeViolationTime()
-      val strictTINDViolationTime = new StrictTemporalIND[T](lhs, rhs, false, validationType).relativeViolationTime()
-      pr.println(s"$idCSVString,$label,strict,true,$validationType,0,$strictTINDViolationTimeWildcardLogic")
-      pr.println(s"$idCSVString,$label,strict,false,$validationType,0,$strictTINDViolationTime")
-    }
+      val strictTINDWildcardIsValid = new StrictTemporalIND[T](lhs, rhs, true, validationType).isValid
+      val strictTINDIsValid = new StrictTemporalIND[T](lhs, rhs, false, validationType).isValid
+      val scoreWildcard = if(strictTINDWildcardIsValid) 1 else 0
+      val score = if(strictTINDIsValid) 1 else 0
+      pr.println(s"$idCSVString,$label,strict,true,$validationType,0,$scoreWildcard")
+      pr.println(s"$idCSVString,$label,strict,false,$validationType,0,$score")
+    }1
   }
 
   def serializeValidityStatistics(pr:PrintWriter) = {
