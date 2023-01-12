@@ -61,7 +61,7 @@ case class LabelledINDCandidateStatistics[T <% Ordered[T]](label:String, candida
       val score = if(strictTINDIsValid) 1 else 0
       pr.println(s"$idCSVString,$label,strict,true,$validationType,0,$scoreWildcard")
       pr.println(s"$idCSVString,$label,strict,false,$validationType,0,$score")
-    }1
+    }
   }
 
   def serializeValidityStatistics(pr:PrintWriter) = {
