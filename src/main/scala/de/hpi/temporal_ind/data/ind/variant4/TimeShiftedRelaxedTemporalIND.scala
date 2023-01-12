@@ -1,13 +1,14 @@
 package de.hpi.temporal_ind.data.ind.variant4
 
 import de.hpi.temporal_ind.data.column.data.AbstractOrderedColumnHistory
+import de.hpi.temporal_ind.data.column.data.original.ValidationVariant
 import de.hpi.temporal_ind.data.ind.TemporalIND
 
 class TimeShiftedRelaxedTemporalIND[T <% Ordered[T]](lhs: AbstractOrderedColumnHistory[T],
                                                      rhs: AbstractOrderedColumnHistory[T],
                                                      deltaInNanos:Long,
                                                      maxEpsilonInNanos:Long,
-                                                     useWildcardLogic:Boolean) extends TemporalIND(lhs,rhs) {
+                                                     useWildcardLogic:Boolean) extends TemporalIND(lhs,rhs,ValidationVariant.FULL_TIME_PERIOD) {
 
   override def toString: String =  s"Variant4TemporalIND(${lhs.id},${rhs.id},$deltaInNanos,$maxEpsilonInNanos)"
 

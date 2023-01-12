@@ -21,46 +21,45 @@ case class LabelledINDCandidateStatistics[T <% Ordered[T]](label:String, candida
     violationTimeSimple!=violationTimeComplex
   }
 
-  def serializeSimpleRelaxedIND(pr: PrintWriter,normalizationTypes: ValidationVariant.ValueSet) = {
-    for(normalizationVariant <- normalizationTypes) {
-      val simpleRelaxedTemporalINDWildcardLogic = new SimpleRelaxedTemporalIND[T](lhs, rhs, 1L, true)
-      val simpleVariantViolationTimeWildcardLogic = simpleRelaxedTemporalINDWildcardLogic.relativeViolationTime(normalizationVariant)
-      val simpleRelaxedTemporalIND = new SimpleRelaxedTemporalIND[T](lhs, rhs, 1L, false)
-      val simpleVariantViolationTime = simpleRelaxedTemporalIND.relativeViolationTime(normalizationVariant)
-      pr.println(s"$idCSVString,$label,relaxedNoShift,true,$normalizationVariant,0,$simpleVariantViolationTimeWildcardLogic")
-      pr.println(s"$idCSVString,$label,relaxedNoShift,false,$normalizationVariant,0,$simpleVariantViolationTime")
+  def serializeSimpleRelaxedIND(pr: PrintWriter, validationTypes: ValidationVariant.ValueSet) = {
+    for(validationType <- validationTypes) {
+      val simpleRelaxedTemporalINDWildcardLogic = new SimpleRelaxedTemporalIND[T](lhs, rhs, 1L, true,validationType)
+      val simpleVariantViolationTimeWildcardLogic = simpleRelaxedTemporalINDWildcardLogic.relativeViolationTime()
+      val simpleRelaxedTemporalIND = new SimpleRelaxedTemporalIND[T](lhs, rhs, 1L, false,validationType)
+      val simpleVariantViolationTime = simpleRelaxedTemporalIND.relativeViolationTime()
+      pr.println(s"$idCSVString,$label,relaxedNoShift,true,$validationType,0,$simpleVariantViolationTimeWildcardLogic")
+      pr.println(s"$idCSVString,$label,relaxedNoShift,false,$validationType,0,$simpleVariantViolationTime")
     }
   }
 
-  def serializeTimeShiftedComplexRelaxedIND(pr: PrintWriter, deltas: Seq[Long],normalizationTypes: ValidationVariant.ValueSet) = {
-    for(normalizationVariant <- normalizationTypes){
-      deltas.foreach(d => {
-        val violationTime = new TimeShiftedRelaxedTemporalIND[T](lhs,rhs,d,1,false)
-          .relativeViolationTime(normalizationVariant)
-        pr.println(s"$idCSVString,$label,timeShiftedComplex,false,$normalizationVariant,$d,$violationTime")
-      })
-    }
+  def serializeTimeShiftedComplexRelaxedIND(pr: PrintWriter, deltas: Seq[Long]) = {
+    deltas.foreach(d => {
+      val violationTime = new TimeShiftedRelaxedTemporalIND[T](lhs,rhs,d,1,false)
+        .relativeViolationTime()
+      pr.println(s"$idCSVString,$label,timeShiftedComplex,false,${ValidationVariant.FULL_TIME_PERIOD},$d,$violationTime")
+    })
   }
 
-  def serializeTimeShiftedSimpleRelaxedIND(pr: PrintWriter, deltas: Seq[Long],normalizationTypes: ValidationVariant.ValueSet) = {
-    for(normalizationVariant <- normalizationTypes) {
+  def serializeTimeShiftedSimpleRelaxedIND(pr: PrintWriter, deltas: Seq[Long], validationTypes: ValidationVariant.ValueSet) = {
+    for(validationType <- validationTypes) {
       deltas.map(d => {
-        val violationTimeNoWildcard = new SimpleTimeWindowTemporalIND[T](lhs,rhs,d,false)
-          .relativeViolationTime(normalizationVariant)
-        val violationTimeWildcard = new SimpleTimeWindowTemporalIND[T](lhs,rhs,d,true)
-          .relativeViolationTime(normalizationVariant)
-        pr.println(s"$idCSVString,$label,timeShiftedSimple,false,$normalizationVariant,$d,$violationTimeNoWildcard")
-        pr.println(s"$idCSVString,$label,timeShiftedSimple,true,$normalizationVariant,$d,$violationTimeWildcard")
+        val violationTimeNoWildcard = new SimpleTimeWindowTemporalIND[T](lhs,rhs,d,false,validationType)
+          .relativeViolationTime()
+        val violationTimeWildcard = new SimpleTimeWindowTemporalIND[T](lhs,rhs,d,true,validationType)
+          .relativeViolationTime()
+        pr.println(s"$idCSVString,$label,timeShiftedSimple,false,$validationType,$d,$violationTimeNoWildcard")
+        pr.println(s"$idCSVString,$label,timeShiftedSimple,true,$validationType,$d,$violationTimeWildcard")
       })
     }
   }
 
   def serializeStrictTemporalIND(pr: PrintWriter) = {
-    val normalizationVariant = ValidationVariant.FULL_TIME_PERIOD
-    val strictTINDViolationTimeWildcardLogic = new StrictTemporalIND[T](lhs, rhs,true).relativeViolationTime(normalizationVariant)
-    val strictTINDViolationTime = new StrictTemporalIND[T](lhs, rhs,false).relativeViolationTime(normalizationVariant)
-    pr.println(s"$idCSVString,$label,strict,true,$normalizationVariant,0,$strictTINDViolationTimeWildcardLogic")
-    pr.println(s"$idCSVString,$label,strict,false,$normalizationVariant,0,$strictTINDViolationTime")
+    for(validationType <- ValidationVariant.values) {
+      val strictTINDViolationTimeWildcardLogic = new StrictTemporalIND[T](lhs, rhs, true, validationType).relativeViolationTime()
+      val strictTINDViolationTime = new StrictTemporalIND[T](lhs, rhs, false, validationType).relativeViolationTime()
+      pr.println(s"$idCSVString,$label,strict,true,$validationType,0,$strictTINDViolationTimeWildcardLogic")
+      pr.println(s"$idCSVString,$label,strict,false,$validationType,0,$strictTINDViolationTime")
+    }
   }
 
   def serializeValidityStatistics(pr:PrintWriter) = {
@@ -76,7 +75,7 @@ case class LabelledINDCandidateStatistics[T <% Ordered[T]](label:String, candida
       TimeUtil.nanosPerDay*60,
       TimeUtil.nanosPerDay*90,
       TimeUtil.nanosPerDay*365)
-    serializeTimeShiftedComplexRelaxedIND(pr,deltas,normalizationTypes)
+    serializeTimeShiftedComplexRelaxedIND(pr,deltas)
     serializeTimeShiftedSimpleRelaxedIND(pr,deltas,normalizationTypes)
 
   }

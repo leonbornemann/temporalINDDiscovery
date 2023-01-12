@@ -1,4 +1,5 @@
 import TestUtilMethods.{toHistory, toInstant}
+import de.hpi.temporal_ind.data.column.data.original.ValidationVariant
 import de.hpi.temporal_ind.data.ind.{SimpleRelaxedTemporalIND, SimpleTimeWindowTemporalIND}
 import de.hpi.temporal_ind.data.ind.variant4.{TimeShiftedRelaxedINDDynamicProgrammingSolver, TimeShiftedRelaxedTemporalIND}
 import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
@@ -75,9 +76,9 @@ class WildcardSemanticTest extends AnyFlatSpec{
     GLOBAL_CONFIG.earliestInstant = toInstant(0)
     GLOBAL_CONFIG.lastInstant = toInstant(100)
     var delta = 10
-    val timeShiftedIND = new SimpleTimeWindowTemporalIND(history1,history2,delta,true)
+    val timeShiftedIND = new SimpleTimeWindowTemporalIND(history1,history2,delta,true,ValidationVariant.FULL_TIME_PERIOD)
     assert(timeShiftedIND.absoluteViolationTime == 0)
-    val timeShiftedIND2 = new SimpleTimeWindowTemporalIND(history1,history3,delta,true)
+    val timeShiftedIND2 = new SimpleTimeWindowTemporalIND(history1,history3,delta,true,ValidationVariant.FULL_TIME_PERIOD)
     assert(timeShiftedIND2.absoluteViolationTime==5)
   }
 
@@ -99,9 +100,9 @@ class WildcardSemanticTest extends AnyFlatSpec{
     ))
     GLOBAL_CONFIG.earliestInstant = toInstant(0)
     GLOBAL_CONFIG.lastInstant = toInstant(100)
-    val relaxedIND = new SimpleRelaxedTemporalIND(history1,history2,0,true)
+    val relaxedIND = new SimpleRelaxedTemporalIND(history1,history2,0,true,ValidationVariant.FULL_TIME_PERIOD)
     assert(relaxedIND.absoluteViolationTime == 0)
-    val relaxedIND2 = new SimpleRelaxedTemporalIND(history1,history3,0,true)
+    val relaxedIND2 = new SimpleRelaxedTemporalIND(history1,history3,0,true,ValidationVariant.FULL_TIME_PERIOD)
     assert(relaxedIND2.absoluteViolationTime==20)
   }
 

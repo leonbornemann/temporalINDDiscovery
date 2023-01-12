@@ -33,10 +33,12 @@ abstract class AbstractOrderedColumnHistory[T] {
    */
   def nonEmptyIntervals = {
     val withIndex = history.versions.toIndexedSeq.zipWithIndex
-    val intervals = withIndex.filter(!_._1._2.isDelete).map{case ((t,_),i) =>
-      val endPoint = if(i == withIndex.size-1) GLOBAL_CONFIG.lastInstant else withIndex(i+1)._1._1
-      (t,endPoint)
-    }
+    val intervals = withIndex
+      .map{case ((t,c),i) =>
+        val endPoint = if(i == withIndex.size-1) GLOBAL_CONFIG.lastInstant else withIndex(i+1)._1._1
+        (c,t,endPoint)
+      }.filter(!_._1.isDelete)
+      .map(t => (t._2,t._3))
     new TimeIntervalSequence(intervals)
   }
 

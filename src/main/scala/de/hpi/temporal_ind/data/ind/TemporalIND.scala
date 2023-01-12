@@ -1,34 +1,56 @@
 package de.hpi.temporal_ind.data.ind
 
-import de.hpi.temporal_ind.data.column.data.AbstractOrderedColumnHistory
+import de.hpi.temporal_ind.data.column.data.{AbstractOrderedColumnHistory, TimeIntervalSequence}
 import de.hpi.temporal_ind.data.column.data.original.ValidationVariant
-import de.hpi.temporal_ind.data.column.data.original.ValidationVariant.NormalizationVariant
+import de.hpi.temporal_ind.data.column.data.original.ValidationVariant.{FULL_TIME_PERIOD, LHS_INTERSECT_RHS, LHS_ONLY, LHS_UNION_RHS, NormalizationVariant, RHS_ONLY}
 import de.hpi.temporal_ind.data.ind.variant4.TimeUtil
 import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
 import de.hpi.temporal_ind.util.TableFormatter
 
 import java.time.Duration
 
-abstract class TemporalIND[T <% Ordered[T]](lhs: AbstractOrderedColumnHistory[T], rhs: AbstractOrderedColumnHistory[T]) {
+abstract class TemporalIND[T <% Ordered[T]](lhs: AbstractOrderedColumnHistory[T], rhs: AbstractOrderedColumnHistory[T],validationVariant:ValidationVariant.Value) {
 
   def absoluteViolationTime: Long
 
-  def relativeViolationTime(normalizationVariant: ValidationVariant.Value) = {
-    normalizationVariant match {
-      case ValidationVariant.LHS_ONLY => TimeUtil.toRelativeTimeAmount(absoluteViolationTime,lhs.nonEmptyIntervals.summedDurationNanos)
-      case ValidationVariant.RHS_ONLY => TimeUtil.toRelativeTimeAmount(absoluteViolationTime,rhs.nonEmptyIntervals.summedDurationNanos)
-      case ValidationVariant.LHS_UNION_RHS => TimeUtil.toRelativeTimeAmount(absoluteViolationTime,lhs.nonEmptyIntervals.union(rhs.nonEmptyIntervals).summedDurationNanos)
-      case ValidationVariant.LHS_INTERSECT_RHS => TimeUtil.toRelativeTimeAmount(absoluteViolationTime,lhs.nonEmptyIntervals.intersect(rhs.nonEmptyIntervals).summedDurationNanos)
-      case ValidationVariant.FULL_TIME_PERIOD => TimeUtil.toRelativeTimeAmount(absoluteViolationTime,GLOBAL_CONFIG.totalTimeInNanos)
-      case _ => throw new AssertionError(s"Normalization Variant ${normalizationVariant} not supported")
+  def denominator = {
+    validationVariant match {
+      case ValidationVariant.LHS_ONLY => lhs.nonEmptyIntervals.summedDurationNanos
+      case ValidationVariant.RHS_ONLY => rhs.nonEmptyIntervals.summedDurationNanos
+      case ValidationVariant.LHS_UNION_RHS => lhs.nonEmptyIntervals.union(rhs.nonEmptyIntervals).summedDurationNanos
+      case ValidationVariant.LHS_INTERSECT_RHS => lhs.nonEmptyIntervals.intersect(rhs.nonEmptyIntervals).summedDurationNanos
+      case ValidationVariant.FULL_TIME_PERIOD => GLOBAL_CONFIG.totalTimeInNanos
+      case _ => throw new AssertionError(s"Normalization Variant ${validationVariant} not supported")
     }
   }
+
+  def relativeViolationTime() = TimeUtil.toRelativeTimeAmount(absoluteViolationTime,denominator)
 
   def isValid:Boolean
 
   def lhsAndRhsVersionTimestamps = {
     //lhs
     lhs.history.versions.keySet.union(rhs.history.versions.keySet)
+  }
+
+  def allIntervals():TimeIntervalSequence = {
+    val list = lhsAndRhsVersionTimestamps.toIndexedSeq
+    if (list.last == GLOBAL_CONFIG.lastInstant)
+      TimeIntervalSequence.fromSortedStartTimes(list.slice(0, list.size - 1), list.last)
+    else
+      TimeIntervalSequence.fromSortedStartTimes(list, GLOBAL_CONFIG.lastInstant)
+  }
+
+  def validationIntervals:TimeIntervalSequence = {
+    validationVariant match {
+      case LHS_ONLY => lhs.nonEmptyIntervals
+      case RHS_ONLY => rhs.nonEmptyIntervals
+      case LHS_UNION_RHS => new TimeIntervalSequence(allIntervals()
+        .intervals
+        .filter(i => !lhs.versionAt(i._1).isDelete || !rhs.versionAt(i._1).isDelete))
+      case LHS_INTERSECT_RHS => lhs.nonEmptyIntervals.intersect(rhs.nonEmptyIntervals)
+      case FULL_TIME_PERIOD => allIntervals
+    }
   }
 
   def getTabularEventLineageString = {

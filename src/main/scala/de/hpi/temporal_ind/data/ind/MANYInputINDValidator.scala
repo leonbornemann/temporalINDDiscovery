@@ -3,6 +3,7 @@ package de.hpi.temporal_ind.data.ind
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.temporal_ind.data.column.data.encoded.ColumnHistoryEncoded
 import de.hpi.temporal_ind.data.column.data.many.InclusionDependencyFromMany
+import de.hpi.temporal_ind.data.column.data.original.ValidationVariant
 import de.hpi.temporal_ind.data.column.statistics.TemporalINDStatRow
 
 import java.io.{File, PrintWriter}
@@ -37,8 +38,8 @@ object MANYInputINDValidator extends App with StrictLogging{
       val rhsCol = ind.rhsColumnID
       val lhs = columnHistoriesByID(lhsCol).asOrderedVersionMap
       val rhs = columnHistoriesByID(rhsCol).asOrderedVersionMap
-      val strictTemporalIND = new StrictTemporalIND(lhs, rhs,false)
-      val variant1TemporalIND = new SimpleTimeWindowTemporalIND(lhs,rhs,deltaInDays,false)
+      val strictTemporalIND = new StrictTemporalIND(lhs, rhs,false,ValidationVariant.FULL_TIME_PERIOD)
+      val variant1TemporalIND = new SimpleTimeWindowTemporalIND(lhs,rhs,deltaInDays,false,ValidationVariant.FULL_TIME_PERIOD)
       val statRow = new TemporalINDStatRow(lhs,rhs,strictTemporalIND,variant1TemporalIND,deltaInDays)
       statRow.appendToCSVFile(pr)
       counter += 1

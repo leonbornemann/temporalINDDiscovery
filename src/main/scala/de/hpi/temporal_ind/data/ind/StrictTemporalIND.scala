@@ -1,7 +1,7 @@
 package de.hpi.temporal_ind.data.ind
 
 import de.hpi.temporal_ind.data.column.data.AbstractOrderedColumnHistory
-import de.hpi.temporal_ind.data.column.data.original.{ColumnHistory, OrderedColumnHistory}
+import de.hpi.temporal_ind.data.column.data.original.{ColumnHistory, OrderedColumnHistory, ValidationVariant}
 import de.hpi.temporal_ind.data.ind.variant4.TimeUtil
 import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
 
@@ -11,16 +11,16 @@ import java.time.temporal.{ChronoUnit, TemporalUnit}
 class StrictTemporalIND[T <% Ordered[T]](lhs: AbstractOrderedColumnHistory[T],
                                          rhs: AbstractOrderedColumnHistory[T],
                                          wildcardLogic:Boolean,
-                                         validationPeriod:ValidationPeriod) extends TemporalIND[T](lhs,rhs){
+                                         validationPeriod:ValidationVariant.Value) extends TemporalIND[T](lhs,rhs,validationPeriod){
 
   override def toString: String = s"StrictTemporalIND(${lhs.id},${rhs.id})"
 
   override def isValid:Boolean = {
-    lhsAndRhsVersionTimestamps.forall(t => {
-      val lhsAtT = lhs.versionAt(t)
-      val rhsAtT = rhs.versionAt(t)
+    validationIntervals.intervals.forall{case (s,e) =>
+      val lhsAtT = lhs.versionAt(s)
+      val rhsAtT = rhs.versionAt(s)
       (rhsAtT.isDelete && wildcardLogic) || lhsAtT.values.forall(v => rhsAtT.values.contains(v))
-    })
+    }
   }
 
   def displayVersionTable = {

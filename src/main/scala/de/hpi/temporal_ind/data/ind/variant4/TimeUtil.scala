@@ -13,6 +13,10 @@ object TimeUtil {
     (nanos / nanosPerDay) / (totalTime / nanosPerDay).toDouble
   }
 
+  def duration(s:Instant,e:Instant) = {
+    ChronoUnit.NANOS.between(s, e)
+  }
+
   def withDurations(timestamps:Iterable[Instant]) = {
     val withIndex = timestamps
       .toIndexedSeq
@@ -21,7 +25,7 @@ object TimeUtil {
     val withDuration = withIndex
       .map { case (t, i) =>
         val end = if (i == withIndex.size - 1) GLOBAL_CONFIG.lastInstant else withIndex(i + 1)._1
-        (t, ChronoUnit.NANOS.between(t, end))
+        (t, duration(t,end))
       }
     withDuration
   }
