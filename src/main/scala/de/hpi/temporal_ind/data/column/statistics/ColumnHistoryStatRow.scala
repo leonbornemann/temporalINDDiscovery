@@ -15,12 +15,6 @@ case class ColumnHistoryStatRow(ch: ColumnHistory) {
   val valueSets = valueChangeVersions.map(_.values)
   val valueSetSizes = valueSets.map(_.size)
   val sizeStatistics = ValueSequenceStatistics(valueSetSizes.map(_.toDouble))
-  val valueSetsWithIndex = valueSets
-    .zipWithIndex
-  val inverseJaccardSimilarities = valueSetsWithIndex
-    .withFilter(t => t._2!=0)
-    .map{case (values,i) => 1.0 - Util.Jaccard_Similarity(valueSetsWithIndex(i-1)._1,values)}
-  val changeAmountStatistics = statistics.ValueSequenceStatistics(inverseJaccardSimilarities)
 
   def toCSVLine = {
     val values = Seq(
@@ -36,10 +30,6 @@ case class ColumnHistoryStatRow(ch: ColumnHistory) {
       sizeStatistics.min,
       sizeStatistics.mean,
       sizeStatistics.median,
-      changeAmountStatistics.max,
-      changeAmountStatistics.min,
-      changeAmountStatistics.mean,
-      changeAmountStatistics.median
     ).map(v => Util.makeStringCSVSafe(v.toString))
     values.mkString(",")
   }
@@ -62,10 +52,6 @@ object ColumnHistoryStatRow {
     "sizeStatistics.max",
     "sizeStatistics.min",
     "sizeStatistics.mean",
-    "sizeStatistics.median",
-    "changeAmountStatistics.max",
-    "changeAmountStatistics.min",
-    "changeAmountStatistics.mean",
-    "changeAmountStatistics.median"
+    "sizeStatistics.median"
   )
 }
