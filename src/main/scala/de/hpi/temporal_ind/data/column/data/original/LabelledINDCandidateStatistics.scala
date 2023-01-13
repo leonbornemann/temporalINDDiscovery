@@ -57,8 +57,8 @@ case class LabelledINDCandidateStatistics[T <% Ordered[T]](label:String, candida
     for(validationType <- ValidationVariant.values) {
       val strictTINDWildcardIsValid = new StrictTemporalIND[T](lhs, rhs, true, validationType).isValid
       val strictTINDIsValid = new StrictTemporalIND[T](lhs, rhs, false, validationType).isValid
-      val scoreWildcard = if(strictTINDWildcardIsValid) 1 else 0
-      val score = if(strictTINDIsValid) 1 else 0
+      val scoreWildcard = if(strictTINDWildcardIsValid) 0 else 1
+      val score = if(strictTINDIsValid) 0 else 1
       pr.println(s"$idCSVString,$label,strict,true,$validationType,0,$scoreWildcard")
       pr.println(s"$idCSVString,$label,strict,false,$validationType,0,$score")
     }
