@@ -12,11 +12,17 @@ object StatisticsAnalysisMain extends App {
   it.next()
 
   def getMedianSize(s: Array[String]) = {
-    s(11).toInt
+    if(s(11)=="NaN")
+      None
+    else
+      Some(s(11).toInt)
   }
 
   def getDurationInDays(s: Array[String]) = {
-    s(6).toInt
+    if(s(6)=="NaN")
+      None
+    else
+      Some(s(6).toInt)
   }
 
   var count = 0
@@ -24,7 +30,10 @@ object StatisticsAnalysisMain extends App {
   val frequencyMap = collection.mutable.HashMap[Int,Int]()
 
   def getnVersionsWithChanges(s: Array[String]) = {
-    s(5).toInt
+    if(s(5)=="NaN")
+      None
+    else
+      Some(s(5).toInt)
   }
 
   it
@@ -32,11 +41,12 @@ object StatisticsAnalysisMain extends App {
       count+=1
       s.split(",")
     })
-    .withFilter(s => getMedianSize(s)>=2 && getDurationInDays(s)>=30)
+    .withFilter(s => getMedianSize(s).getOrElse(0)>=2 && getDurationInDays(s).getOrElse(0)>=30)
+    .withFilter(s => getnVersionsWithChanges(s).isDefined)
     .foreach(s => {
       countFiltered+=1
       val nChangeVersions = getnVersionsWithChanges(s)
-      frequencyMap(nChangeVersions) = frequencyMap.getOrElse(nChangeVersions,0)+1
+      frequencyMap(nChangeVersions.get) = frequencyMap.getOrElse(nChangeVersions.get,0)+1
     })
   val pr = new PrintWriter(outFile)
   frequencyMap
