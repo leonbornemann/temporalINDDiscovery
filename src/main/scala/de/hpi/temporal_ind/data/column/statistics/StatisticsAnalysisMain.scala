@@ -15,7 +15,7 @@ object StatisticsAnalysisMain extends App {
     if(s(11)=="NaN")
       None
     else
-      Some(s(11).toInt)
+      Some(s(11).toDouble.toInt)
   }
 
   def getDurationInDays(s: Array[String]) = {
@@ -33,7 +33,7 @@ object StatisticsAnalysisMain extends App {
     if(s(5)=="NaN")
       None
     else
-      Some(s(5).toInt)
+      Some(s(5).toDouble.toInt)
   }
 
   it
