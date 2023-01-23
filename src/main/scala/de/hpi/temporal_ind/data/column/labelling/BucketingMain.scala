@@ -28,8 +28,9 @@ object BucketingMain extends App {
   }
 
   def appendToCurrentFile(ch: ColumnHistory, bucketName: String,originFile:File) = {
+    new File(outputDir + "/" + bucketName).mkdirs()
     val filePath = outputDir + "/" + bucketName + "/" + originFile
-    val writer = curFiles(filePath)
+    val writer = curFiles.getOrElseUpdate(filePath, new PrintWriter(filePath))
     bucketSizes.put(bucketName,bucketSizes.getOrElse(bucketName,0))
     ch.appendToWriter(writer)
   }
