@@ -40,9 +40,6 @@ object ExportForManyMain extends App with StrictLogging{
               !preparer.mostlyNumeric(vhs._1) &&
               !preparer.isNumeric(vhs._1.columnVersions.findLast(!_.isDelete).get.values)
           })
-        //serialize to filtered outputDir:
-        filtered.foreach { case (ch, _) => ch.appendToWriter(resultWriterFilteredHistory) }
-        resultWriterFilteredHistory.close()
         filtered
           .groupBy(t => (t._1.pageID, t._1.tableId))
           .foreach { case ((pID, tID), colList) =>
