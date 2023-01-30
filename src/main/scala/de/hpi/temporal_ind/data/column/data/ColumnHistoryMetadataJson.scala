@@ -15,21 +15,20 @@ case class ColumnHistoryMetadataJson(id:String,uniqueness:collection.Map[String,
 
 object ColumnHistoryMetadataJson extends JsonReadable[ColumnHistoryMetadataJson] {
   def extractAndSerialize(inputDir: File, outFile: File) = {
-    val map = createForDir(inputDir)
     val pr = new PrintWriter(outFile)
-    map.values.foreach(md => md.toSerialized.appendToWriter(pr))
+    createForDir(inputDir,pr)
     pr.close()
   }
 
 
-  def createForDir(dir: File): Map[String, ColumnHistoryMetadata] = {
-    val uniqueness = collection.mutable.HashMap[String, collection.mutable.HashMap[Instant, Boolean]]()
-    val nChangeVersions = collection.mutable.HashMap[String, Int]()
+  def createForDir(dir: File,pr:PrintWriter)= {
     dir
       .listFiles()
       .foreach(f => {
         println(s"Processing $f")
-        val histories = ColumnHistory.fromJsonObjectPerLineFile(f.getAbsolutePath)
+        val uniqueness = collection.mutable.HashMap[String, collection.mutable.HashMap[Instant, Boolean]]()
+        val nChangeVersions = collection.mutable.HashMap[String, Int]()
+        ColumnHistory.fromJsonObjectPerLineFile(f.getAbsolutePath)
           .groupBy(_.tableId)
           .foreach { case (tID, chs) => {
             val allVersions = chs.flatMap(_.columnVersions.map(_.timestamp)).toSet.toIndexedSeq.sorted
@@ -48,13 +47,14 @@ object ColumnHistoryMetadataJson extends JsonReadable[ColumnHistoryMetadataJson]
             })
           }
           }
+        val finalMap = uniqueness
+          .keySet
+          .toIndexedSeq
+          .map(k => (k, ColumnHistoryMetadata(k, uniqueness(k), nChangeVersions(k))))
+          .toMap
+        finalMap.values.foreach(md => md.toSerialized.appendToWriter(pr))
       })
-    val finalMap = uniqueness
-      .keySet
-      .toIndexedSeq
-      .map(k => (k, ColumnHistoryMetadata(k,uniqueness(k), nChangeVersions(k))))
-      .toMap
-    finalMap
+
   }
 
 }
