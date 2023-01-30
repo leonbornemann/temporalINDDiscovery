@@ -6,6 +6,8 @@ import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
 import de.hpi.temporal_ind.util.Util
 
 case class ColumnHistoryStatRow(ch: ColumnHistory) {
+  def satisfiesBasicFilter = sizeStatistics.median >= 2 && lifetimeInDays >= 30 && nVersionsWithChanges > 0
+
 
   val nVersions = ch.columnVersions.size
   val valueChangeVersions = ch.versionsWithNonDeleteChanges

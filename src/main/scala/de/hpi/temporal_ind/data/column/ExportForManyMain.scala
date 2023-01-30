@@ -19,6 +19,7 @@ object ExportForManyMain extends App with StrictLogging{
   else {
     (Instant.parse(args(3)),None)
   }
+  val applyBasiCFilter = args(4).toBoolean
   if(inputType=="singleDir"){
     processInputDir(inputRootDir,outputDirRootDir + s"/${inputRootDir.getName}/")
   } else{
@@ -29,7 +30,11 @@ object ExportForManyMain extends App with StrictLogging{
     processInputDir(inputDir,outputDirRootDir + s"/${inputDir.getName}/")
   })
 
-  private def processInputDir(inputDir: File,outputDir:String): Unit = {
+  def satisfiesBasicFilter(vhs: (ColumnHistory, Int)) = {
+    ColumnHistoryStatRow(vhs._1).satisfiesBasicFilter
+  }
+
+  private def processInputDir(inputDir: File, outputDir:String): Unit = {
     println(s"Processing $inputDir")
     val files = inputDir.listFiles()
     val preparer = new WikipediaDataPreparer()
@@ -48,7 +53,8 @@ object ExportForManyMain extends App with StrictLogging{
               vhs._1.existsNonDeleteInVersionRange(beginTimestamp, endTimestampExclusive.get)
             nonDelete &&
               !preparer.mostlyNumeric(vhs._1) &&
-              !preparer.isNumeric(vhs._1.columnVersions.findLast(!_.isDelete).get.values)
+              !preparer.isNumeric(vhs._1.columnVersions.findLast(!_.isDelete).get.values) &&
+              (!applyBasiCFilter || satisfiesBasicFilter(vhs))
           })
         filtered
           .groupBy(t => (t._1.pageID, t._1.tableId))

@@ -49,7 +49,7 @@ object BucketingMain extends App {
         (ch, ColumnHistoryStatRow(ch), f)
       }}
       .withFilter { case (_, stats, _) => {
-        stats.sizeStatistics.median >= 2 && stats.lifetimeInDays >= 30 && stats.nVersionsWithChanges > 0
+        stats.satisfiesBasicFilter
       }
       }
       .map { case (ch, stats, f) => (ch, getDirName(getBucket(stats.nVersionsWithChanges, buckets)), f) }
