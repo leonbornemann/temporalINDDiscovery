@@ -17,12 +17,12 @@ object ColumnHistoryMetadataJson extends JsonReadable[ColumnHistoryMetadataJson]
   def extractAndSerialize(inputDir: File, outFile: File) = {
     val map = createForDir(inputDir)
     val pr = new PrintWriter(outFile)
-    map.values.foreach(md => md.appendToWriter(pr))
+    map.values.foreach(md => md.toSerialized.appendToWriter(pr))
     pr.close()
   }
 
 
-  def createForDir(dir: File): Map[String, ColumnHistoryMetadataJson] = {
+  def createForDir(dir: File): Map[String, ColumnHistoryMetadata] = {
     val uniqueness = collection.mutable.HashMap[String, collection.mutable.HashMap[Instant, Boolean]]()
     val nChangeVersions = collection.mutable.HashMap[String, Int]()
     dir
@@ -52,7 +52,7 @@ object ColumnHistoryMetadataJson extends JsonReadable[ColumnHistoryMetadataJson]
     val finalMap = uniqueness
       .keySet
       .toIndexedSeq
-      .map(k => (k, ColumnHistoryMetadata(k,uniqueness(k), nChangeVersions(k)).toSerialized))
+      .map(k => (k, ColumnHistoryMetadata(k,uniqueness(k), nChangeVersions(k))))
       .toMap
     finalMap
   }
