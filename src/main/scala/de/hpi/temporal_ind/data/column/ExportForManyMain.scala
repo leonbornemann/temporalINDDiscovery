@@ -10,17 +10,27 @@ import java.time.Instant
 
 object ExportForManyMain extends App with StrictLogging{
   println(s"Called with ${args.toIndexedSeq}")
-  GLOBAL_CONFIG.setSettingsForDataSource(args(0))
-  val inputRootDir = new File(args(1))
-  val outputDirRootDir = args(2)
+  GLOBAL_CONFIG.setSettingsForDataSource("wikipedia")
+  val inputRootDir = new File(args(0))
+  val outputDirRootDir = args(1)
+  val inputType = args(2)
   val (beginTimestamp,endTimestampExclusive) = if(args(3).contains(";"))
     (Instant.parse(args(3).split(";")(0)),Some(Instant.parse(args(3).split(";")(1))))
   else {
     (Instant.parse(args(3)),None)
   }
+  if(inputType=="singleDir"){
+    processInputDir(inputRootDir,outputDirRootDir + s"/${inputRootDir.getName}/")
+  } else{
+    assert(inputType=="multiDir")
+    processInputDir(inputRootDir,outputDirRootDir + s"/${inputRootDir.getName}/")
+  }
   inputRootDir.listFiles().foreach(inputDir => {
+    processInputDir(inputDir,outputDirRootDir + s"/${inputDir.getName}/")
+  })
+
+  private def processInputDir(inputDir: File,outputDir:String): Unit = {
     println(s"Processing $inputDir")
-    val outputDir = outputDirRootDir + s"/${inputDir.getName}/"
     val files = inputDir.listFiles()
     val preparer = new WikipediaDataPreparer()
     files
@@ -57,7 +67,5 @@ object ExportForManyMain extends App with StrictLogging{
               ColumnVersion.serializeToTable(tableVersion, headersOrdered, new File(resultDir + s"/${tID}_$pID.csv"))
           }
       }
-  })
-
-
+  }
 }

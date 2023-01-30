@@ -18,6 +18,7 @@ case class ColumnHistory(id: String,
                          columnVersions: ArrayBuffer[ColumnVersion]
                         ) extends JsonWritable[ColumnHistory]{
 
+
   def existsNonDeleteInVersionRange(beginTimestamp:Instant,endTimestampExclusive:Instant) = {
     val beginVersion = versionAt(beginTimestamp)
     if(beginVersion.isDelete) {
