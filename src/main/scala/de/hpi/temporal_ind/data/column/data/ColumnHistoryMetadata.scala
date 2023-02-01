@@ -11,6 +11,12 @@ case class ColumnHistoryMetadata(id:String,uniqueAtLatestTimestamp:Boolean, nCha
 }
 
 object ColumnHistoryMetadata extends JsonReadable[ColumnHistoryMetadata]{
+  def readAsMap(metadataFile: String) = {
+    fromJsonObjectPerLineFile(metadataFile)
+      .map(md => (md.id,md))
+      .toMap
+  }
+
 
   def extractAndSerialize(inputDir: File, outFile: File, timestamp: Instant) = {
     val pr = new PrintWriter(outFile)

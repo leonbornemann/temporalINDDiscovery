@@ -1,67 +1,62 @@
 package de.hpi.temporal_ind.data.column.labelling
 
+import com.typesafe.scalalogging.StrictLogging
 import de.hpi.temporal_ind.data
 import de.hpi.temporal_ind.data.column
 import de.hpi.temporal_ind.data.column.data
-import de.hpi.temporal_ind.data.column.data.original
+import de.hpi.temporal_ind.data.column.data.many.InclusionDependencyFromMany
+import de.hpi.temporal_ind.data.column.data.{ColumnHistoryMetadata, original}
 import de.hpi.temporal_ind.data.column.data.original.ColumnHistory
 import de.hpi.temporal_ind.data.column.statistics.ColumnHistoryStatRow
 import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
 
 import java.io.{File, PrintWriter}
+import scala.io.Source
 
-object BucketingMain extends App {
+object BucketingMain extends App with StrictLogging{
   println(s"Called with ${args.toIndexedSeq}")
-  val inputDir = args(0)
-  val outputDir = args(1)
+  val indFile = args(0)
+  val metadataFile = args(1)
+  val outputDir = args(2)
   GLOBAL_CONFIG.setSettingsForDataSource("wikipedia")
-  val iterators = new File(inputDir)
-    .listFiles()
-    .map(f => (f,ColumnHistory.iterableFromJsonObjectPerLineFile(f.getAbsolutePath,true)))
   val buckets = Seq((1,4),(4,16),(16,20000))
-  val bucketSizes = collection.mutable.HashMap[String,Int]()
-  def getBucket(nVersionsWithChanges: Int, buckets: Seq[(Int, Int)]) =
-    buckets
-      .find{case (min,max) => nVersionsWithChanges>=min && nVersionsWithChanges<=max}
+
+  implicit class Crossable[X](xs: Iterable[X]) {
+    def cross[Y](ys: Iterable[Y]) = for {x <- xs; y <- ys} yield (x, y)
+  }
+
+  val indBuckets = buckets.cross(buckets)
+  val bucketFiles = indBuckets.map{case b =>
+    val ((lmin,lmax),(rmin,rmax)) = b
+    val filename = s"$lmin-${lmax}__$rmin-$rmax.txt"
+    (b,new PrintWriter(s"$outputDir/$filename"))
+  }.toMap
+  var counter = 0
+  val metadata = ColumnHistoryMetadata.readAsMap(metadataFile)
+  Source
+    .fromFile(indFile)
+    .getLines()
+    .foreach(l => {
+      counter+=1
+      val ind = InclusionDependencyFromMany.fromManyOutputString(l)
+      val left = ind.lhsColumnID
+      val right = ind.rhsColumnID
+      val (leftBucket,rightBucket) = getBuckets(metadata(left).nChangeVersions,metadata(right).nChangeVersions,buckets)
+      bucketFiles((leftBucket,rightBucket)).println(l)
+      if(counter%1000000==0)
+        logger.debug(s"Finished $counter")
+    })
+  bucketFiles.foreach(_._2.close())
+
+  def getBuckets(nVersionsWithChangesLeft: Int,nVersionsWithChangesRight: Int, buckets: Seq[(Int, Int)]) = {
+    val leftBucket = buckets
+      .find{case (min,max) => nVersionsWithChangesLeft>=min && nVersionsWithChangesLeft<=max}
       .get
-
-  def getDirName(t: (Int, Int)) = {
-    val (min,max) = t
-    s"${min}_$max"
+    val rightBucket = buckets
+      .find { case (min, max) => nVersionsWithChangesRight >= min && nVersionsWithChangesRight <= max }
+      .get
+    (leftBucket,rightBucket)
   }
 
-  def appendToCurrentFile(curFiles:collection.mutable.HashMap[String,PrintWriter],ch: ColumnHistory, bucketName: String,originFile:File) = {
-    val newDir = new File(outputDir + "/" + bucketName)
-    if(!newDir.exists()){
-      println(s"Creating new Dir $newDir")
-    }
-    newDir.mkdirs()
-    val filePath = outputDir + "/" + bucketName + "/" + originFile.getName
-    val writer = curFiles.getOrElseUpdate(filePath, new PrintWriter(filePath))
-    bucketSizes.put(bucketName,bucketSizes.getOrElse(bucketName,0))
-    ch.appendToWriter(writer)
-  }
 
-  def process(f: File, chs: ColumnHistory.JsonObjectPerLineFileIterator) = {
-    val curFiles = collection.mutable.HashMap[String,PrintWriter]()
-    chs
-      .map { case (ch) => {
-        (ch, ColumnHistoryStatRow(ch), f)
-      }}
-      .withFilter { case (_, stats, _) => {
-        stats.satisfiesBasicFilter
-      }
-      }
-      .map { case (ch, stats, f) => (ch, getDirName(getBucket(stats.nVersionsWithChanges, buckets)), f) }
-      .foreach { case (ch, dirName, originFile) => appendToCurrentFile(curFiles,ch, dirName, originFile) }
-    curFiles.values.foreach(_.close())
-  }
-
-  iterators
-    .foreach{case (f,chs) => process(f,chs)}
-
-  bucketSizes
-    .toIndexedSeq
-    .sortBy(_._1)
-    .foreach(println(_))
 }
