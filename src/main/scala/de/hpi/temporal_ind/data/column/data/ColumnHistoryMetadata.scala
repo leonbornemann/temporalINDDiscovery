@@ -1,17 +1,41 @@
 package de.hpi.temporal_ind.data.column.data
 
+import de.hpi.temporal_ind.data.column.data.original.ColumnHistory
+import de.hpi.temporal_ind.data.{JsonReadable, JsonWritable}
+
+import java.io.{File, PrintWriter}
 import java.time.Instant
 
-case class ColumnHistoryMetadata(id:String,uniqueness:collection.Map[Instant,Boolean], nChangeVersions:Int) {
-  def toSerialized = ColumnHistoryMetadataJson(id,uniqueness.map(s => (s._1.toString,s._2)),nChangeVersions)
+case class ColumnHistoryMetadata(id:String,uniqueAtLatestTimestamp:Boolean, nChangeVersions:Int) extends JsonWritable[ColumnHistoryMetadata]{
 
 }
 
-object ColumnHistoryMetadata {
-  def readFromJsonObjectPerLineFile(outputFile: String) = ColumnHistoryMetadataJson
-    .iterableFromJsonObjectPerLineFile(outputFile)
-    .map(chm => chm.toColumnHistoryMetadata)
-    .toIndexedSeq
-    .map(chm => (chm.id,chm))
-    .toMap
+object ColumnHistoryMetadata extends JsonReadable[ColumnHistoryMetadata]{
+
+  def extractAndSerialize(inputDir: File, outFile: File, timestamp: Instant) = {
+    val pr = new PrintWriter(outFile)
+    createForDir(inputDir, pr, timestamp)
+    pr.close()
+  }
+
+  def createForDir(dir: File, pr: PrintWriter, timestamp: Instant) = {
+    dir
+      .listFiles()
+      .foreach(f => {
+        println(s"Processing $f")
+        ColumnHistory
+          .fromJsonObjectPerLineFile(f.getAbsolutePath)
+          .groupBy(_.tableId)
+          .foreach { case (tID, chs) => {
+            val sizes = chs.map(ch => ch.versionAt(timestamp).values.size).toIndexedSeq
+            val maxSize = sizes.max
+            val uniquenessAtV = sizes.map(s => s == maxSize)
+            val nChangeVersions = chs.toIndexedSeq.map(ch => ch.versionsWithNonDeleteChanges.size)
+            (0 until chs.size)
+              .foreach(i => ColumnHistoryMetadata(chs(i).id, uniquenessAtV(i), nChangeVersions(i)).appendToWriter(pr))
+          }
+          }
+      })
+  }
+
 }

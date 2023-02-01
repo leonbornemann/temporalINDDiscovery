@@ -18,7 +18,7 @@ object BucketingMain extends App {
   val iterators = new File(inputDir)
     .listFiles()
     .map(f => (f,ColumnHistory.iterableFromJsonObjectPerLineFile(f.getAbsolutePath,true)))
-  val buckets = Seq((1,2),(2,4),(4,8),(8,16),(16,32),(32,20000))
+  val buckets = Seq((1,4),(4,16),(16,20000))
   val bucketSizes = collection.mutable.HashMap[String,Int]()
   def getBucket(nVersionsWithChanges: Int, buckets: Seq[(Int, Int)]) =
     buckets

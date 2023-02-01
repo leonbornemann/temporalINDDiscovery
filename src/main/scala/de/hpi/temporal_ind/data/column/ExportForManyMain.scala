@@ -26,9 +26,6 @@ object ExportForManyMain extends App with StrictLogging{
     assert(inputType=="multiDir")
     processInputDir(inputRootDir,outputDirRootDir + s"/${inputRootDir.getName}/")
   }
-  inputRootDir.listFiles().foreach(inputDir => {
-    processInputDir(inputDir,outputDirRootDir + s"/${inputDir.getName}/")
-  })
 
   def satisfiesBasicFilter(vhs: (ColumnHistory, Int)) = {
     ColumnHistoryStatRow(vhs._1).satisfiesBasicFilter
