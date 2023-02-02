@@ -1,6 +1,6 @@
 package de.hpi.temporal_ind.data.column.data.many
 
-import de.hpi.temporal_ind.data.column.data.IndexedColumnHistories
+import de.hpi.temporal_ind.data.column.data.{IncrementalIndexedColumnHistories, IndexedColumnHistories}
 import de.hpi.temporal_ind.data.column.data.original.INDCandidate
 
 import java.io.File
@@ -16,6 +16,12 @@ case class InclusionDependencyFromMany(lhsID:String, rhsID:String) {
     } else {
       INDCandidate[String](indexed.multiLevelIndex(lhsPageID)(lhsColumnID).asOrderedHistory,indexed.multiLevelIndex(rhsPageID)(rhsColumnID).asOrderedHistory)
     }
+  }
+
+  def toCandidateWithIncrementalIndex(index: IncrementalIndexedColumnHistories, filterByUnion: Boolean = false) = {
+    val lhsColID = if(filterByUnion) lhsColumnID.replace("_union", "") else lhsColumnID
+    val rhsColID = if(filterByUnion) rhsColumnID.replace("_union", "") else rhsColumnID
+    INDCandidate[String](index.getOrLoad(lhsPageID.toLong,lhsColID).asOrderedHistory, index.getOrLoad(rhsPageID.toLong,rhsColID).asOrderedHistory)
   }
 
   private def getColumnID(str: String) = {
