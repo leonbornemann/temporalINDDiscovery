@@ -39,6 +39,7 @@ object ColumnHistoryMetadata extends JsonReadable[ColumnHistoryMetadata]{
             val nChangeVersions = chs.toIndexedSeq.map(ch => ch.versionsWithNonDeleteChanges.size)
             val medianSizes = chs.toIndexedSeq.map(ch => ch.medianSize)
             (0 until chs.size)
+              .withFilter(i => nChangeVersions(i)>0)
               .foreach(i => ColumnHistoryMetadata(chs(i).id, uniquenessAtV(i), nChangeVersions(i),medianSizes(i)).appendToWriter(pr))
           }
           }

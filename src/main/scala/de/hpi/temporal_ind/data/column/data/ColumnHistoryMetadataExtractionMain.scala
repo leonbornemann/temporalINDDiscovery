@@ -10,7 +10,8 @@ object ColumnHistoryMetadataExtractionMain extends App {
   val inputDir = args(0)
   val outputFile = args(1)
   val timestamp = Instant.parse(args(2))
-  ColumnHistoryMetadata.extractAndSerialize(new File(inputDir),new File(outputFile),timestamp)
+  ColumnHistoryMetadata
+    .extractAndSerialize(new File(inputDir),new File(outputFile),timestamp)
   //test Reading:
   println("found",ColumnHistoryMetadata.fromJsonObjectPerLineFile(outputFile).size,"metadata objects")
 
