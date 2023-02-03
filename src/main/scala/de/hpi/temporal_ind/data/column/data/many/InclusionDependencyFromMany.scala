@@ -18,6 +18,11 @@ case class InclusionDependencyFromMany(lhsID:String, rhsID:String) {
     }
   }
 
+  def toMANYString = {
+    //[340203519-5_25959604.csv.0a845016-f912-4e18-8922-1f246f407452][=[367621044-0_27613671.csv.e0aec3f0-5c8c-44f1-b955-bda304e0c206]
+    s"[$lhsID][=[$rhsID]"
+  }
+
   def toCandidateWithIncrementalIndex(index: IncrementalIndexedColumnHistories, filterByUnion: Boolean = false) = {
     val lhsColID = if(filterByUnion) lhsColumnID.replace("_union", "") else lhsColumnID
     val rhsColID = if(filterByUnion) rhsColumnID.replace("_union", "") else rhsColumnID
