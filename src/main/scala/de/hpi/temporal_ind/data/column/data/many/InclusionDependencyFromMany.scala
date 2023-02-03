@@ -55,7 +55,6 @@ object InclusionDependencyFromMany{
   def readFromMANYOutputFile(file :File):Iterator[InclusionDependencyFromMany] = {
     Source.fromFile(file).getLines()
       .map(s => {
-        println(s"processing $s")
         fromManyOutputString(s)
       })
   }
