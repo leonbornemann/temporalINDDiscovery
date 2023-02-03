@@ -6,7 +6,7 @@ import de.hpi.temporal_ind.data.{JsonReadable, JsonWritable}
 import java.io.{File, PrintWriter}
 import java.time.Instant
 
-case class ColumnHistoryMetadata(id:String,uniqueAtLatestTimestamp:Boolean, nChangeVersions:Int) extends JsonWritable[ColumnHistoryMetadata]{
+case class ColumnHistoryMetadata(id:String,uniqueAtLatestTimestamp:Boolean, nChangeVersions:Int,medianSize:Double) extends JsonWritable[ColumnHistoryMetadata]{
 
 }
 
@@ -37,8 +37,9 @@ object ColumnHistoryMetadata extends JsonReadable[ColumnHistoryMetadata]{
             val maxSize = sizes.max
             val uniquenessAtV = sizes.map(s => s == maxSize)
             val nChangeVersions = chs.toIndexedSeq.map(ch => ch.versionsWithNonDeleteChanges.size)
+            val medianSizes = chs.toIndexedSeq.map(ch => ch.medianSize)
             (0 until chs.size)
-              .foreach(i => ColumnHistoryMetadata(chs(i).id, uniquenessAtV(i), nChangeVersions(i)).appendToWriter(pr))
+              .foreach(i => ColumnHistoryMetadata(chs(i).id, uniquenessAtV(i), nChangeVersions(i),medianSizes(i)).appendToWriter(pr))
           }
           }
       })

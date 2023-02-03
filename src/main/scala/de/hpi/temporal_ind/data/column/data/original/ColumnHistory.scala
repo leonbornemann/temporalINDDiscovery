@@ -3,6 +3,7 @@ package de.hpi.temporal_ind.data.column.data.original
 import de.hpi.temporal_ind.data.column.data.AbstractColumnVersion
 import de.hpi.temporal_ind.data.column.data.encoded.ColumnHistoryEncoded
 import de.hpi.temporal_ind.data.column.io.Dictionary
+import de.hpi.temporal_ind.data.column.statistics.ValueSequenceStatistics
 import de.hpi.temporal_ind.data.column.wikipedia.{WikipediaColumnHistoryIndex, WikipediaPageRange}
 import de.hpi.temporal_ind.data.{JsonReadable, JsonWritable}
 
@@ -17,6 +18,10 @@ case class ColumnHistory(id: String,
                          pageTitle: String,
                          columnVersions: ArrayBuffer[ColumnVersion]
                         ) extends JsonWritable[ColumnHistory]{
+  def medianSize = {
+    val valueSetSizes = versionsWithNonDeleteChanges.map(_.values.size)
+    ValueSequenceStatistics(valueSetSizes.map(_.toDouble)).median
+  }
 
 
   def existsNonDeleteInVersionRange(beginTimestamp:Instant,endTimestampExclusive:Instant) = {
