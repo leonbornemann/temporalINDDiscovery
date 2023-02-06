@@ -79,7 +79,7 @@ case class LabelledINDCandidateStatistics[T <% Ordered[T]](label:String, candida
       TimeUtil.nanosPerDay*365)
     serializeTimeShiftedComplexRelaxedIND(pr,deltas)
     serializeTimeShiftedSimpleRelaxedIND(pr,deltas,normalizationTypes)
-
+    pr.flush()
   }
 
 }

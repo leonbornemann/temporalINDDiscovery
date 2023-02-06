@@ -16,6 +16,7 @@ object StatisticsForLabelledExampleMain extends App {
   new File(resultDir).mkdirs()
 
   sourceDir.listFiles().foreach(sourceFile => {
+    println(s"Processing $sourceFile")
     val out = new PrintWriter(resultDir + "/stats_" + sourceFile.getName)
     LabelledINDCandidateStatistics.printCSVSchema(out)
     val examples = Source.fromFile(sourceFile)
