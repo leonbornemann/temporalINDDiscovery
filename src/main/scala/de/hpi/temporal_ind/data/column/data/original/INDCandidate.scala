@@ -1,6 +1,6 @@
 package de.hpi.temporal_ind.data.column.data.original
 
-import de.hpi.temporal_ind.data.column.data.{AbstractOrderedColumnHistory, IndexedColumnHistories}
+import de.hpi.temporal_ind.data.column.data.{AbstractOrderedColumnHistory, IncrementalIndexedColumnHistories, IndexedColumnHistories}
 import de.hpi.temporal_ind.data.{JsonReadable, JsonWritable}
 import de.hpi.temporal_ind.util.Util
 
@@ -83,6 +83,15 @@ object INDCandidate {
     val lhs = index.multiLevelIndex(tokens("fkPageID"))(tokens("fkID"))
     val rhs = index.multiLevelIndex(tokens("pkPageID"))(tokens("pkID"))
     INDCandidate(lhs.asOrderedHistory,rhs.asOrderedHistory)
+  }
+
+  def fromCSVLineWithIncrementalIndex(index: IncrementalIndexedColumnHistories, l: String) = {
+    val tokens = csvSchema.split(",")
+      .zip(l.split(",").toSeq)
+      .toMap
+    val lhs = index.getOrLoad(tokens("fkPageID").toLong,tokens("fkID"))
+    val rhs = index.getOrLoad(tokens("pkPageID").toLong,tokens("pkID"))
+    INDCandidate(lhs.asOrderedHistory, rhs.asOrderedHistory)
   }
 
   def csvSchema = "versionURLFK,versionURLPK,pageTitleFK,colHeaderFK,colPositionFK,pageTitlePK,colHeaderPK,colPositionPK,isGenuine,fkTableID,pkTableID,fkValues,pkValues,fkID,pkID,fkPageID,pkPageID,fkTitle,pkTitle"

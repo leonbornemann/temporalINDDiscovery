@@ -1,6 +1,6 @@
 package de.hpi.temporal_ind.data.column.data.original
 
-import de.hpi.temporal_ind.data.column.data.IndexedColumnHistories
+import de.hpi.temporal_ind.data.column.data.{IncrementalIndexedColumnHistories, IndexedColumnHistories}
 import de.hpi.temporal_ind.data.ind.{SimpleRelaxedTemporalIND, SimpleTimeWindowTemporalIND, StrictTemporalIND}
 import de.hpi.temporal_ind.data.ind.variant4.{TimeShiftedRelaxedTemporalIND, TimeUtil}
 import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
@@ -89,6 +89,12 @@ object LabelledINDCandidateStatistics{
     val label = l.split(",")(8)
     val indCandidate = INDCandidate.fromCSVLine(index,l)
     LabelledINDCandidateStatistics(label,indCandidate)
+  }
+
+  def fromCSVLineWithIncrementalIndex(index: IncrementalIndexedColumnHistories, l: String) = {
+    val label = l.split(",")(8)
+    val indCandidate = INDCandidate.fromCSVLineWithIncrementalIndex(index, l)
+    LabelledINDCandidateStatistics(label, indCandidate)
   }
 
   def printCSVSchema(pr:PrintWriter) = {
