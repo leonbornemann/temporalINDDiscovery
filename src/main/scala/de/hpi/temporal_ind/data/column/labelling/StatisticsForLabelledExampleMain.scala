@@ -10,12 +10,19 @@ import scala.io.Source
 
 object StatisticsForLabelledExampleMain extends App {
   GLOBAL_CONFIG.setSettingsForDataSource(args(0))
-  val sourceDir = new File(args(1))
+  val annotatedSource = new File(args(1))
   val index = new IncrementalIndexedColumnHistories(new File(args(2)))
   private val resultDir: String = args(3)
   new File(resultDir).mkdirs()
 
-  sourceDir.listFiles().foreach(sourceFile => {
+
+  if(annotatedSource.isDirectory){
+    annotatedSource.listFiles().foreach(sourceFile => processFile(sourceFile))
+  } else {
+    processFile(annotatedSource)
+  }
+
+  private def processFile(sourceFile: File): Unit = {
     println(s"Processing $sourceFile")
     val out = new PrintWriter(resultDir + "/stats_" + sourceFile.getName)
     LabelledINDCandidateStatistics.printCSVSchema(out)
@@ -26,7 +33,5 @@ object StatisticsForLabelledExampleMain extends App {
       .map(l => LabelledINDCandidateStatistics.fromCSVLineWithIncrementalIndex(index, l))
       .foreach(ind => ind.serializeValidityStatistics(out))
     out.close()
-  })
-
-
+  }
 }
