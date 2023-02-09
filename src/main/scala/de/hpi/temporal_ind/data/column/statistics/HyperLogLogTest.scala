@@ -2,12 +2,14 @@ package de.hpi.temporal_ind.data.column.statistics
 
 import com.google.zetasketch.HyperLogLogPlusPlus
 import de.hpi.temporal_ind.data.column.data.IncrementalIndexedColumnHistories
+import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
 
 import java.io.{File, PrintWriter}
 import java.lang
 import scala.util.Random
 
 object HyperLogLogTest extends App {
+  GLOBAL_CONFIG.setSettingsForDataSource("wikipedia")
   val inputDir = args(0)
   val outputFile = new PrintWriter(args(1))
   val index = new IncrementalIndexedColumnHistories(new File(inputDir))
