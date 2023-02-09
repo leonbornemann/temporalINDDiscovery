@@ -8,6 +8,12 @@ import java.io.File
 import scala.util.Random
 
 class IncrementalIndexedColumnHistories(dir:File) extends StrictLogging{
+  def getRandomColumnHistory() = {
+    val chosenFile = dir.listFiles().toIndexedSeq(random.nextInt(dir.listFiles().size))
+    val map = load(chosenFile)
+    val a = map.keySet.toIndexedSeq(random.nextInt(map.keySet.size))
+    map(a)
+  }
 
   val index = collection.mutable.HashMap[File, Map[String, ColumnHistory]]()
   var maxMem = 100
@@ -15,7 +21,7 @@ class IncrementalIndexedColumnHistories(dir:File) extends StrictLogging{
 
   def getOrLoad(pageID:Long,columnID:String) = {
     val file = getFileForPageID(pageID)
-    val mapInFile = index.getOrElseUpdate(file,ColumnHistory.fromJsonObjectPerLineFile(file.getAbsolutePath).map(ch => (ch.id,ch)).toMap)
+    val mapInFile = load(file)
     val result = mapInFile(columnID)
     if(index.size>maxMem) {
       val toRemove = index.keySet.toIndexedSeq(random.nextInt(index.keySet.size))
@@ -23,6 +29,10 @@ class IncrementalIndexedColumnHistories(dir:File) extends StrictLogging{
       index.remove(toRemove)
     }
     result
+  }
+
+  private def load(file: File) = {
+    index.getOrElseUpdate(file, ColumnHistory.fromJsonObjectPerLineFile(file.getAbsolutePath).map(ch => (ch.id, ch)).toMap)
   }
 
   def getFileForPageID(id: Long): File = {

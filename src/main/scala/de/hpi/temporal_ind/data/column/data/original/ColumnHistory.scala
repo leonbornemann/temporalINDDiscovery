@@ -1,5 +1,6 @@
 package de.hpi.temporal_ind.data.column.data.original
 
+import com.google.zetasketch.HyperLogLogPlusPlus
 import de.hpi.temporal_ind.data.column.data.AbstractColumnVersion
 import de.hpi.temporal_ind.data.column.data.encoded.ColumnHistoryEncoded
 import de.hpi.temporal_ind.data.column.io.Dictionary
@@ -18,6 +19,37 @@ case class ColumnHistory(id: String,
                          pageTitle: String,
                          columnVersions: ArrayBuffer[ColumnVersion]
                         ) extends JsonWritable[ColumnHistory]{
+
+  def hyperLogLogOfUnionedValueSet = {
+    val hll:HyperLogLogPlusPlus[String] = new HyperLogLogPlusPlus.Builder().buildForStrings();
+    columnVersions
+      .flatMap(cv => cv.values)
+      .toSet
+      .foreach((s:String) => hll.add(s))
+    hll
+  }
+
+  def hyperLogLogOverlapOfUnionedValuesets(b: ColumnHistory) = {
+    val myLogLog = hyperLogLogOfUnionedValueSet
+    val myLogLogOther = b.hyperLogLogOfUnionedValueSet
+    val sizeA = myLogLog.result()
+    val sizeB = myLogLogOther.result()
+    myLogLog.merge(myLogLogOther)
+    val unionSize = myLogLog.result()
+    val intersection = sizeA+sizeB-unionSize
+    intersection
+  }
+
+  def overlapOfUnionedValuesets(b:ColumnHistory) = {
+    val mySet = columnVersions
+      .flatMap(cv => cv.values)
+      .toSet
+    val otherSet = b.columnVersions
+      .flatMap(cv => cv.values)
+      .toSet
+    mySet.intersect(otherSet).size
+  }
+
   def medianSize = {
     val valueSetSizes = versionsWithNonDeleteChanges.map(_.values.size)
     ValueSequenceStatistics(valueSetSizes.map(_.toDouble)).median

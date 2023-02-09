@@ -22,3 +22,6 @@ libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.3"
 
 libraryDependencies += "org.scalactic" %% "scalactic" % "3.2.10"
 libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.10" % "test"
+
+// https://mvnrepository.com/artifact/com.google.zetasketch/zetasketch
+libraryDependencies += "com.google.zetasketch" % "zetasketch" % "0.1.0"
