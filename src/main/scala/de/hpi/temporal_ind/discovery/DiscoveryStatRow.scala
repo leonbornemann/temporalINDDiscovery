@@ -11,22 +11,24 @@ case class DiscoveryStatRow(queryLink: String,
                             queryColumnID:String,
                             indexQueryTimeMS: Double,
                             validationTimeMS: Double,
-                            falsePositiveCount: Int,
+                            falsePositiveCountFROMMANY: Int,
+                            falsePositiveCountFROMTemporal: Int,
                             truePositiveCount: Int,
                             discoveryVersion:String) extends JsonWritable[DiscoveryStatRow]{
 
   def toCSVLine = {
-    s"$queryLink,$queryPageID,$queryTableID,$queryColumnID,$indexQueryTimeMS,$validationTimeMS,$falsePositiveCount,$truePositiveCount,$discoveryVersion"
+    s"$queryLink,$queryPageID,$queryTableID,$queryColumnID,$indexQueryTimeMS,$validationTimeMS,$falsePositiveCountFROMMANY,$falsePositiveCountFROMTemporal,$truePositiveCount,$discoveryVersion"
   }
 
 }
 object DiscoveryStatRow extends JsonReadable[DiscoveryStatRow]{
-  def schema = "queryLink,queryPageID,queryTableID,queryColumnID,indexQueryTimeMS,validationTimeMS,falsePositiveCount,truePositiveCount,discoveryVersion"
+  def schema = "queryLink,queryPageID,queryTableID,queryColumnID,indexQueryTimeMS,validationTimeMS,falsePositiveCountFROMMANY,falsePositiveCountFROMTemporal,truePositiveCount,discoveryVersion"
 
   def fromEnrichedColumnHistory(query: EnrichedColumnHistory,
                                 indexQueryTimeMS: Double,
                                 validationTimeMS: Double,
-                                falsePositiveCount: Int,
+                                falsePositiveCountFROMMANY: Int,
+                                falsePositiveCountFROMTemporal: Int,
                                 truePositiveCount: Int,
                                 discoveryVersion: String) = {
     val queryLink = query.och.activeRevisionURLAtTimestamp(GLOBAL_CONFIG.lastInstant)
@@ -39,7 +41,8 @@ object DiscoveryStatRow extends JsonReadable[DiscoveryStatRow]{
       queryColumnID,
       indexQueryTimeMS,
       validationTimeMS,
-      falsePositiveCount,
+      falsePositiveCountFROMMANY,
+      falsePositiveCountFROMTemporal,
       truePositiveCount,
       discoveryVersion)
   }

@@ -50,11 +50,19 @@ class RelaxedShiftedTemporalINDDiscovery(sourceDirs: IndexedSeq[File], targetDir
     historiesEnriched.histories.foreach(query => {
       //TODO: make query return the bitVector once we do more filtering
       val (candidatesRequiredValues,queryTime) = TimeUtil.executionTimeInMS(bloomFilterIndexEntireValueset.query(query,((e:EnrichedColumnHistory) => e.requiredValues)))
+      val falsePositivesFromMANY = candidatesRequiredValues
+        .filter(candidateRef => {
+          val requiredValues = query.requiredValues
+          val allValues = candidateRef.allValues
+          !requiredValues.subsetOf(allValues)
+        }).size
       val (trueTemporalINDs,validationTime) = TimeUtil.executionTimeInMS(validateCandidates(query,candidatesRequiredValues))
       val truePositiveCount = trueTemporalINDs.size
-      val falsePositiveCount = candidatesRequiredValues.size-truePositiveCount
+      val falsePositiveCountFROMTemporal = candidatesRequiredValues.size-truePositiveCount - falsePositivesFromMANY
+      if(falsePositiveCountFROMTemporal<0)
+        println()
       trueTemporalINDs.foreach(c => c.toCandidateIDs.appendToWriter(resultPR))
-      val discoveryStatRow = DiscoveryStatRow.fromEnrichedColumnHistory(query,queryTime,validationTime,falsePositiveCount,truePositiveCount,version)
+      val discoveryStatRow = DiscoveryStatRow.fromEnrichedColumnHistory(query,queryTime,validationTime,falsePositivesFromMANY,falsePositiveCountFROMTemporal,truePositiveCount,version)
       discoveryStatRow.appendToWriter(statsPRJson)
       statsPRCSV.println(discoveryStatRow.toCSVLine)
     })
