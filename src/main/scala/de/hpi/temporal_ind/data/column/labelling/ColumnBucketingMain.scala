@@ -1,12 +1,13 @@
 package de.hpi.temporal_ind.data.column.labelling
 
+import com.typesafe.scalalogging.StrictLogging
 import de.hpi.temporal_ind.data.column.data.ColumnHistoryMetadata
 import de.hpi.temporal_ind.data.column.data.original.ColumnHistory
 import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
 
 import java.io.{File, PrintWriter}
 
-object ColumnBucketingMain extends App{
+object ColumnBucketingMain extends App with StrictLogging{
   println(s"Called with ${args.toIndexedSeq}")
   val colHistoryDir = args(0)
   val metadataFile = args(1)
@@ -28,6 +29,7 @@ object ColumnBucketingMain extends App{
   new File(colHistoryDir)
     .listFiles()
     .foreach(f => {
+      logger.debug(s"Processing ${f.getAbsolutePath}")
       ColumnHistory.iterableFromJsonObjectPerLineFile(f.getAbsolutePath)
         .foreach(ch => {
           if(metadata(ch.id).medianSize>=minMedianSize){
