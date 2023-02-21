@@ -16,7 +16,7 @@ object ColumnBucketingMain extends App with StrictLogging{
   GLOBAL_CONFIG.setSettingsForDataSource("wikipedia")
   val buckets = Seq((1, 4), (4, 16), (16, 20000))
   val bucketToDirs = buckets.map{case (min, max) =>
-      val dirName = s"$min-${max}.txt"
+      val dirName = s"$min-${max}"
       val dir = new File(s"$outputDir/$dirName")
       dir.mkdirs()
       ((min,max),dir)
