@@ -11,6 +11,7 @@ object ColumnBucketingMain extends App{
   val colHistoryDir = args(0)
   val metadataFile = args(1)
   val outputDir = args(2)
+  val minMedianSize = args(3).toDouble
   GLOBAL_CONFIG.setSettingsForDataSource("wikipedia")
   val buckets = Seq((1, 4), (4, 16), (16, 20000))
   val bucketToDirs = buckets.map{case (min, max) =>
@@ -29,12 +30,16 @@ object ColumnBucketingMain extends App{
     .foreach(f => {
       ColumnHistory.iterableFromJsonObjectPerLineFile(f.getAbsolutePath)
         .foreach(ch => {
-          val bucket:(Int,Int) = getBucket(metadata(ch.id).nChangeVersions,buckets)
-          val dir = bucketToDirs(bucket)
-          val pr = bucketFiles(dir).getOrElseUpdate(f.getName,(new PrintWriter(s"${dir.getAbsolutePath}/${f.getName}")))
-          ch.appendToWriter(pr)
+          if(metadata(ch.id).medianSize>=minMedianSize){
+            val bucket: (Int, Int) = getBucket(metadata(ch.id).nChangeVersions, buckets)
+            val dir = bucketToDirs(bucket)
+            val pr = bucketFiles(dir).getOrElseUpdate(f.getName, (new PrintWriter(s"${dir.getAbsolutePath}/${f.getName}")))
+            ch.appendToWriter(pr)
+          }
         })
     })
+
+  bucketFiles.values.foreach(_.values.foreach(_.close()))
 
   def getBucket(nVersions: Int, buckets: Seq[(Int, Int)]) = {
     buckets
