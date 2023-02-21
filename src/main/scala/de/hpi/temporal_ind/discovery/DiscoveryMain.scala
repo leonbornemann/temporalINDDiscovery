@@ -10,7 +10,7 @@ object DiscoveryMain extends App {
   println(s"Called with ${args.toIndexedSeq}")
   GLOBAL_CONFIG.setSettingsForDataSource("wikipedia")
   println(GLOBAL_CONFIG.totalTimeInDays)
-  val sourceDirs = args(0).split(";")
+  val sourceDirs = args(0).split(",")
     .map(new File(_))
     .toIndexedSeq
   val targetDir = new File(args(1))
