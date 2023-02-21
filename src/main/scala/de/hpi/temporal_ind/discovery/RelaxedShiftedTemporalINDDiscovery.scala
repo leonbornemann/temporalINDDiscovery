@@ -12,7 +12,6 @@ import scala.collection.mutable.ArrayBuffer
 class RelaxedShiftedTemporalINDDiscovery(sourceDirs: IndexedSeq[File], targetDir: File, epsilon: Double, deltaInNanos: Long,version:String) extends StrictLogging{
 
   val absoluteEpsilonNanos = (GLOBAL_CONFIG.totalTimeInNanos*epsilon).toLong
-  val historiesEnriched = TimeUtil.printExecutionTimeInMS(enrichWithHistory(loadHistories()),"Column History Metadata Enrichtment")
 
 
   def loadHistories() =
@@ -25,7 +24,7 @@ class RelaxedShiftedTemporalINDDiscovery(sourceDirs: IndexedSeq[File], targetDir
     new ColumnHistoryStorage(histories.map(och => new EnrichedColumnHistory(och,absoluteEpsilonNanos)))
   }
 
-  def getIndexForEntireValueset() = {
+  def getIndexForEntireValueset(historiesEnriched: ColumnHistoryStorage) = {
     new BloomfilterIndex(historiesEnriched.histories,((e:EnrichedColumnHistory) => e.allValues))
   }
 
@@ -42,10 +41,12 @@ class RelaxedShiftedTemporalINDDiscovery(sourceDirs: IndexedSeq[File], targetDir
     val statsPRJson = new PrintWriter(targetDir + "/discoveryStats.jsonl")
     val statsPROtherTimes = new PrintWriter(targetDir + "/discoveryStatTimes.csv")
     statsPRCSV.println(DiscoveryStatRow.schema)
-    val (bloomFilterIndexEntireValueset,timeIndexBuild) = TimeUtil.executionTimeInMS(getIndexForEntireValueset())
-    //query all:
+    val (historiesEnriched,timeDataLoading) = TimeUtil.executionTimeInMS(enrichWithHistory(loadHistories()))
+    statsPROtherTimes.println(s"Data Loading,$timeDataLoading")
+    val (bloomFilterIndexEntireValueset,timeIndexBuild) = TimeUtil.executionTimeInMS(getIndexForEntireValueset(historiesEnriched))
     statsPROtherTimes.println(s"Index Build,$timeIndexBuild")
     statsPROtherTimes.close()
+    //query all:
     historiesEnriched.histories.foreach(query => {
       //TODO: make query return the bitVector once we do more filtering
       val (candidatesRequiredValues,queryTime) = TimeUtil.executionTimeInMS(bloomFilterIndexEntireValueset.query(query,((e:EnrichedColumnHistory) => e.requiredValues)))
@@ -53,7 +54,7 @@ class RelaxedShiftedTemporalINDDiscovery(sourceDirs: IndexedSeq[File], targetDir
       val truePositiveCount = trueTemporalINDs.size
       val falsePositiveCount = candidatesRequiredValues.size-truePositiveCount
       trueTemporalINDs.foreach(c => c.toCandidateIDs.appendToWriter(resultPR))
-      val discoveryStatRow = DiscoveryStatRow(query,queryTime,validationTime,falsePositiveCount,truePositiveCount,version)
+      val discoveryStatRow = DiscoveryStatRow.fromEnrichedColumnHistory(query,queryTime,validationTime,falsePositiveCount,truePositiveCount,version)
       discoveryStatRow.appendToWriter(statsPRJson)
       statsPRCSV.println(discoveryStatRow.toCSVLine)
     })
