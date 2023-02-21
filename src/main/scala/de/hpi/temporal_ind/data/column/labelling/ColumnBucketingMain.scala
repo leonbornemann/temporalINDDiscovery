@@ -31,13 +31,22 @@ object ColumnBucketingMain extends App with StrictLogging{
     .foreach(f => {
       logger.debug(s"Processing ${f.getAbsolutePath}")
       ColumnHistory.iterableFromJsonObjectPerLineFile(f.getAbsolutePath)
-        .foreach(ch => {
-          if(metadata(ch.id).medianSize>=minMedianSize){
-            val bucket: (Int, Int) = getBucket(metadata(ch.id).nChangeVersions, buckets)
-            val dir = bucketToDirs(bucket)
-            val pr = bucketFiles(dir).getOrElseUpdate(f.getName, (new PrintWriter(s"${dir.getAbsolutePath}/${f.getName}")))
-            ch.appendToWriter(pr)
+        .withFilter(ch => {
+          val a = metadata.get(ch.id)
+          if(!a.isDefined){
+            if(ch.versionsWithNonDeleteChanges.size >= 1){
+              println("Weird ",ch.versionsWithNonDeleteChanges.size,ch.id)
+            }
+            assert(ch.versionsWithNonDeleteChanges.size < 1)
           }
+          !a.isEmpty && metadata(ch.id).medianSize>=minMedianSize
+        })
+        .foreach(ch => {
+          val bucket: (Int, Int) = getBucket(metadata(ch.id).nChangeVersions, buckets)
+          val dir = bucketToDirs(bucket)
+          val pr = bucketFiles(dir).getOrElseUpdate(f.getName, (new PrintWriter(s"${dir.getAbsolutePath}/${f.getName}")))
+          ch.appendToWriter(pr)
+
         })
     })
 
