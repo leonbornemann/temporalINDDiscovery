@@ -21,7 +21,7 @@ case class DiscoveryStatRow(queryLink: String,
 
 }
 object DiscoveryStatRow extends JsonReadable[DiscoveryStatRow]{
-  def schema = "queryLink,queryPageID,queryTableID,queryColumnID,indexQueryTime,validationTime,falsePositiveCount,truePositiveCount,discoveryVersion"
+  def schema = "queryLink,queryPageID,queryTableID,queryColumnID,indexQueryTimeMS,validationTimeMS,falsePositiveCount,truePositiveCount,discoveryVersion"
 
   def fromEnrichedColumnHistory(query: EnrichedColumnHistory,
                                 indexQueryTimeMS: Double,
