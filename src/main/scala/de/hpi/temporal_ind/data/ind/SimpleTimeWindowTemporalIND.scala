@@ -11,8 +11,13 @@ import scala.collection.mutable
 class SimpleTimeWindowTemporalIND[T <% Ordered[T]](lhs: AbstractOrderedColumnHistory[T],
                                                    rhs: AbstractOrderedColumnHistory[T],
                                                    deltaInNanos: Long,
+                                                   absoluteEpsilonInNanos:Long,
                                                    useWildcardLogic:Boolean,
                                                    validationVariant:ValidationVariant.Value) extends TemporalIND(lhs,rhs,validationVariant){
+  def toCandidateIDs = {
+    INDCandidateIDs(lhs.pageID,lhs.tableId,lhs.id,rhs.pageID,rhs.tableId,rhs.id)
+  }
+
 
   def rhsIsWildcardOnlyInRange(lower: Instant, upper: Instant): Boolean = {
     val rhsVersions = rhs.versionsInWindow(lower,upper)
@@ -75,6 +80,6 @@ class SimpleTimeWindowTemporalIND[T <% Ordered[T]](lhs: AbstractOrderedColumnHis
   }
 
   override def isValid: Boolean = {
-    absoluteViolationTime == 0
+    absoluteViolationTime <=absoluteEpsilonInNanos
   }
 }

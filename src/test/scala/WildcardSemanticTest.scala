@@ -76,9 +76,9 @@ class WildcardSemanticTest extends AnyFlatSpec{
     GLOBAL_CONFIG.earliestInstant = toInstant(0)
     GLOBAL_CONFIG.lastInstant = toInstant(100)
     var delta = 10
-    val timeShiftedIND = new SimpleTimeWindowTemporalIND(history1,history2,delta,true,ValidationVariant.FULL_TIME_PERIOD)
+    val timeShiftedIND = new SimpleTimeWindowTemporalIND(history1,history2,delta,0,true,ValidationVariant.FULL_TIME_PERIOD)
     assert(timeShiftedIND.absoluteViolationTime == 0)
-    val timeShiftedIND2 = new SimpleTimeWindowTemporalIND(history1,history3,delta,true,ValidationVariant.FULL_TIME_PERIOD)
+    val timeShiftedIND2 = new SimpleTimeWindowTemporalIND(history1,history3,delta,0,true,ValidationVariant.FULL_TIME_PERIOD)
     assert(timeShiftedIND2.absoluteViolationTime==5)
   }
 

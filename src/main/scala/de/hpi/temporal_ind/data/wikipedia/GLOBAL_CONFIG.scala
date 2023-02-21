@@ -5,6 +5,7 @@ import java.time.temporal.ChronoUnit
 
 object GLOBAL_CONFIG {
   def totalTimeInNanos = ChronoUnit.NANOS.between(earliestInstant,lastInstant)
+  def totalTimeInDays = ChronoUnit.DAYS.between(earliestInstant,lastInstant)
 
   val CANONICAL_NULL_VALUE: String = "⊥NULL⊥"
 

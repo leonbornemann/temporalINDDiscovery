@@ -43,9 +43,9 @@ case class LabelledINDCandidateStatistics[T <% Ordered[T]](label:String, candida
   def serializeTimeShiftedSimpleRelaxedIND(pr: PrintWriter, deltas: Seq[Long], validationTypes: ValidationVariant.ValueSet) = {
     for(validationType <- validationTypes) {
       deltas.map(d => {
-        val violationTimeNoWildcard = new SimpleTimeWindowTemporalIND[T](lhs,rhs,d,false,validationType)
+        val violationTimeNoWildcard = new SimpleTimeWindowTemporalIND[T](lhs,rhs,d,0,false,validationType)
           .relativeViolationTime()
-        val violationTimeWildcard = new SimpleTimeWindowTemporalIND[T](lhs,rhs,d,true,validationType)
+        val violationTimeWildcard = new SimpleTimeWindowTemporalIND[T](lhs,rhs,d,0,true,validationType)
           .relativeViolationTime()
         pr.println(s"$idCSVString,$label,timeShiftedSimple,false,$validationType,$d,$violationTimeNoWildcard")
         pr.println(s"$idCSVString,$label,timeShiftedSimple,true,$validationType,$d,$violationTimeWildcard")
