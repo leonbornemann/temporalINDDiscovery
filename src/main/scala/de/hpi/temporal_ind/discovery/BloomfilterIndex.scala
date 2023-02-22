@@ -65,9 +65,21 @@ class BloomfilterIndex(input: IndexedSeq[EnrichedColumnHistory],
     val queryValueSet:Set[String] = getQueryValueSet(q)
     val querySig = many.applyBloomfilter(queryValueSet.asJava)
     val worker = new INDDetectionWorkerQuery(many,querySig,  0)
-    val res = worker.executeQuery()
-    val candidates = bitVectorToColumns(res)
-    candidates
+    try {
+      val res = worker.executeQuery()
+      val candidates = bitVectorToColumns(res)
+      candidates
+    } catch {
+      case e:Throwable => {
+        e.printStackTrace()
+        println(queryValueSet)
+        println(querySig.size())
+        println(many.getBitMatrix.size())
+        println(s"LHS: ${q.och.tableId + "__" + q.och.pageID + "__" + q.och.id}")
+        assert(false)
+        collection.mutable.ArrayBuffer[EnrichedColumnHistory]()
+      }
+    }
   }
 
 //  TimeUtil.logRuntime(timeWorker,"ms","Single Worker Execution For Value Set containment")
