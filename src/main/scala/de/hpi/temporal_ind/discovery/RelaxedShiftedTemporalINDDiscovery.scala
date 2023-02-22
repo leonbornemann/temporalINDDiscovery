@@ -50,15 +50,19 @@ class RelaxedShiftedTemporalINDDiscovery(sourceDirs: IndexedSeq[File], targetDir
     historiesEnriched.histories.foreach(query => {
       //TODO: make query return the bitVector once we do more filtering
       val (candidatesRequiredValues,queryTime) = TimeUtil.executionTimeInMS(bloomFilterIndexEntireValueset.query(query,((e:EnrichedColumnHistory) => e.requiredValues)))
-      val falsePositivesFromMANY = candidatesRequiredValues
+      val actualCandidates = candidatesRequiredValues
         .filter(candidateRef => {
           val requiredValues = query.requiredValues
           val allValues = candidateRef.allValues
-          !requiredValues.subsetOf(allValues)
-        }).size
-      val (trueTemporalINDs,validationTime) = TimeUtil.executionTimeInMS(validateCandidates(query,candidatesRequiredValues))
+          requiredValues.subsetOf(allValues)
+        })
+      val falsePositivesFromMANY = candidatesRequiredValues.size - actualCandidates.size
+      if(!actualCandidates.contains(query)){
+        println(s"Weird for query ${query.och.compositeID} - not contained in actual candidates")
+      }
+      val (trueTemporalINDs,validationTime) = TimeUtil.executionTimeInMS(validateCandidates(query,actualCandidates.filter(c => c!=query)))
       val truePositiveCount = trueTemporalINDs.size
-      val falsePositiveCountFROMTemporal = candidatesRequiredValues.size-truePositiveCount - falsePositivesFromMANY
+      val falsePositiveCountFROMTemporal = actualCandidates.size-truePositiveCount
       if(falsePositiveCountFROMTemporal<0)
         println()
       trueTemporalINDs.foreach(c => c.toCandidateIDs.appendToWriter(resultPR))

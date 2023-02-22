@@ -10,6 +10,8 @@ class OrderedColumnHistory(val id: String,
                            val pageID: String,
                            val pageTitle: String,
                            val history: OrderedColumnVersionList) extends AbstractOrderedColumnHistory[String] {
+  def compositeID = s"$pageID--$tableId--$id"
+
   def allValues:Set[String] = history
     .versions
     .values
