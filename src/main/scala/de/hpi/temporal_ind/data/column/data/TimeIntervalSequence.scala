@@ -108,7 +108,7 @@ object TimeIntervalSequence{
   def fromSortedStartTimes(startTimes: IndexedSeq[Instant], lastEnd: Instant): TimeIntervalSequence = {
     val withIndex = (startTimes ++ Seq(lastEnd)).zipWithIndex
     new TimeIntervalSequence(withIndex
-      .filter(_._2 != startTimes.size)
+      .withFilter(_._2 != startTimes.size)
       .map { case (s, i) => (s, withIndex(i + 1)._1) })
   }
 

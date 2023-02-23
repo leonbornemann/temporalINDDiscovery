@@ -31,7 +31,7 @@ class SimpleTimeWindowTemporalIND[T <% Ordered[T]](lhs: AbstractOrderedColumnHis
         val lower = t.minus(Duration.ofNanos(deltaInNanos))
         val upper = t.plus(Duration.ofNanos(deltaInNanos).plusNanos(1))
         val values = rhs.valuesInWindow(lower, upper)
-        val allContained = lhsVersion.forall(v => values.contains(v))
+        val allContained = lhsVersion.subsetOf(values)// lhsVersion.forall(v => values.contains(v))
         if (allContained || (useWildcardLogic && rhsIsWildcardOnlyInRange(lower, upper)))
           0
         else
