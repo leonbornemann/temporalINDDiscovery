@@ -18,7 +18,7 @@ object SingleINDDebug extends App {
   val labelled = candidate
     .toCandidate(index,true)
     .toLabelledINDCandidateStatistics("label")
-  labelled.serializeValidityStatistics(pr)
+  labelled.serializeValidityStatistics(pr,None)
   pr.close()
 
 }
