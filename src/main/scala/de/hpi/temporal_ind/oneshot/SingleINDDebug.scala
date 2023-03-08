@@ -20,5 +20,4 @@ object SingleINDDebug extends App {
     .toLabelledINDCandidateStatistics("label")
   labelled.serializeValidityStatistics(pr,None)
   pr.close()
-
 }

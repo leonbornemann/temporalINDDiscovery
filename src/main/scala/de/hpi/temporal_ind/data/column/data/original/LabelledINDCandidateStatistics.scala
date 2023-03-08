@@ -107,7 +107,6 @@ case class LabelledINDCandidateStatistics[T <% Ordered[T]](label:String, candida
         println("and new Variant",shifteNew.absoluteViolationScore)
         println("For RHS ",lhs.pageID,lhs.tableId,lhs.id)
         println("And LHS ",rhs.pageID,rhs.tableId,rhs.id)
-        assert(false)
       }
       if(prTimeStats.isDefined)
         prTimeStats.get.println(s"$timeSimple,$timeNew")
