@@ -17,11 +17,11 @@ class SimpleRelaxedTemporalIND[T <% Ordered[T]](lhs: AbstractOrderedColumnHistor
   override def toString: String = s"SimpleRelaxedTemporalIND(${lhs.id},${rhs.id})"
 
   override def isValid:Boolean = {
-    val violationTimeNanos: Long = absoluteViolationTime
+    val violationTimeNanos: Long = absoluteViolationScore.toLong
     violationTimeNanos <= maxEpsilonInNanos
   }
 
-  def absoluteViolationTime = {
+  def absoluteViolationScore = {
     val violationTimeNanos = validationIntervals.intervals.map { case (s, e) =>
       val dur = TimeUtil.duration(s,e)
       val lhsAtT = lhs.versionAt(s)

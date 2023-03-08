@@ -11,7 +11,11 @@ import java.time.Duration
 
 abstract class TemporalIND[T <% Ordered[T]](lhs: AbstractOrderedColumnHistory[T], rhs: AbstractOrderedColumnHistory[T],validationVariant:ValidationVariant.Value) {
 
-  def absoluteViolationTime: Long
+  def toCandidateIDs = {
+    INDCandidateIDs(lhs.pageID, lhs.tableId, lhs.id, rhs.pageID, rhs.tableId, rhs.id)
+  }
+
+  def absoluteViolationScore: Double
 
   def denominator = {
     validationVariant match {
@@ -24,7 +28,7 @@ abstract class TemporalIND[T <% Ordered[T]](lhs: AbstractOrderedColumnHistory[T]
     }
   }
 
-  def relativeViolationTime() = TimeUtil.toRelativeTimeAmount(absoluteViolationTime,denominator)
+  def relativeViolationTime() = TimeUtil.toRelativeTimeAmount(absoluteViolationScore.toLong,denominator)
 
   def isValid:Boolean
 

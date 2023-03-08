@@ -77,9 +77,9 @@ class WildcardSemanticTest extends AnyFlatSpec{
     GLOBAL_CONFIG.lastInstant = toInstant(100)
     var delta = 10
     val timeShiftedIND = new SimpleTimeWindowTemporalIND(history1,history2,delta,0,true,ValidationVariant.FULL_TIME_PERIOD)
-    assert(timeShiftedIND.absoluteViolationTime == 0)
+    assert(timeShiftedIND.absoluteViolationScore == 0)
     val timeShiftedIND2 = new SimpleTimeWindowTemporalIND(history1,history3,delta,0,true,ValidationVariant.FULL_TIME_PERIOD)
-    assert(timeShiftedIND2.absoluteViolationTime==5)
+    assert(timeShiftedIND2.absoluteViolationScore==5)
   }
 
   "Simple Relaxed IND" should "work correctly using wildcards" in {
@@ -101,9 +101,9 @@ class WildcardSemanticTest extends AnyFlatSpec{
     GLOBAL_CONFIG.earliestInstant = toInstant(0)
     GLOBAL_CONFIG.lastInstant = toInstant(100)
     val relaxedIND = new SimpleRelaxedTemporalIND(history1,history2,0,true,ValidationVariant.FULL_TIME_PERIOD)
-    assert(relaxedIND.absoluteViolationTime == 0)
+    assert(relaxedIND.absoluteViolationScore == 0)
     val relaxedIND2 = new SimpleRelaxedTemporalIND(history1,history3,0,true,ValidationVariant.FULL_TIME_PERIOD)
-    assert(relaxedIND2.absoluteViolationTime==20)
+    assert(relaxedIND2.absoluteViolationScore==20)
   }
 
 }

@@ -30,7 +30,7 @@ class TimeShiftedRelaxedTemporalIND[T <% Ordered[T]](lhs: AbstractOrderedColumnH
     matrix.optimalMapping
   }
 
-  override def absoluteViolationTime: Long = {
+  override def absoluteViolationScore: Double = {
     getOrCeateSolver()
       .optimalMappingCost
   }

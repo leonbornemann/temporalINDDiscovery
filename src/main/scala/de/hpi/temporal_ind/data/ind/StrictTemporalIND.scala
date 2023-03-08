@@ -49,5 +49,5 @@ class StrictTemporalIND[T <% Ordered[T]](lhs: AbstractOrderedColumnHistory[T],
 
   }
 
-  override def absoluteViolationTime: Long = if(isValid) 0 else GLOBAL_CONFIG.totalTimeInNanos
+  override def absoluteViolationScore: Double = if(isValid) 0 else GLOBAL_CONFIG.totalTimeInNanos
 }

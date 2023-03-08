@@ -14,17 +14,13 @@ class SimpleTimeWindowTemporalIND[T <% Ordered[T]](lhs: AbstractOrderedColumnHis
                                                    absoluteEpsilonInNanos:Long,
                                                    useWildcardLogic:Boolean,
                                                    validationVariant:ValidationVariant.Value) extends TemporalIND(lhs,rhs,validationVariant){
-  def toCandidateIDs = {
-    INDCandidateIDs(lhs.pageID,lhs.tableId,lhs.id,rhs.pageID,rhs.tableId,rhs.id)
-  }
-
 
   def rhsIsWildcardOnlyInRange(lower: Instant, upper: Instant): Boolean = {
     val rhsVersions = rhs.versionsInWindow(lower,upper)
     rhsVersions.size==1 && rhs.versionAt(rhsVersions.head).columnNotPresent
   }
 
-  def absoluteViolationTime = {
+  def absoluteViolationScore = {
     val violationTime = relevantTimestamps
       .map { case (t, dur) =>
         val lhsVersion = lhs.versionAt(t).values
@@ -39,6 +35,21 @@ class SimpleTimeWindowTemporalIND[T <% Ordered[T]](lhs: AbstractOrderedColumnHis
       }
       .sum
     violationTime
+  }
+
+  def debugViolationTimes = {
+    relevantTimestamps
+      .map { case (t, dur) =>
+        val lhsVersion = lhs.versionAt(t).values
+        val lower = t.minus(Duration.ofNanos(deltaInNanos))
+        val upper = t.plus(Duration.ofNanos(deltaInNanos).plusNanos(1))
+        val values = rhs.valuesInWindow(lower, upper)
+        val allContained = lhsVersion.subsetOf(values) // lhsVersion.forall(v => values.contains(v))
+        if (allContained || (useWildcardLogic && rhsIsWildcardOnlyInRange(lower, upper)))
+          (t,0)
+        else
+          (t,dur)
+      }.toIndexedSeq
   }
 
   override def toString: String = s"Variant1TemporalIND(${lhs.id},${rhs.id},$deltaInNanos)"
@@ -80,6 +91,6 @@ class SimpleTimeWindowTemporalIND[T <% Ordered[T]](lhs: AbstractOrderedColumnHis
   }
 
   override def isValid: Boolean = {
-    absoluteViolationTime <=absoluteEpsilonInNanos
+    absoluteViolationScore <=absoluteEpsilonInNanos
   }
 }

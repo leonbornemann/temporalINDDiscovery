@@ -21,7 +21,7 @@ class SimpleRelaxedTemporalINDTest extends AnyFlatSpec{
     ))
     GLOBAL_CONFIG.lastInstant = toInstant(40)
     var simpleRelaxedTemporalIND = new SimpleRelaxedTemporalIND(history1,history2,7,false,ValidationVariant.FULL_TIME_PERIOD)
-    assert(simpleRelaxedTemporalIND.absoluteViolationTime==5)
+    assert(simpleRelaxedTemporalIND.absoluteViolationScore==5)
     assert(simpleRelaxedTemporalIND.isValid)
     val history3 = toHistory(Map(
       (1,Set("a","b")),
@@ -31,7 +31,7 @@ class SimpleRelaxedTemporalINDTest extends AnyFlatSpec{
     ))
     simpleRelaxedTemporalIND = new SimpleRelaxedTemporalIND(history1,history3,7,false,ValidationVariant.FULL_TIME_PERIOD)
     assert(!simpleRelaxedTemporalIND.isValid)
-    assert(simpleRelaxedTemporalIND.absoluteViolationTime==17)
+    assert(simpleRelaxedTemporalIND.absoluteViolationScore==17)
   }
 
   "Different Validation Variants Tested" should "work correctly" in {
@@ -54,19 +54,19 @@ class SimpleRelaxedTemporalINDTest extends AnyFlatSpec{
       (47, Set()),
     ))
     var simpleRelaxedTemporalIND = new SimpleRelaxedTemporalIND(history1,history2,7,false,ValidationVariant.FULL_TIME_PERIOD)
-    assert(simpleRelaxedTemporalIND.absoluteViolationTime==1+5+4)
+    assert(simpleRelaxedTemporalIND.absoluteViolationScore==1+5+4)
     assert(simpleRelaxedTemporalIND.denominator==47)
     simpleRelaxedTemporalIND = new SimpleRelaxedTemporalIND(history1,history2,7,false,ValidationVariant.LHS_ONLY)
-    assert(simpleRelaxedTemporalIND.absoluteViolationTime==1+5+4)
+    assert(simpleRelaxedTemporalIND.absoluteViolationScore==1+5+4)
     assert(simpleRelaxedTemporalIND.denominator==10+8+6)
     simpleRelaxedTemporalIND = new SimpleRelaxedTemporalIND(history1, history2, 7, false, ValidationVariant.RHS_ONLY)
-    assert(simpleRelaxedTemporalIND.absoluteViolationTime == 0)
+    assert(simpleRelaxedTemporalIND.absoluteViolationScore == 0)
     assert(simpleRelaxedTemporalIND.denominator==4+8+8)
     simpleRelaxedTemporalIND = new SimpleRelaxedTemporalIND(history1, history2, 7, false, ValidationVariant.LHS_UNION_RHS)
-    assert(simpleRelaxedTemporalIND.absoluteViolationTime == 1 + 5 + 4)
+    assert(simpleRelaxedTemporalIND.absoluteViolationScore == 1 + 5 + 4)
     assert(simpleRelaxedTemporalIND.denominator==10+12+8)
     simpleRelaxedTemporalIND = new SimpleRelaxedTemporalIND(history1, history2, 7, false, ValidationVariant.LHS_INTERSECT_RHS)
-    assert(simpleRelaxedTemporalIND.absoluteViolationTime == 0)
+    assert(simpleRelaxedTemporalIND.absoluteViolationScore == 0)
     assert(simpleRelaxedTemporalIND.denominator==4+4+6)
   }
 

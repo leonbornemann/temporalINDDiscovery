@@ -25,3 +25,5 @@ libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.10" % "test"
 
 // https://mvnrepository.com/artifact/com.google.zetasketch/zetasketch
 libraryDependencies += "com.google.zetasketch" % "zetasketch" % "0.1.0"
+
+libraryDependencies += "org.scala-lang.modules" %% "scala-collection-contrib" % "0.3.0"

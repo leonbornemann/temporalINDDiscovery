@@ -22,5 +22,19 @@ abstract class AbstractColumnVersion[T] {
 }
 
 object AbstractColumnVersion {
+  def getEmpty[T](): AbstractColumnVersion[T] = new AbstractColumnVersion[T] {
+    override def revisionID: String = ""
+
+    override def revisionDate: String = ""
+
+    override def values: Set[T] = Set()
+
+    override def columnNotPresent: Boolean = true
+
+    override def header: Option[String] = None
+
+    override def position: Option[Int] = None
+  }
+
   def INITIALEMPTYID: String = "-1"
 }
