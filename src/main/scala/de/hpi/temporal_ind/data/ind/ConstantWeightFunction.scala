@@ -8,5 +8,7 @@ class ConstantWeightFunction(timeUnit:ChronoUnit) extends TimestampWeightFunctio
 
   override def weight(t: Instant): Double = 1.0
 
-  override def weight(startInclusive: Instant, endExclusive: Instant): Double = timeUnit.between(startInclusive,endExclusive)
+  override def weight(startInclusive: Instant, endExclusive: Instant): Double = 1.0//
+
+  override def summedWeightNanos(startInclusive: Instant, endExclusive: Instant): Double = ChronoUnit.NANOS.between(startInclusive,endExclusive)
 }

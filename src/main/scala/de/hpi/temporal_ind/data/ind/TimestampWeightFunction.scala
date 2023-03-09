@@ -9,4 +9,5 @@ abstract class TimestampWeightFunction(timeUnit:ChronoUnit) {
 
   def weight(startInclusive:Instant,endExclusive:Instant):Double
 
+  def summedWeightNanos(startInclusive: Instant, endExclusive: Instant):Double
 }

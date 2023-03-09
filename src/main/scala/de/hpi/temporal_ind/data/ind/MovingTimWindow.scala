@@ -33,7 +33,7 @@ class MovingTimWindow[T](validationIntervals: Iterable[(Instant, Instant)],
     if(setLHS.subsetOf(setRHS)){
       TimeWindowWithCost(curBegin,curEnd,0.0)
     } else {
-      TimeWindowWithCost(curBegin,curEnd,costFunction.weight(curBegin,curEnd))
+      TimeWindowWithCost(curBegin,curEnd,costFunction.summedWeightNanos(curBegin,curEnd))
     }
   }
 

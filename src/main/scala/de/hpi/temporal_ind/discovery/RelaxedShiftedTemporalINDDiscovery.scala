@@ -9,7 +9,11 @@ import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
 import java.io.{File, PrintWriter}
 import scala.collection.mutable.ArrayBuffer
 
-class RelaxedShiftedTemporalINDDiscovery(sourceDirs: IndexedSeq[File], targetDir: File, epsilon: Double, deltaInNanos: Long,version:String) extends StrictLogging{
+class RelaxedShiftedTemporalINDDiscovery(sourceDirs: IndexedSeq[File],
+                                         targetDir: File,
+                                         epsilon: Double,
+                                         deltaInNanos: Long,
+                                         version:String) extends StrictLogging{
 
   val absoluteEpsilonNanos = (GLOBAL_CONFIG.totalTimeInNanos*epsilon).toLong
 
