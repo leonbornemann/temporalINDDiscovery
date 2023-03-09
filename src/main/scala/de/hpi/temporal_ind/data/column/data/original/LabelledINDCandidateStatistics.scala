@@ -60,6 +60,11 @@ case class LabelledINDCandidateStatistics[T <% Ordered[T]](label:String, candida
           .relativeViolationTime()
         pr.println(s"$idCSVString,$label,timeShiftedExponentialDecay,false,$validationType,$d,$a,$violationTimeNoWildcard")
       })
+      //add alpha 1:
+      val decayFunction = new ConstantWeightFunction(ChronoUnit.DAYS)
+      val violationTimeNoWildcard = new ShifteddRelaxedCustomFunctionTemporalIND[T](lhs, rhs, d, 0, decayFunction, validationType)
+        .relativeViolationTime()
+      pr.println(s"$idCSVString,$label,timeShiftedExponentialDecay,false,$validationType,$d,1,$violationTimeNoWildcard")
     }
   }
 
