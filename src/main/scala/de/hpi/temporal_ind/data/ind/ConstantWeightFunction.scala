@@ -4,7 +4,7 @@ import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
-class ConstantWeightFunction(timeUnit:ChronoUnit) extends TimestampWeightFunction(timeUnit:ChronoUnit) {
+class ConstantWeightFunction() extends TimestampWeightFunction() {
 
   override def weight(t: Instant): Double = 1.0
 

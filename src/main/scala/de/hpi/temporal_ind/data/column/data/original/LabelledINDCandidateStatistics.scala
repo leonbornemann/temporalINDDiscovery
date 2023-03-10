@@ -61,7 +61,7 @@ case class LabelledINDCandidateStatistics[T <% Ordered[T]](label:String, candida
         pr.println(s"$idCSVString,$label,timeShiftedExponentialDecay,false,$validationType,$d,$a,$violationTimeNoWildcard")
       })
       //add alpha 1:
-      val decayFunction = new ConstantWeightFunction(ChronoUnit.DAYS)
+      val decayFunction = new ConstantWeightFunction()
       val violationTimeNoWildcard = new ShifteddRelaxedCustomFunctionTemporalIND[T](lhs, rhs, d, 0, decayFunction, validationType)
         .relativeViolationTime()
       pr.println(s"$idCSVString,$label,timeShiftedExponentialDecay,false,$validationType,$d,1,$violationTimeNoWildcard")
@@ -106,7 +106,7 @@ case class LabelledINDCandidateStatistics[T <% Ordered[T]](label:String, candida
     //serializeTimeShiftedComplexRelaxedIND(pr,deltas)
     deltas.foreach(d => {
       val (simpleRelaxed,timeSimple) = TimeUtil.executionTimeInMS(new SimpleTimeWindowTemporalIND(lhs,rhs,d,0,false,ValidationVariant.FULL_TIME_PERIOD))
-      val (shifteNew,timeNew) = TimeUtil.executionTimeInMS(new ShifteddRelaxedCustomFunctionTemporalIND(lhs,rhs,d,0,new ConstantWeightFunction(ChronoUnit.DAYS),ValidationVariant.FULL_TIME_PERIOD))
+      val (shifteNew,timeNew) = TimeUtil.executionTimeInMS(new ShifteddRelaxedCustomFunctionTemporalIND(lhs,rhs,d,0,new ConstantWeightFunction(),ValidationVariant.FULL_TIME_PERIOD))
       if(!(shifteNew.absoluteViolationScore == simpleRelaxed.absoluteViolationScore)){
         println("Difference between simpleRelaxed",simpleRelaxed.absoluteViolationScore)
         println("and new Variant",shifteNew.absoluteViolationScore)

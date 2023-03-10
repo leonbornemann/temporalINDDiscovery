@@ -4,7 +4,7 @@ import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
-class ExponentialDecayWeightFunction(a:Double,timeUnit:ChronoUnit) extends TimestampWeightFunction(timeUnit) {
+class ExponentialDecayWeightFunction(a:Double,timeUnit:ChronoUnit) extends TimestampWeightFunction() {
 
   val maxTimestamp = timeUnit.between(GLOBAL_CONFIG.earliestInstant,GLOBAL_CONFIG.lastInstant)
 

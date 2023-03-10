@@ -2,7 +2,7 @@ package de.hpi.temporal_ind.data.column.data
 
 import de.hpi.temporal_ind.util.Util
 
-abstract class AbstractColumnVersion[T] {
+abstract class AbstractColumnVersion[T] extends Serializable{
 
   if(columnNotPresent)
     assert(values.isEmpty)

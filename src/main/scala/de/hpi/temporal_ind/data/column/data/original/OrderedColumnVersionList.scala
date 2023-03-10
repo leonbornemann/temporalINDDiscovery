@@ -7,7 +7,7 @@ import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
 import java.time.Instant
 import scala.collection.mutable
 
-class OrderedColumnVersionList(val versions : mutable.TreeMap[Instant, _ <: AbstractColumnVersion[String]]) extends AbstractOrderdColumnVersionList[String]{
+class OrderedColumnVersionList(val versions : mutable.TreeMap[Instant, _ <: AbstractColumnVersion[String]]) extends AbstractOrderdColumnVersionList[String] with Serializable{
 
   def versionsSorted= versions.toIndexedSeq.sortBy(_._1).map(_._2)
 
