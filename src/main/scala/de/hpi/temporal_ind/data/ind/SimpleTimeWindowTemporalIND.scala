@@ -68,7 +68,7 @@ class SimpleTimeWindowTemporalIND[T <% Ordered[T]](lhs: AbstractOrderedColumnHis
       val endFromList = if(i==eventTimestampList.size-1) GLOBAL_CONFIG.lastInstant else eventTimestampList(i+1)._1
       if(validationIntervalsMap.contains(t)){
         val end = Seq(validationIntervalsMap(t)._2,endFromList).min
-        Some((t,TimeUtil.duration(t,end)))
+        Some((t,TimeUtil.durationNanos(t,end)))
       } else if(validationIntervalsMap.maxBefore(t).isEmpty){
         None
       } else {
@@ -80,7 +80,7 @@ class SimpleTimeWindowTemporalIND[T <% Ordered[T]](lhs: AbstractOrderedColumnHis
             println()
           assert(t.isAfter(intervalBefore._1) && t.isBefore(intervalBefore._2))
           val end = Seq(intervalBefore._2,endFromList).min
-          Some((t,TimeUtil.duration(t,end)))
+          Some((t,TimeUtil.durationNanos(t,end)))
         }
       }
     }}

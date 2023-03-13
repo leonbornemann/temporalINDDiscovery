@@ -17,7 +17,7 @@ class OrderedColumnVersionList(val versions : mutable.TreeMap[Instant, _ <: Abst
     val peekableVersionIterator = new PeekableIterator(versions.keysIterator)
     peekableVersionIterator.foreach{case v => {
       val nextTimestamp = peekableVersionIterator.peek.getOrElse(GLOBAL_CONFIG.lastInstant)
-      val duration = TimeUtil.duration(v,nextTimestamp)
+      val duration = TimeUtil.durationNanos(v,nextTimestamp)
       versions(v).values
         .foreach(v => valueToLifetime(v) = valueToLifetime.getOrElseUpdate(v,0) + duration)
     }}

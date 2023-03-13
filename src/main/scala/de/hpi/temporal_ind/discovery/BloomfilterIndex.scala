@@ -3,7 +3,7 @@ package de.hpi.temporal_ind.discovery
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.temporal_ind.data.ind.variant4.TimeUtil
 import de.metanome.algorithm_integration.result_receiver.InclusionDependencyResultReceiver
-import de.metanome.algorithms.many.bitvectors.BitVector
+import de.metanome.algorithms.many.bitvectors.{BitVector, LongArrayBitVector}
 import de.metanome.algorithms.many.driver.SynchronizedDiscInclusionDependencyResultReceiver
 import de.metanome.algorithms.many.{Column, INDDetectionWorker, INDDetectionWorkerQuery, MANY}
 
@@ -11,7 +11,7 @@ import java.io.PrintWriter
 import java.util
 import collection.JavaConverters._
 class BloomfilterIndex(input: IndexedSeq[EnrichedColumnHistory],
-                       generateValueSet:(EnrichedColumnHistory => Set[String])) extends StrictLogging{
+                       generateValueSet:(EnrichedColumnHistory => collection.Set[String])) extends StrictLogging{
   val outFile = "/home/leon/data/temporalINDDiscovery/wikipedia/discovery/testOutput/test.txt"
   val many = new MANY()
 
@@ -61,25 +61,41 @@ class BloomfilterIndex(input: IndexedSeq[EnrichedColumnHistory],
     columns
   }
 
-  def query(q:EnrichedColumnHistory, getQueryValueSet:(EnrichedColumnHistory => Set[String])) = {
-    val queryValueSet:Set[String] = getQueryValueSet(q)
-    val querySig = many.applyBloomfilter(queryValueSet.asJava)
-    val worker = new INDDetectionWorkerQuery(many,querySig,  0)
-    try {
-      val res = worker.executeQuery()
-      val candidates = bitVectorToColumns(res)
-      candidates
-    } catch {
-      case e:Throwable => {
-        e.printStackTrace()
-        println(queryValueSet)
-        println(querySig.size())
-        println(many.getBitMatrix.size())
-        println(s"LHS: ${q.och.tableId + "__" + q.och.pageID + "__" + q.och.id}")
-        assert(false)
-        collection.mutable.ArrayBuffer[EnrichedColumnHistory]()
+  def validateContainment(queryValueSet: collection.Set[String],
+                          res: BitVector[_]) = {
+    var curColumnIndex = res.next(0)
+    val toSetTo0 = collection.mutable.ArrayBuffer[Int]()
+    while (curColumnIndex != -1) {
+      val curCol = input(curColumnIndex)
+      if(!queryValueSet.subsetOf(generateValueSet(curCol))){
+        toSetTo0 += curColumnIndex
       }
+      curColumnIndex = res.next(curColumnIndex)
     }
+    toSetTo0.foreach(i => res.clear(i))
+  }
+
+  def queryWithBitVectorResult(q:EnrichedColumnHistory,
+                               getQueryValueSet:(EnrichedColumnHistory => collection.Set[String]),
+                               preFilteredCandidates:Option[BitVector[_]] = None,
+                               validate:Boolean=true) = {
+    val queryValueSet: collection.Set[String] = getQueryValueSet(q)
+    val querySig = many.applyBloomfilter(queryValueSet.asJava)
+    val worker = new INDDetectionWorkerQuery(many, querySig, 0)
+    val res = if (preFilteredCandidates.isDefined)
+      worker.executeQuery(preFilteredCandidates.get)
+    else
+      worker.executeQuery()
+    if(validate){
+      validateContainment(queryValueSet,res)
+    }
+    res
+  }
+
+  def query(q:EnrichedColumnHistory, getQueryValueSet:(EnrichedColumnHistory => Set[String])) = {
+    val res = queryWithBitVectorResult(q,getQueryValueSet)
+    val candidates = bitVectorToColumns(res)
+    candidates
   }
 
 //  TimeUtil.logRuntime(timeWorker,"ms","Single Worker Execution For Value Set containment")

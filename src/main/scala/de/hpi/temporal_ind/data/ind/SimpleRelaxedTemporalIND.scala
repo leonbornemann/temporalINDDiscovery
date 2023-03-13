@@ -23,7 +23,7 @@ class SimpleRelaxedTemporalIND[T <% Ordered[T]](lhs: AbstractOrderedColumnHistor
 
   def absoluteViolationScore = {
     val violationTimeNanos = validationIntervals.intervals.map { case (s, e) =>
-      val dur = TimeUtil.duration(s,e)
+      val dur = TimeUtil.durationNanos(s,e)
       val lhsAtT = lhs.versionAt(s)
       val rhsAtT = rhs.versionAt(s)
       val isValid = lhsAtT.values.forall(v => rhsAtT.values.contains(v)) || (rhsAtT.isDelete && useWildcardLogic)

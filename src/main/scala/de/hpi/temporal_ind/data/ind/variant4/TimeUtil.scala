@@ -32,7 +32,7 @@ object TimeUtil extends StrictLogging{
     (nanos / nanosPerDay) / (totalTime / nanosPerDay).toDouble
   }
 
-  def duration(s:Instant,e:Instant) = {
+  def durationNanos(s:Instant, e:Instant) = {
     ChronoUnit.NANOS.between(s, e)
   }
 
@@ -44,7 +44,7 @@ object TimeUtil extends StrictLogging{
     val withDuration = withIndex
       .map { case (t, i) =>
         val end = if (i == withIndex.size - 1) GLOBAL_CONFIG.lastInstant else withIndex(i + 1)._1
-        (t, duration(t,end))
+        (t, durationNanos(t,end))
       }
     withDuration
   }

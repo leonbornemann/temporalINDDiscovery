@@ -1,9 +1,25 @@
 package de.hpi.temporal_ind.data.wikipedia
 
+import de.hpi.temporal_ind.data.ind.variant4.TimeUtil
+
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
 object GLOBAL_CONFIG {
+  def partitionTimePeriodIntoSlices(sliceSizeNanos: Long) = {
+    val numSlices = Math.ceil(TimeUtil.durationNanos(earliestInstant,lastInstant)/sliceSizeNanos.toDouble).toLong
+    (0L until numSlices)
+      .map(i => {
+        val begin = GLOBAL_CONFIG.earliestInstant.plusNanos(i * sliceSizeNanos)
+        val end = Seq(GLOBAL_CONFIG.earliestInstant.plusNanos(i * (sliceSizeNanos + 1)),GLOBAL_CONFIG.lastInstant).min
+        (begin, end)
+      })
+  }
+
+  def getAllTimeSlices() = {
+
+  }
+
   def totalTimeInNanos = ChronoUnit.NANOS.between(earliestInstant,lastInstant)
   def totalTimeInDays = ChronoUnit.DAYS.between(earliestInstant,lastInstant)
 

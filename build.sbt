@@ -29,4 +29,5 @@ libraryDependencies += "com.google.zetasketch" % "zetasketch" % "0.1.0"
 libraryDependencies += "org.scala-lang.modules" %% "scala-collection-contrib" % "0.3.0"
 
 // https://mvnrepository.com/artifact/de.ruedigermoeller/fst
-libraryDependencies += "de.ruedigermoeller" % "fst" % "3.0.4-jdk17"
+libraryDependencies += "de.ruedigermoeller" % "fst" % "3.0.3"
+
