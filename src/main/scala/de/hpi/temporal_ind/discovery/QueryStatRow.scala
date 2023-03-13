@@ -2,15 +2,15 @@ package de.hpi.temporal_ind.discovery
 
 import java.time.Instant
 
-case class QueryStatRow(queryNumber: Int, query: EnrichedColumnHistory, timeInMS: Double, queryType: String, inputSize: Int, outputSize: Int, begin: Some[Instant], end: Some[Instant],indexOrder:Option[Int]) {
+case class QueryStatRow(queryNumber: Int, query: EnrichedColumnHistory, timeInMS: Double, indexType: String, inputSize: Int, outputSize: Int, begin: Option[Instant], end: Option[Instant], indexOrder:Option[Int]) {
 
   def toCSVLine() = {
     Seq(queryNumber,
       query.och.pageID,
       query.och.tableId,
       query.och.id,
+      indexType,
       timeInMS,
-      queryType,
       inputSize,
       outputSize,
       begin.getOrElse("None"),
@@ -21,5 +21,5 @@ case class QueryStatRow(queryNumber: Int, query: EnrichedColumnHistory, timeInMS
 }
 object QueryStatRow {
 
-  def schema = s"queryNumber,pageID,tableID,id,timeInMS,inputSize,outputSize,begin,end,indexOrder"
+  def schema = s"queryNumber,pageID,tableID,id,indexType,timeInMS,inputSize,outputSize,begin,end,indexOrder"
 }

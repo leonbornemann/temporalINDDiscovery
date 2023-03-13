@@ -5,6 +5,7 @@ import de.hpi.temporal_ind.data.column.data.original.{OrderedColumnHistory, Vali
 import de.hpi.temporal_ind.data.ind.{ConstantWeightFunction, ShifteddRelaxedCustomFunctionTemporalIND, SimpleTimeWindowTemporalIND}
 import de.hpi.temporal_ind.data.ind.variant4.TimeUtil
 import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
+import de.metanome.algorithms.many.bitvectors.BitVector
 import org.json4s.scalap.scalasig.ClassFileParser.byte
 import org.nustaq.serialization.{FSTConfiguration, FSTObjectInput, FSTObjectOutput}
 import org.nustaq.serialization.util.FSTOutputStream
@@ -138,30 +139,32 @@ class RelaxedShiftedTemporalINDDiscovery(val sourceDirs: IndexedSeq[File],
     validationStatsPR.close()
   }
 
+  def queryTimeSliceIndices(candidatesRequiredValues: BitVector[_], timeSliceIndices: Map[(Instant, Instant), BloomfilterIndex], query: EnrichedColumnHistory, queryNumber: Int) = {
+    var curCandidates = candidatesRequiredValues
+    val queryTimesSlices = collection.mutable.ArrayBuffer[Double]()
+    timeSliceIndices
+      .zipWithIndex
+      .foreach { case (((begin, end), index), indexOrder) => {
+        val candidateCountBefore = curCandidates.count()
+        val (candidatesIndexSlice, queryTimeSlice) = TimeUtil.executionTimeInMS(index.queryWithBitVectorResult(query,
+          (e: EnrichedColumnHistory) => e.och.valuesInWindow(begin, end),
+          Some(curCandidates), true))
+        curCandidates = candidatesIndexSlice
+        val candidateCountAfter = curCandidates.count()
+        queryTimesSlices += queryTimeSlice
+        val queryStatRow = new QueryStatRow(queryNumber, query, queryTimeSlice, "Time Slice", candidateCountBefore, candidateCountAfter, Some(begin), Some(end), Some(indexOrder))
+        indexQueryStatsPR.println(queryStatRow.toCSVLine())
+      }
+      }
+    curCandidates
+  }
 
   private def qeuryAll(historiesEnriched: ColumnHistoryStorage,
                        entireValuesetIndex:BloomfilterIndex,
                        timeSliceIndices:Map[(Instant,Instant),BloomfilterIndex]): Unit = {
     historiesEnriched.histories.zipWithIndex.foreach{case (query,queryNumber) => {
-      val (candidatesRequiredValues, queryTime) = TimeUtil.executionTimeInMS(entireValuesetIndex.queryWithBitVectorResult(query,
-        ((e: EnrichedColumnHistory) => e.requiredValues),
-        None,
-        true))
-      var curCandidates = candidatesRequiredValues
-      val queryTimesSlices = collection.mutable.ArrayBuffer[Double]()
-      timeSliceIndices
-        .zipWithIndex
-        .foreach{case (((begin,end),index),indexOrder) => {
-        val candidateCountBefore = curCandidates.count()
-        val ( candidatesIndexSlice, queryTimeSlice) = TimeUtil.executionTimeInMS(index.queryWithBitVectorResult(query,
-          (e:EnrichedColumnHistory) => e.och.valuesInWindow(begin,end),
-          Some(curCandidates),true))
-        curCandidates = candidatesIndexSlice
-        val candidateCountAfter = curCandidates.count()
-        queryTimesSlices+=queryTimeSlice
-        val queryStatRow = new QueryStatRow(queryNumber,query,queryTimeSlice,"Time Slice",candidateCountBefore,candidateCountAfter,Some(begin),Some(end),Some(indexOrder))
-        indexQueryStatsPR.println(queryStatRow.toCSVLine())
-      }}
+      val candidatesRequiredValues: BitVector[_] = queryRequiredValuesIndex(historiesEnriched, entireValuesetIndex, query, queryNumber)
+      val curCandidates = queryTimeSliceIndices(candidatesRequiredValues,timeSliceIndices,query,queryNumber)
       val candidateLineages = entireValuesetIndex.bitVectorToColumns(curCandidates) //does not matter which index transforms it back because all have them in the same order
         .filter(_ != query)
       val (validationTime,truePositiveCount) = validate(query, candidateLineages)
@@ -176,6 +179,16 @@ class RelaxedShiftedTemporalINDDiscovery(val sourceDirs: IndexedSeq[File],
         version)
       validationStatsPR.println(validationStatRow.toCSVLine)
     }}
+  }
+
+  private def queryRequiredValuesIndex(historiesEnriched: ColumnHistoryStorage, entireValuesetIndex: BloomfilterIndex, query: EnrichedColumnHistory, queryNumber: Int) = {
+    val (candidatesRequiredValues, queryTime) = TimeUtil.executionTimeInMS(entireValuesetIndex.queryWithBitVectorResult(query,
+      ((e: EnrichedColumnHistory) => e.requiredValues),
+      None,
+      true))
+    val queryStatRow = new QueryStatRow(queryNumber, query, queryTime, "Required Values", historiesEnriched.histories.size * (historiesEnriched.histories.size + 1) / 2, candidatesRequiredValues.size(), None, None, Some(-1))
+    indexQueryStatsPR.println(queryStatRow.toCSVLine())
+    candidatesRequiredValues
   }
 
   private def validate(query: EnrichedColumnHistory, actualCandidates: ArrayBuffer[EnrichedColumnHistory]) = {

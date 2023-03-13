@@ -9,7 +9,7 @@ assemblyMergeStrategy in assembly := {
   case PathList("META-INF", xs @ _*) => MergeStrategy.discard
   case x => MergeStrategy.first
 }
-javacOptions ++= Seq("-source", "1.8", "-target", "1.8")
+javacOptions ++= Seq("-source", "1.8", "-target", "1.8", "-Xlint")
 
 // https://mvnrepository.com/artifact/org.json4s/json4s-jackson
 libraryDependencies += "org.json4s" %% "json4s-jackson" % "3.7.0-M4"
@@ -28,8 +28,8 @@ libraryDependencies += "com.google.zetasketch" % "zetasketch" % "0.1.0"
 
 libraryDependencies += "org.scala-lang.modules" %% "scala-collection-contrib" % "0.3.0"
 
-//// https://mvnrepository.com/artifact/de.ruedigermoeller/fst
-//libraryDependencies += "de.ruedigermoeller" % "fst" % "3.0.3"
 // https://mvnrepository.com/artifact/de.ruedigermoeller/fst
-libraryDependencies += "de.ruedigermoeller" % "fst" % "2.57"
+libraryDependencies += "de.ruedigermoeller" % "fst" % "3.0.3"
+//// https://mvnrepository.com/artifact/de.ruedigermoeller/fst
+//libraryDependencies += "de.ruedigermoeller" % "fst" % "2.57"
 
