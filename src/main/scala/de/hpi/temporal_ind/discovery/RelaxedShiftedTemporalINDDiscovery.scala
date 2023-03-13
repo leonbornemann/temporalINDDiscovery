@@ -28,7 +28,7 @@ class RelaxedShiftedTemporalINDDiscovery(val sourceDirs: IndexedSeq[File],
   val validationStatsPR = new PrintWriter(targetDir + "/validationStats.csv")
   val statsPROtherTimes = new PrintWriter(targetDir + "/discoveryStatTimes.csv")
   indexQueryStatsPR.println(QueryStatRow.schema)
-  indexQueryStatsPR.println(ValidationStatRow.schema)
+  validationStatsPR.println(ValidationStatRow.schema)
 
   def loadHistories() =
     sourceDirs
@@ -141,6 +141,7 @@ class RelaxedShiftedTemporalINDDiscovery(val sourceDirs: IndexedSeq[File],
         indexQueryStatsPR.println(queryStatRow.toCSVLine())
       }}
       val candidateLineages = entireValuesetIndex.bitVectorToColumns(curCandidates) //does not matter which index transforms it back because all have them in the same order
+        .filter(_ != query)
       val (validationTime,truePositiveCount) = validate(query, candidateLineages)
       val validationStatRow = ValidationStatRow(queryNumber,
         query.och.activeRevisionURLAtTimestamp(GLOBAL_CONFIG.lastInstant),
@@ -156,10 +157,7 @@ class RelaxedShiftedTemporalINDDiscovery(val sourceDirs: IndexedSeq[File],
   }
 
   private def validate(query: EnrichedColumnHistory, actualCandidates: ArrayBuffer[EnrichedColumnHistory]) = {
-    if (!actualCandidates.contains(query)) {
-      println(s"Weird for query ${query.och.compositeID} - not contained in actual candidates")
-    }
-    val (trueTemporalINDs, validationTime) = TimeUtil.executionTimeInMS(validateCandidates(query, actualCandidates.filter(c => c != query)))
+    val (trueTemporalINDs, validationTime) = TimeUtil.executionTimeInMS(validateCandidates(query,actualCandidates))
     val truePositiveCount = trueTemporalINDs.size
     trueTemporalINDs.foreach(c => c.toCandidateIDs.appendToWriter(resultPR))
     (validationTime,truePositiveCount)

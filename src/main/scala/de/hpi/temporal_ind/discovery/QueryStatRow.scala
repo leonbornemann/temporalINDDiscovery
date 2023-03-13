@@ -21,5 +21,5 @@ case class QueryStatRow(queryNumber: Int, query: EnrichedColumnHistory, timeInMS
 }
 object QueryStatRow {
 
-  def schema = s"queryNumber,pageID,tableID,id,timeInMS,inputSize,outputSize,begin,end"
+  def schema = s"queryNumber,pageID,tableID,id,timeInMS,inputSize,outputSize,begin,end,indexOrder"
 }
