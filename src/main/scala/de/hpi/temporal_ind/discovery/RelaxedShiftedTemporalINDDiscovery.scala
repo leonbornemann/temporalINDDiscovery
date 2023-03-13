@@ -100,8 +100,30 @@ class RelaxedShiftedTemporalINDDiscovery(val sourceDirs: IndexedSeq[File],
     }}.toMap
   }
 
+  def testBinaryLoading(histories:IndexedSeq[OrderedColumnHistory]) = {
+    serializeAsBinary(histories, targetFileBinary)
+    println(histories.size)
+    val (historiesFromBinary,timeLoadingBinary) = TimeUtil.executionTimeInMS(loadAsBinary(targetFileBinary))
+    statsPROtherTimes.println(s"Data Loading Binary,$timeLoadingBinary")
+    println(s"Data Loading Binary,$timeLoadingBinary")
+    assert(historiesFromBinary.size == histories.size)
+    historiesFromBinary.zip(histories).foreach { case (h1, h2) => {
+      assert(h1.id == h2.id)
+      assert(h1.tableId == h2.tableId)
+      assert(h1.pageID == h2.pageID)
+      assert(h1.pageTitle == h2.pageTitle)
+      assert(h1.history.versions == h2.history.versions)
+    }
+    }
+    println("Check successful, binary file intact")
+  }
+
   def runDiscovery() = {
-    val historiesEnriched: ColumnHistoryStorage = loadData()
+    val (histories,timeLoadingJson) = TimeUtil.executionTimeInMS(loadData())
+    statsPROtherTimes.println(s"Data Loading Json,$timeLoadingJson")
+    println(s"Data Loading Json,$timeLoadingJson")
+    testBinaryLoading(histories)
+    val historiesEnriched = enrichWithHistory(histories)
     //required values index:
     val (indexEntireValueset,timeIndexBuild) = TimeUtil.executionTimeInMS(getIndexForEntireValueset(historiesEnriched))
     statsPROtherTimes.println(s"Index Build,$timeIndexBuild")
@@ -166,21 +188,7 @@ class RelaxedShiftedTemporalINDDiscovery(val sourceDirs: IndexedSeq[File],
   private def loadData() = {
     val (histories, timeDataLoading) = TimeUtil.executionTimeInMS(loadHistories())
     statsPROtherTimes.println(s"Data Loading,$timeDataLoading")
-    serializeAsBinary(histories, targetFileBinary)
-    println(histories.size)
-    val historiesFromBinary = loadAsBinary(targetFileBinary)
-    assert(historiesFromBinary.size == histories.size)
-    historiesFromBinary.zip(histories).foreach { case (h1, h2) => {
-      assert(h1.id == h2.id)
-      assert(h1.tableId == h2.tableId)
-      assert(h1.pageID == h2.pageID)
-      assert(h1.pageTitle == h2.pageTitle)
-      assert(h1.history.versions == h2.history.versions)
-    }
-    }
-    println("Check successful, binary file intact")
-    val historiesEnriched = enrichWithHistory(histories)
-    historiesEnriched
+    histories
   }
 
   def discover() = {
