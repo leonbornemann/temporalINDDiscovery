@@ -130,9 +130,10 @@ class RelaxedShiftedTemporalINDDiscovery(val sourceDirs: IndexedSeq[File],
     val (timeSliceIndices,indexBuildTimes) = buildTimeSliceIndices(historiesEnriched,statsPROtherTimes,numTimeSliceIndicesList.max)
     statsPROtherTimes.close()
     //query all:
+    val sample = random.shuffle(historiesEnriched.histories.zipWithIndex).take(sampleSize)
     numTimeSliceIndicesList.foreach(numTimeSliceIndices => {
       logger.debug(s"Processing $numTimeSliceIndices")
-      val (totalQueryTime,totalSubsetValidationTime,totalTemporalValidationTime) =  qeuryAll(historiesEnriched,sampleSize,indexEntireValueset,timeSliceIndices.take(numTimeSliceIndices))
+      val (totalQueryTime,totalSubsetValidationTime,totalTemporalValidationTime) =  qeuryAll(historiesEnriched,sample,indexEntireValueset,timeSliceIndices.take(numTimeSliceIndices))
       val totalResultSTatsLine = TotalResultStats(numTimeSliceIndices,dataLoadingTimeMS,requirecValuesIndexBuildTime,indexBuildTimes.take(numTimeSliceIndices).sum,totalQueryTime,totalSubsetValidationTime,totalTemporalValidationTime)
       totalResultsStats.println(totalResultSTatsLine.toCSV)
       totalResultsStats.flush()
@@ -168,10 +169,10 @@ class RelaxedShiftedTemporalINDDiscovery(val sourceDirs: IndexedSeq[File],
   }
 
   private def qeuryAll(historiesEnriched: ColumnHistoryStorage,
-                       sampleSize:Int,
+                       sample:IndexedSeq[(EnrichedColumnHistory,Int)],
                        entireValuesetIndex:BloomfilterIndex,
                        timeSliceIndices:Map[(Instant,Instant),BloomfilterIndex]) = {
-    val queryAndValidationAndTemporalValidationTimes = random.shuffle(historiesEnriched.histories.zipWithIndex).take(sampleSize).map{case (query,queryNumber) => {
+    val queryAndValidationAndTemporalValidationTimes = sample.map{case (query,queryNumber) => {
       val (candidatesRequiredValues, queryTimeRQValues) = queryRequiredValuesIndex(historiesEnriched, entireValuesetIndex, query, queryNumber)
       val (curCandidates, queryTimeIndexTimeSlice) = queryTimeSliceIndices(candidatesRequiredValues,timeSliceIndices,query,queryNumber)
       //validate curCandidates after all candidates have already been pruned
