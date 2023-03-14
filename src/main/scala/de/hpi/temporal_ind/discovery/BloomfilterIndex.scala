@@ -11,7 +11,8 @@ import java.io.PrintWriter
 import java.util
 import collection.JavaConverters._
 class BloomfilterIndex(input: IndexedSeq[EnrichedColumnHistory],
-                       generateValueSet:(EnrichedColumnHistory => collection.Set[String])) extends StrictLogging{
+                       generateValueSet:(EnrichedColumnHistory => collection.Set[String]),
+                       generateQueryValueSet:(EnrichedColumnHistory => collection.Set[String])) extends StrictLogging{
   val outFile = "/home/leon/data/temporalINDDiscovery/wikipedia/discovery/testOutput/test.txt"
   val many = new MANY()
 
@@ -61,7 +62,11 @@ class BloomfilterIndex(input: IndexedSeq[EnrichedColumnHistory],
     columns
   }
 
-  def validateContainment(queryValueSet: collection.Set[String],
+  def validateContainment(query:EnrichedColumnHistory,res:BitVector[_]) = {
+    validateContainmentOfSet(generateQueryValueSet(query),res)
+  }
+
+  def validateContainmentOfSet(queryValueSet: collection.Set[String],
                           res: BitVector[_]) = {
     var curColumnIndex = res.next(0)
     val toSetTo0 = collection.mutable.ArrayBuffer[Int]()
@@ -76,11 +81,10 @@ class BloomfilterIndex(input: IndexedSeq[EnrichedColumnHistory],
   }
 
   def queryWithBitVectorResult(q:EnrichedColumnHistory,
-                               getQueryValueSet:(EnrichedColumnHistory => collection.Set[String]),
                                preFilteredCandidates:Option[BitVector[_]] = None,
                                validate:Boolean=true) = {
     val ((res,queryValueSet),queryTime) = TimeUtil.executionTimeInMS({
-      val queryValueSet: collection.Set[String] = getQueryValueSet(q)
+      val queryValueSet: collection.Set[String] = generateQueryValueSet(q)
       val querySig = many.applyBloomfilter(queryValueSet.asJava)
       val worker = new INDDetectionWorkerQuery(many, querySig, 0)
       val res = if (preFilteredCandidates.isDefined)
@@ -92,15 +96,15 @@ class BloomfilterIndex(input: IndexedSeq[EnrichedColumnHistory],
     })
 
     val validationTime = if(validate){
-      TimeUtil.executionTimeInMS(validateContainment(queryValueSet,res))._2
+      TimeUtil.executionTimeInMS(validateContainment(q,res))._2
     } else {
       0.0
     }
     (res,queryTime,validationTime)
   }
 
-  def query(q:EnrichedColumnHistory, getQueryValueSet:(EnrichedColumnHistory => Set[String])) = {
-    val res = queryWithBitVectorResult(q,getQueryValueSet)
+  def query(q:EnrichedColumnHistory) = {
+    val res = queryWithBitVectorResult(q)
     val candidates = bitVectorToColumns(res._1)
     candidates
   }
