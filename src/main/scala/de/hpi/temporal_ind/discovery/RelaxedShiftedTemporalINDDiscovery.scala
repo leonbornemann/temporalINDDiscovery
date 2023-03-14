@@ -198,7 +198,9 @@ class RelaxedShiftedTemporalINDDiscovery(val sourceDirs: IndexedSeq[File],
         timeSliceIndices.size,
         queryTimeRQValues+queryTimeIndexTimeSlice,
         subsetValidationTime,
-        validationTime
+        validationTime,
+        candidateLineages.size,
+        truePositiveCount
         ) //TODO: append this to a writer,
       individualStats.println(individualStatLine.toCSVLine)
       (queryTimeRQValues+queryTimeIndexTimeSlice,subsetValidationTime,validationTime)
