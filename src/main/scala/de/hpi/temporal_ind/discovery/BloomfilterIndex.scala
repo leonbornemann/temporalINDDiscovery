@@ -79,22 +79,29 @@ class BloomfilterIndex(input: IndexedSeq[EnrichedColumnHistory],
                                getQueryValueSet:(EnrichedColumnHistory => collection.Set[String]),
                                preFilteredCandidates:Option[BitVector[_]] = None,
                                validate:Boolean=true) = {
-    val queryValueSet: collection.Set[String] = getQueryValueSet(q)
-    val querySig = many.applyBloomfilter(queryValueSet.asJava)
-    val worker = new INDDetectionWorkerQuery(many, querySig, 0)
-    val res = if (preFilteredCandidates.isDefined)
-      worker.executeQuery(preFilteredCandidates.get)
-    else
-      worker.executeQuery()
-    if(validate){
-      validateContainment(queryValueSet,res)
+    val ((res,queryValueSet),queryTime) = TimeUtil.executionTimeInMS({
+      val queryValueSet: collection.Set[String] = getQueryValueSet(q)
+      val querySig = many.applyBloomfilter(queryValueSet.asJava)
+      val worker = new INDDetectionWorkerQuery(many, querySig, 0)
+      val res = if (preFilteredCandidates.isDefined)
+        worker.executeQuery(preFilteredCandidates.get)
+      else {
+        worker.executeQuery()
+      }
+      (res,queryValueSet)
+    })
+
+    val validationTime = if(validate){
+      TimeUtil.executionTimeInMS(validateContainment(queryValueSet,res))._2
+    } else {
+      0.0
     }
-    res
+    (res,queryTime,validationTime)
   }
 
   def query(q:EnrichedColumnHistory, getQueryValueSet:(EnrichedColumnHistory => Set[String])) = {
     val res = queryWithBitVectorResult(q,getQueryValueSet)
-    val candidates = bitVectorToColumns(res)
+    val candidates = bitVectorToColumns(res._1)
     candidates
   }
 

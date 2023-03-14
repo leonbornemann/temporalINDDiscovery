@@ -19,5 +19,5 @@ object DiscoveryMain extends App {
   val deltaInDays = args(4).toLong
   val version = "0.3" //TODO: update this if discovery algorithm changes!
   val relaxedShiftedTemporalINDDiscovery = new RelaxedShiftedTemporalINDDiscovery(sourceDirs,targetFileBinary,targetDir,epsilon,TimeUtil.nanosPerDay*deltaInDays,version)
-  relaxedShiftedTemporalINDDiscovery.discover()
+  relaxedShiftedTemporalINDDiscovery.discover(IndexedSeq(0,1,2,3,4,5,6,7,8,9,10,15,20))
 }
