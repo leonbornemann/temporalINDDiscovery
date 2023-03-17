@@ -26,7 +26,7 @@ class SimpleTimeWindowTemporalIND[T <% Ordered[T]](lhs: AbstractOrderedColumnHis
         val lhsVersion = lhs.versionAt(t).values
         val lower = t.minus(Duration.ofNanos(deltaInNanos))
         val upper = t.plus(Duration.ofNanos(deltaInNanos).plusNanos(1))
-        val values = rhs.valuesInWindow(lower, upper)
+        val values = rhs.versionTimestampsInWindow(lower, upper)
         val allContained = lhsVersion.subsetOf(values)// lhsVersion.forall(v => values.contains(v))
         if (allContained || (useWildcardLogic && rhsIsWildcardOnlyInRange(lower, upper)))
           0
@@ -43,7 +43,7 @@ class SimpleTimeWindowTemporalIND[T <% Ordered[T]](lhs: AbstractOrderedColumnHis
         val lhsVersion = lhs.versionAt(t).values
         val lower = t.minus(Duration.ofNanos(deltaInNanos))
         val upper = t.plus(Duration.ofNanos(deltaInNanos).plusNanos(1))
-        val values = rhs.valuesInWindow(lower, upper)
+        val values = rhs.versionTimestampsInWindow(lower, upper)
         val allContained = lhsVersion.subsetOf(values) // lhsVersion.forall(v => values.contains(v))
         if (allContained || (useWildcardLogic && rhsIsWildcardOnlyInRange(lower, upper)))
           (t,0)

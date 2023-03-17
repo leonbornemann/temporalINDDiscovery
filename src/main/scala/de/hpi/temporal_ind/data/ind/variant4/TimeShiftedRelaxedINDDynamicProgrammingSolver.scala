@@ -82,7 +82,7 @@ class TimeShiftedRelaxedINDDynamicProgrammingSolver[T <% Ordered[T]](lhs: Abstra
       //due to construction there can be no
       val lowerDeltaWindowBorderInclusive = currentTimespanOfLHSVersionEnd.minusNanos(1).minusNanos(deltaInNanos)
       val upperDeltaWindowBorderExclusive = currentTimespanOfLHSVersionEnd.minusNanos(1).plusNanos(deltaInNanos)
-      val valuesInPk = rhs.valuesInWindow(lowerDeltaWindowBorderInclusive,upperDeltaWindowBorderExclusive.plusNanos(1),Some(relevantPKVersions))
+      val valuesInPk = rhs.versionTimestampsInWindow(lowerDeltaWindowBorderInclusive,upperDeltaWindowBorderExclusive.plusNanos(1),Some(relevantPKVersions))
       val timeDiff = ChronoUnit.NANOS.between(currentTimespanOfLHSVersionStart,currentTimespanOfLHSVersionEnd)
       if(lhsVersion.diff(valuesInPk).size==0 || (useWildcardLogic && rhsIsWildcardOnlyInRange(lowerDeltaWindowBorderInclusive,upperDeltaWindowBorderExclusive))){
         //no costs to add

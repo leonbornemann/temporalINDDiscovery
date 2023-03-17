@@ -62,7 +62,26 @@ abstract class AbstractOrderedColumnHistory[T] {
     }
   }
 
-  def valuesInWindow(lowerInclusive: Instant, upperExclusive: Instant,limitToVersions:Option[collection.Set[Instant]]=None) :collection.Set[T] = {
+  def versionsInWindowNew(lowerInclusive: Instant, upperExclusive: Instant):collection.Map[Instant, _ <: AbstractColumnVersion[T]] = {
+    var res = history
+      .versions
+      .rangeImpl(Some(lowerInclusive), Some(upperExclusive))
+      .toMap
+    if (!history.versions.contains(lowerInclusive)) {
+      //add previous version because it lasted until lowerInclusive
+      val versionBefore = history.versions.maxBefore(lowerInclusive)
+      if(versionBefore.isDefined) {
+        res = res ++ Seq(versionBefore.get)
+      }
+    }
+    if(res.isEmpty){
+      Map((GLOBAL_CONFIG.earliestInstant,AbstractColumnVersion.getEmpty[T]()))
+    } else {
+      res
+    }
+  }
+
+  def versionTimestampsInWindow(lowerInclusive: Instant, upperExclusive: Instant, limitToVersions:Option[collection.Set[Instant]]=None) :collection.Set[T] = {
     val res = collection.mutable.HashSet[T]()
     history.versions
       .rangeImpl(Some(lowerInclusive), Some(upperExclusive))

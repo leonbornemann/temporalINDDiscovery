@@ -10,9 +10,16 @@ import de.metanome.algorithms.many.{Column, INDDetectionWorker, INDDetectionWork
 import java.io.PrintWriter
 import java.util
 import collection.JavaConverters._
+
+/***
+ *
+ * @param input
+ * @param generateValueSet
+ * @param generateQueryValueSets This can be multiple value sets because for time-slice indices we need separately check all versions of the query in the time period and or the result candidates
+ */
 class BloomfilterIndex(input: IndexedSeq[EnrichedColumnHistory],
                        generateValueSet:(EnrichedColumnHistory => collection.Set[String]),
-                       generateQueryValueSet:(EnrichedColumnHistory => collection.Set[String])) extends StrictLogging{
+                       generateQueryValueSets:(EnrichedColumnHistory => Seq[collection.Set[String]])) extends StrictLogging{
   val outFile = "/home/leon/data/temporalINDDiscovery/wikipedia/discovery/testOutput/test.txt"
   val many = new MANY()
 
@@ -63,16 +70,16 @@ class BloomfilterIndex(input: IndexedSeq[EnrichedColumnHistory],
   }
 
   def validateContainment(query:EnrichedColumnHistory,res:BitVector[_]) = {
-    validateContainmentOfSet(generateQueryValueSet(query),res)
+    validateContainmentOfSets(generateQueryValueSets(query),res)
   }
 
-  def validateContainmentOfSet(queryValueSet: collection.Set[String],
+  def validateContainmentOfSets(queryValueSets: Seq[collection.Set[String]],
                           res: BitVector[_]) = {
     var curColumnIndex = res.next(0)
     val toSetTo0 = collection.mutable.ArrayBuffer[Int]()
     while (curColumnIndex != -1) {
       val curCol = input(curColumnIndex)
-      if(!queryValueSet.subsetOf(generateValueSet(curCol))){
+      if(!queryValueSets.exists(_.subsetOf(generateValueSet(curCol)))){
         toSetTo0 += curColumnIndex
       }
       curColumnIndex = res.next(curColumnIndex)
@@ -83,18 +90,29 @@ class BloomfilterIndex(input: IndexedSeq[EnrichedColumnHistory],
   def queryWithBitVectorResult(q:EnrichedColumnHistory,
                                preFilteredCandidates:Option[BitVector[_]] = None,
                                validate:Boolean=true) = {
-    val ((res,queryValueSet),queryTime) = TimeUtil.executionTimeInMS({
-      val queryValueSet: collection.Set[String] = generateQueryValueSet(q)
-      val querySig = many.applyBloomfilter(queryValueSet.asJava)
-      val worker = new INDDetectionWorkerQuery(many, querySig, 0)
-      val res = if (preFilteredCandidates.isDefined)
-        worker.executeQuery(preFilteredCandidates.get)
-      else {
-        worker.executeQuery()
+    var res:BitVector[_] = null
+    val (_,queryTime) = TimeUtil.executionTimeInMS({
+      val queryValueSets: Seq[collection.Set[String]] = generateQueryValueSets(q)
+      if(queryValueSets.size==0){
+        println()
       }
-      (res,queryValueSet)
+      queryValueSets.foreach{queryValueSet =>
+        val querySig = many.applyBloomfilter(queryValueSet.asJava)
+        val worker = new INDDetectionWorkerQuery(many, querySig, 0)
+        val resNew = if (preFilteredCandidates.isDefined)
+          worker.executeQuery(preFilteredCandidates.get)
+        else {
+          worker.executeQuery()
+        }
+        if(res == null){
+          res = resNew
+        } else {
+          res = res.or(resNew) // we take the or here because if any of the versions within a time slice is contained, we cannot prune the candidate
+          if(preFilteredCandidates.isDefined)
+            res.and(preFilteredCandidates.get) //doing the and again is probably not necessary (?)
+        }
+      }
     })
-
     val validationTime = if(validate){
       TimeUtil.executionTimeInMS(validateContainment(q,res))._2
     } else {
