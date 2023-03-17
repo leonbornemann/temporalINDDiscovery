@@ -14,11 +14,11 @@ import collection.JavaConverters._
 /***
  *
  * @param input
- * @param generateValueSet
+ * @param generateValueSetToIndex
  * @param generateQueryValueSets This can be multiple value sets because for time-slice indices we need separately check all versions of the query in the time period and or the result candidates
  */
 class BloomfilterIndex(input: IndexedSeq[EnrichedColumnHistory],
-                       generateValueSet:(EnrichedColumnHistory => collection.Set[String]),
+                       generateValueSetToIndex:(EnrichedColumnHistory => collection.Set[String]),
                        generateQueryValueSets:(EnrichedColumnHistory => Seq[collection.Set[String]])) extends StrictLogging{
   val outFile = "/home/leon/data/temporalINDDiscovery/wikipedia/discovery/testOutput/test.txt"
   val many = new MANY()
@@ -26,7 +26,7 @@ class BloomfilterIndex(input: IndexedSeq[EnrichedColumnHistory],
   def getColumnsAsJavaList(): util.List[Column] = {
     val list = (collection.mutable.ArrayBuffer() ++ input)
       .map{case och =>
-        val col = new Column(och.colID,generateValueSet(och).toSeq.asJava)
+        val col = new Column(och.colID,generateValueSetToIndex(och).toSeq.asJava)
         col.setTableName(och.tableID)
         col
       }
@@ -79,7 +79,7 @@ class BloomfilterIndex(input: IndexedSeq[EnrichedColumnHistory],
     val toSetTo0 = collection.mutable.ArrayBuffer[Int]()
     while (curColumnIndex != -1) {
       val curCol = input(curColumnIndex)
-      if(!queryValueSets.exists(_.subsetOf(generateValueSet(curCol)))){
+      if(!queryValueSets.exists(_.subsetOf(generateValueSetToIndex(curCol)))){
         toSetTo0 += curColumnIndex
       }
       curColumnIndex = res.next(curColumnIndex)

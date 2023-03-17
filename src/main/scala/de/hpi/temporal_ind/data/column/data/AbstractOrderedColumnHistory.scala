@@ -81,7 +81,7 @@ abstract class AbstractOrderedColumnHistory[T] {
     }
   }
 
-  def versionTimestampsInWindow(lowerInclusive: Instant, upperExclusive: Instant, limitToVersions:Option[collection.Set[Instant]]=None) :collection.Set[T] = {
+  def valueSetInWindow(lowerInclusive: Instant, upperExclusive: Instant, limitToVersions:Option[collection.Set[Instant]]=None) :collection.Set[T] = {
     val res = collection.mutable.HashSet[T]()
     history.versions
       .rangeImpl(Some(lowerInclusive), Some(upperExclusive))

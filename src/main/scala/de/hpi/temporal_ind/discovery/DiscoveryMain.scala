@@ -10,7 +10,7 @@ object DiscoveryMain extends App {
   println(s"Called with ${args.toIndexedSeq}")
   GLOBAL_CONFIG.setSettingsForDataSource("wikipedia")
   println(GLOBAL_CONFIG.totalTimeInDays)
-  val version = "0.4" //TODO: update this if discovery algorithm changes!
+  val version = "0.5" //TODO: update this if discovery algorithm changes!
   val sourceDirs = args(0).split(",")
     .map(new File(_))
     .toIndexedSeq

@@ -54,7 +54,7 @@ class RelaxedShiftedTemporalINDDiscovery(val sourceDirs: IndexedSeq[File],
   def getIndexForTimeSlice(historiesEnriched:ColumnHistoryStorage,lower:Instant, upper:Instant) = {
     val (beginDelta,endDelta) = (lower.minusNanos(deltaInNanos),upper.plusNanos(deltaInNanos))
     new BloomfilterIndex(historiesEnriched.histories,
-      (e:EnrichedColumnHistory) => e.och.versionTimestampsInWindow(beginDelta,endDelta),
+      (e:EnrichedColumnHistory) => e.valueSetInWindow(beginDelta,endDelta),
       (e:EnrichedColumnHistory) => e.och.versionsInWindowNew(lower,upper).map(_._2.values).toSeq)
   }
 
