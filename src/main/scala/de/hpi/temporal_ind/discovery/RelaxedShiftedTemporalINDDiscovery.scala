@@ -23,6 +23,7 @@ class RelaxedShiftedTemporalINDDiscovery(val sourceDirs: IndexedSeq[File],
                                          val epsilon: Double,
                                          val deltaInNanos: Long,
                                          val version:String,
+                                         val subsetValidation:Boolean,
                                          val random:Random = new Random(13)) extends StrictLogging{
 
   val absoluteEpsilonNanos = (GLOBAL_CONFIG.totalTimeInNanos*epsilon).toLong
@@ -164,11 +165,15 @@ class RelaxedShiftedTemporalINDDiscovery(val sourceDirs: IndexedSeq[File],
       val (curCandidates, queryTimeIndexTimeSlice) = queryTimeSliceIndices(candidatesRequiredValues,timeSliceIndices,query,queryNumber)
       val numCandidatesAfterIndexQuery = curCandidates.count()-1
       //validate curCandidates after all candidates have already been pruned
-      val (_,subsetValidationTime) = TimeUtil.executionTimeInMS({
-        entireValuesetIndex.validateContainment(query,curCandidates)
-        timeSliceIndices.foreach(index => index._2.validateContainment(query,curCandidates))
-      })
-
+      val subsetValidationTime = if(subsetValidation){
+        val (_, subsetValidationTime) = TimeUtil.executionTimeInMS({
+          entireValuesetIndex.validateContainment(query, curCandidates)
+          timeSliceIndices.foreach(index => index._2.validateContainment(query, curCandidates))
+        })
+        subsetValidationTime
+      } else {
+        0.0
+      }
       val candidateLineages = entireValuesetIndex
         .bitVectorToColumns(curCandidates) //does not matter which index transforms it back because all have them in the same order
         .filter(_ != query)
@@ -226,9 +231,9 @@ class RelaxedShiftedTemporalINDDiscovery(val sourceDirs: IndexedSeq[File],
     histories
   }
 
-  def discover(timeSliceIndexNumbers:IndexedSeq[Int]) = {
+  def discover(timeSliceIndexNumbers:IndexedSeq[Int],sampleSize:Int) = {
     val (_,totalTime) = TimeUtil.executionTimeInMS{
-      runDiscovery(1000,timeSliceIndexNumbers)
+      runDiscovery(sampleSize,timeSliceIndexNumbers)
     }
     TimeUtil.logRuntime(totalTime,"ms","Total Execution Time")
   }
