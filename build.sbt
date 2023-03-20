@@ -40,6 +40,6 @@ libraryDependencies += "org.scala-lang.modules" %% "scala-collection-contrib" % 
 //// https://mvnrepository.com/artifact/com.esotericsoftware/kryo
 //libraryDependencies += "com.esotericsoftware" % "kryo" % "4.0.2"
 
-//// https://mvnrepository.com/artifact/com.twitter/chill
-//libraryDependencies += "com.twitter" %% "chill" % "0.10.0"
+// https://mvnrepository.com/artifact/com.twitter/chill
+libraryDependencies += "com.twitter" %% "chill" % "0.10.0"
 

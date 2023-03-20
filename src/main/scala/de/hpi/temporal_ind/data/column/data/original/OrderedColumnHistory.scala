@@ -10,6 +10,11 @@ class OrderedColumnHistory(val id: String,
                            val pageID: String,
                            val pageTitle: String,
                            val history: OrderedColumnVersionList) extends AbstractOrderedColumnHistory[String] with Serializable{
+  def toColumnHistory  = {
+    val hist = collection.mutable.ArrayBuffer() ++ history.versions.values.map(acv => acv.asInstanceOf[ColumnVersion])
+    ColumnHistory(id, tableId, pageID, pageTitle, hist)
+  }
+
   def compositeID = s"$pageID--$tableId--$id"
 
   def allValues:Set[String] = history

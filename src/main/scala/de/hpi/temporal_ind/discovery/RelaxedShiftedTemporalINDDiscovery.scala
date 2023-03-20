@@ -1,13 +1,17 @@
 package de.hpi.temporal_ind.discovery
 
+import com.esotericsoftware.kryo.serializers.DefaultSerializers.TreeMapSerializer
+import com.twitter.chill.{Input, Output, ScalaKryoInstantiator}
 import com.typesafe.scalalogging.StrictLogging
-import de.hpi.temporal_ind.data.column.data.original.{OrderedColumnHistory, ValidationVariant}
+import de.hpi.temporal_ind.data.column.data.AbstractColumnVersion
+import de.hpi.temporal_ind.data.column.data.original.{ColumnHistory, OrderedColumnHistory, OrderedColumnVersionList, ValidationVariant}
 import de.hpi.temporal_ind.data.ind.{ConstantWeightFunction, ShifteddRelaxedCustomFunctionTemporalIND, SimpleTimeWindowTemporalIND}
 import de.hpi.temporal_ind.data.ind.variant4.TimeUtil
 import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
 import de.metanome.algorithms.many.bitvectors.BitVector
 import org.json4s.scalap.scalasig.ClassFileParser.byte
 
+import scala.collection.mutable
 import scala.jdk.CollectionConverters.{ListHasAsScala, SeqHasAsJava}
 //import org.nustaq.serialization.{FSTConfiguration, FSTObjectInput, FSTObjectOutput}
 //import org.nustaq.serialization.util.FSTOutputStream
@@ -35,7 +39,15 @@ class RelaxedShiftedTemporalINDDiscovery(val sourceDirs: IndexedSeq[File],
   totalResultsStats.println(TotalResultStats.schema)
   individualStats.println(IndividualResultStats.schema)
   basicQueryInfoRow.println(BasicQueryInfoRow.schema)
-  //val kryo = new Kryo()
+  val instantiator = (new ScalaKryoInstantiator).setRegistrationRequired(false)
+  val kryo = instantiator.newKryo
+  //kryo.reg
+  //kryo.register(mutable.TreeMap.getClass,com.esotericsoftware.kryo.serializers.DefaultSerializers.TreeMapSerializer)
+  kryo.register(OrderedColumnHistory.getClass)
+  kryo.register(OrderedColumnHistory.getClass)
+  //kryo.register(scala.collection.immutable.IndexedSeq.getClass)
+  //kryo.register(OrderedColumnVersionList.getClass)
+
 
   def loadHistories() =
     sourceDirs
@@ -69,19 +81,21 @@ class RelaxedShiftedTemporalINDDiscovery(val sourceDirs: IndexedSeq[File],
     }).filter(_.isValid)
   }
 
-//  def serializeAsBinary(histories: IndexedSeq[OrderedColumnHistory], path: String) = {
-//    val os = new Output(new FileOutputStream(new File(path)))
-//    kryo.writeClassAndObject(os,histories.toBuffer)
-//    os.close()
-//  }
+  def serializeAsBinary(histories: IndexedSeq[OrderedColumnHistory], path: String) = {
+    val os = new Output(new FileOutputStream(new File(path)))
+    val historySerializable = histories.map(och => och.toColumnHistory)
+    kryo.writeClassAndObject(os,historySerializable)
+    //os.write(kryo.toBytesWithClass(histories.toBuffer))//.writeClassAndObject(os,histories.toBuffer)
+    os.close()
+  }
 
-//  def loadAsBinary(path:String) = {
-//    val is = new Input(new FileInputStream(path))
-//    val res = kryo.readClassAndObject(is)
-//      .asInstanceOf[collection.mutable.Buffer[OrderedColumnHistory]]
-//    is.close()
-//    res.toIndexedSeq
-//  }
+  def loadAsBinary(path:String) = {
+    val is = new Input(new FileInputStream(path))
+    val res = kryo.readClassAndObject(is)
+      .asInstanceOf[collection.IndexedSeq[ColumnHistory]]
+    is.close()
+    res.map(_.asOrderedHistory).toIndexedSeq
+  }
 
   def buildTimeSliceIndices(historiesEnriched: ColumnHistoryStorage,indicesToBuild:Int) = {
     val allSlices = GLOBAL_CONFIG.partitionTimePeriodIntoSlices(absoluteEpsilonNanos)
@@ -96,29 +110,28 @@ class RelaxedShiftedTemporalINDDiscovery(val sourceDirs: IndexedSeq[File],
     (indexMap,buildTimes)
   }
 
-//  def testBinaryLoading(histories:IndexedSeq[OrderedColumnHistory]) = {
-//    serializeAsBinary(histories, targetFileBinary)
-//    println(histories.size)
-//    val (historiesFromBinary,timeLoadingBinary) = TimeUtil.executionTimeInMS(loadAsBinary(targetFileBinary))
-//    statsPROtherTimes.println(s"Data Loading Binary,$timeLoadingBinary")
-//    println(s"Data Loading Binary,$timeLoadingBinary")
-//    assert(historiesFromBinary.size == histories.size)
-//    historiesFromBinary.zip(histories).foreach { case (h1, h2) => {
-//      assert(h1.id == h2.id)
-//      assert(h1.tableId == h2.tableId)
-//      assert(h1.pageID == h2.pageID)
-//      assert(h1.pageTitle == h2.pageTitle)
-//      assert(h1.history.versions == h2.history.versions)
-//    }
-//    }
-//    println("Check successful, binary file intact")
-//  }
+  def testBinaryLoading(histories:IndexedSeq[OrderedColumnHistory]) = {
+    serializeAsBinary(histories, targetFileBinary)
+    val (historiesFromBinary,timeLoadingBinary) = TimeUtil.executionTimeInMS(loadAsBinary(targetFileBinary))
+    println(s"Data Loading Binary,$timeLoadingBinary")
+    assert(historiesFromBinary.size == histories.size)
+    historiesFromBinary.zip(histories).foreach { case (h1, h2) => {
+      assert(h1.id == h2.id)
+      assert(h1.tableId == h2.tableId)
+      assert(h1.pageID == h2.pageID)
+      assert(h1.pageTitle == h2.pageTitle)
+      assert(h1.history.versions.isInstanceOf[collection.SortedMap[Instant,AbstractColumnVersion[String]]])
+      assert(h1.history.versions == h2.history.versions)
+    }
+    }
+    println("Check successful, binary file intact")
+  }
 
   def runDiscovery(sampleSize:Int,numTimeSliceIndicesList:IndexedSeq[Int]) = {
     val beforePreparation = System.nanoTime()
     val (histories,timeLoadingJson) = TimeUtil.executionTimeInMS(loadData())
     println(s"Data Loading Json,$timeLoadingJson")
-    //testBinaryLoading(histories)
+    testBinaryLoading(histories)
     val historiesEnriched = enrichWithHistory(histories)
     //required values index:
     val afterPreparation = System.nanoTime()
