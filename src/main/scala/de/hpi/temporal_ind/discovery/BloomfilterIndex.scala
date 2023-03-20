@@ -18,6 +18,7 @@ import collection.JavaConverters._
  * @param generateQueryValueSets This can be multiple value sets because for time-slice indices we need separately check all versions of the query in the time period and or the result candidates
  */
 class BloomfilterIndex(input: IndexedSeq[EnrichedColumnHistory],
+                       bloomfilterSize:Int,
                        generateValueSetToIndex:(EnrichedColumnHistory => collection.Set[String]),
                        generateQueryValueSets:(EnrichedColumnHistory => Seq[collection.Set[String]])) extends StrictLogging{
   val outFile = "/home/leon/data/temporalINDDiscovery/wikipedia/discovery/testOutput/test.txt"
@@ -41,7 +42,7 @@ class BloomfilterIndex(input: IndexedSeq[EnrichedColumnHistory],
     many.setResultReceiver(resultReceiver)
     many.setIntegerConfigurationValue(MANY.Identifier.INPUT_ROW_LIMIT.name, Integer.valueOf(-1))
     many.setIntegerConfigurationValue(MANY.Identifier.HASH_FUNCTION_COUNT.name, Integer.valueOf(3))
-    many.setIntegerConfigurationValue(MANY.Identifier.BIT_VECTOR_SIZE.name, Integer.valueOf(512))
+    many.setIntegerConfigurationValue(MANY.Identifier.BIT_VECTOR_SIZE.name, Integer.valueOf(bloomfilterSize))
     many.setIntegerConfigurationValue(MANY.Identifier.DEGREE_OF_PARALLELISM.name, Integer.valueOf(1))
     many.setIntegerConfigurationValue(MANY.Identifier.PASSES.name, Integer.valueOf(1))
     many.setBooleanConfigurationValue(MANY.Identifier.VERIFY.name, java.lang.Boolean.valueOf(true))
