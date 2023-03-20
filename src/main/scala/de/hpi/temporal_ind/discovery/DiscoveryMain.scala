@@ -18,7 +18,7 @@ object DiscoveryMain extends App {
   val targetFileBinary = args(2)
   val epsilon = args(3).toDouble
   val deltaInDays = args(4).toLong
-  val subsetValidation = false
+  val subsetValidation = true
   val sampleSize=100
   val bloomfilterSize = 1024
   val relaxedShiftedTemporalINDDiscovery = new RelaxedShiftedTemporalINDDiscovery(sourceDirs,
