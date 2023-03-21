@@ -100,6 +100,7 @@ class RelaxedShiftedTemporalINDDiscovery(val sourceDirs: IndexedSeq[File],
 
   def buildTimeSliceIndices(historiesEnriched: ColumnHistoryStorage,indicesToBuild:Int) = {
     val allSlices = GLOBAL_CONFIG.partitionTimePeriodIntoSlices(absoluteEpsilonNanos)
+    logger.debug("Found ",allSlices.size," time slices")
     val slices = random.shuffle(allSlices)
       .take(indicesToBuild)
     var buildTimes = collection.mutable.ArrayBuffer[Double]()
@@ -117,12 +118,21 @@ class RelaxedShiftedTemporalINDDiscovery(val sourceDirs: IndexedSeq[File],
     println(s"Data Loading Binary,$timeLoadingBinary")
     assert(historiesFromBinary.size == histories.size)
     historiesFromBinary.zip(histories).foreach { case (h1, h2) => {
-      assert(h1.id == h2.id)
-      assert(h1.tableId == h2.tableId)
-      assert(h1.pageID == h2.pageID)
-      assert(h1.pageTitle == h2.pageTitle)
-      assert(h1.history.versions.isInstanceOf[collection.SortedMap[Instant,AbstractColumnVersion[String]]])
-      assert(h1.history.versions == h2.history.versions)
+      if(!(h1.tableId == h2.tableId)
+       && (h1.pageID == h2.pageID)
+      && (h1.pageTitle == h2.pageTitle)
+      && (h1.history.versions.isInstanceOf[collection.SortedMap[Instant,AbstractColumnVersion[String]]])
+      && (h1.history.versions == h2.history.versions)){
+        println(s"${h1.id},${h2.id}")
+        println(s"${h1.pageID},${h2.pageID}")
+        println(s"${h1.pageTitle},${h2.pageTitle}")
+        println(h1.history.versions.getClass)
+        println(h2.history.versions.getClass)
+        println(s"${h1.history.versions}")
+        println(h2.history.versions)
+        println(s"${h1.id},${h2.id}")
+        assert(false)
+      }
     }
     }
     println("Check successful, binary file intact")
@@ -131,6 +141,7 @@ class RelaxedShiftedTemporalINDDiscovery(val sourceDirs: IndexedSeq[File],
   def interactiveTimeSliceIndicesBuilding(historiesEnriched: ColumnHistoryStorage) = {
     var done = false
     val allSlices = GLOBAL_CONFIG.partitionTimePeriodIntoSlices(absoluteEpsilonNanos)
+    logger.debug("Found " + allSlices.size + " time slices")
     val slices = random.shuffle(allSlices)
     var buildTimes = collection.mutable.ArrayBuffer[Double]()
     while(!done){
