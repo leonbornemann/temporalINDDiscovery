@@ -22,6 +22,7 @@ case class ColumnVersion(revisionID: String,
     res.revisionDate=revisionDate
     res.values=valueSet
     res.header=header.getOrElse(null)
+    res.position = position.getOrElse(-1)
     res.columnNotPresent=columnNotPresent
     res
   }

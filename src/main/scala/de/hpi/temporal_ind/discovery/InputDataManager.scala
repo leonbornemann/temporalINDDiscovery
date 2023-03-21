@@ -35,7 +35,7 @@ class InputDataManager(binaryFile: String,jsonSourceDirs:Option[IndexedSeq[File]
     var curElem = 0
     println("to Read",histories.size)
     historiesFromBinary.foreach { case (h1) => {
-      println(curElem)
+      //println(curElem)
       val h2 = histories(curElem)
       if (!((h1.tableId == h2.tableId)
         && (h1.pageID == h2.pageID)
@@ -50,6 +50,11 @@ class InputDataManager(binaryFile: String,jsonSourceDirs:Option[IndexedSeq[File]
         println(s"${h1.history.versions}")
         println(h2.history.versions)
         println(s"${h1.id},${h2.id}")
+        h1.history.versions.toIndexedSeq.zip(h2.history.versions.toIndexedSeq).foreach{case (t1,t2) => {
+          if(t1!=t2){
+            println()
+          }
+        }}
         assert(false)
       }
       curElem+=1
