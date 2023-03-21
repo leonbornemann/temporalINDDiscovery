@@ -44,6 +44,7 @@ class RelaxedShiftedTemporalINDDiscovery(val sourceDirs: IndexedSeq[File],
   individualStats.println(IndividualResultStats.schema)
   basicQueryInfoRow.println(BasicQueryInfoRow.schema)
   val kryo = new Kryo();
+  kryo.setRegistrationRequired(false)
 
 
 
