@@ -18,13 +18,15 @@ class InputDataManager(binaryFile: String,jsonSourceDirs:Option[IndexedSeq[File]
       histories
     } else {
       val (histories, timeLoadingBinary) = TimeUtil.executionTimeInMS(loadAsBinary(binaryFile))
+      val res = histories.toIndexedSeq
       println(s"Data Loading Binary,$timeLoadingBinary")
-      histories.toIndexedSeq
+      res
     }
   }
 
   val kryo = new Kryo();
   kryo.setRegistrationRequired(false)
+  kryo.setReferences(true)
 
   def testBinaryLoading(histories: IndexedSeq[OrderedColumnHistory]) = {
     serializeAsBinary(histories, binaryFile)

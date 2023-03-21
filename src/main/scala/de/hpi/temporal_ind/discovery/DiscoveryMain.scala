@@ -24,7 +24,7 @@ object DiscoveryMain extends App {
   val interactiveIndexBuilding = true
   val dataLoader = new InputDataManager(targetFileBinary,Some(sourceDirs))
   val relaxedShiftedTemporalINDDiscovery = new RelaxedShiftedTemporalINDDiscovery(dataLoader,
-    targetDir,
+    new ResultSerializer(targetDir),
     epsilon,
     TimeUtil.nanosPerDay*deltaInDays,
     version,

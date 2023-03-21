@@ -27,7 +27,7 @@ object TimeSliceBorderImpactExploreMain extends App {
   val interactiveIndexBuilding = true
   val dataLoader = new InputDataManager(targetFileBinary)
   val relaxedShiftedTemporalINDDiscovery = new RelaxedShiftedTemporalINDDiscovery(dataLoader,
-    targetDir,
+    new ResultSerializer(targetDir),
     epsilon,
     TimeUtil.nanosPerDay * deltaInDays,
     version,

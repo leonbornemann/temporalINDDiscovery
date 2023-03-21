@@ -23,7 +23,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 
 class RelaxedShiftedTemporalINDDiscovery(val dataManager:InputDataManager,
-                                         val targetDir: File,
+                                         val resultSerializer:ResultSerializer,
                                          val epsilon: Double,
                                          val deltaInNanos: Long,
                                          val versionParam:String,
@@ -35,13 +35,7 @@ class RelaxedShiftedTemporalINDDiscovery(val dataManager:InputDataManager,
   def version = if(interactiveIndexBuilding) versionParam + "_interactive" else versionParam
 
   val absoluteEpsilonNanos = (GLOBAL_CONFIG.totalTimeInNanos*epsilon).toLong
-  val resultPR = new PrintWriter(targetDir + "/discoveredINDs.jsonl")
-  val basicQueryInfoRow = new PrintWriter(targetDir + "/basicQueryInfo.csv")
-  val totalResultsStats = new PrintWriter(targetDir + "/totalStats.csv")
-  val individualStats = new PrintWriter(targetDir + "/improvedIndividualStats.csv")
-  totalResultsStats.println(TotalResultStats.schema)
-  individualStats.println(IndividualResultStats.schema)
-  basicQueryInfoRow.println(BasicQueryInfoRow.schema)
+
 
   def enrichWithHistory(histories: IndexedSeq[OrderedColumnHistory]) = {
     new ColumnHistoryStorage(histories.map(och => new EnrichedColumnHistory(och,absoluteEpsilonNanos)))
@@ -123,7 +117,7 @@ class RelaxedShiftedTemporalINDDiscovery(val dataManager:InputDataManager,
 
   def runDiscovery(sampleSize:Int, numTimeSliceIndicesList:IndexedSeq[Int]) = {
     val beforePreparation = System.nanoTime()
-//    val histories = dataManager.loadData()
+    //val histories = dataManager.loadData()
     val histories = dataManager.loadJsonHistories()
     dataManager.testBinaryLoading(histories)
     val historiesEnriched = enrichWithHistory(histories)
@@ -139,13 +133,9 @@ class RelaxedShiftedTemporalINDDiscovery(val dataManager:InputDataManager,
       val curIndex = multiIndexStructure.limitTimeSliceIndices(numTimeSliceIndices)
       val (totalQueryTime,totalSubsetValidationTime,totalTemporalValidationTime) =  queryAll(sample,curIndex)
       val totalResultSTatsLine = TotalResultStats(numTimeSliceIndices,dataLoadingTimeMS,curIndex.requiredValuesIndexBuildTime,curIndex.totalTimeSliceIndexBuildTime,totalQueryTime,totalSubsetValidationTime,totalTemporalValidationTime)
-      totalResultsStats.println(totalResultSTatsLine.toCSV)
-      totalResultsStats.flush()
+      resultSerializer.addTotalResultStats(totalResultSTatsLine)
     })
-    individualStats.close()
-    totalResultsStats.close()
-    resultPR.close()
-    basicQueryInfoRow.close()
+    resultSerializer.closeAll()
   }
 
 
@@ -172,7 +162,7 @@ class RelaxedShiftedTemporalINDDiscovery(val dataManager:InputDataManager,
         query.och.pageID,
         query.och.tableId,
         query.och.id)
-      basicQueryInfoRow.println(validationStatRow.toCSVLine)
+      resultSerializer.addBasicQueryInfoRow(validationStatRow)
       val avgVersionsPerTimeSliceWindow = multiLevelIndexStructure.timeSliceIndices
         .keys
         .map{case (s,e) => query.och.versionsInWindow(s,e).size}
@@ -188,7 +178,7 @@ class RelaxedShiftedTemporalINDDiscovery(val dataManager:InputDataManager,
         avgVersionsPerTimeSliceWindow,
         version
         ) //TODO: append this to a writer,
-      individualStats.println(individualStatLine.toCSVLine)
+      resultSerializer.addIndividualResultStats(individualStatLine)
       (queryTimeRQValues+queryTimeIndexTimeSlice,subsetValidationTime,validationTime)
     }}
     val totalQueryTime = queryAndValidationAndTemporalValidationTimes.map(_._1).sum
@@ -201,7 +191,7 @@ class RelaxedShiftedTemporalINDDiscovery(val dataManager:InputDataManager,
   private def validate(query: EnrichedColumnHistory, actualCandidates: ArrayBuffer[EnrichedColumnHistory]) = {
     val (trueTemporalINDs, validationTime) = TimeUtil.executionTimeInMS(validateCandidates(query,actualCandidates))
     val truePositiveCount = trueTemporalINDs.size
-    trueTemporalINDs.foreach(c => c.toCandidateIDs.appendToWriter(resultPR))
+    resultSerializer.addTrueTemporalINDs(trueTemporalINDs)
     (validationTime,truePositiveCount)
   }
 
