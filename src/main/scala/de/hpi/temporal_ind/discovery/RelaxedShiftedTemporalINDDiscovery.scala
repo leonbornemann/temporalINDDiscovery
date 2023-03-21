@@ -1,16 +1,17 @@
 package de.hpi.temporal_ind.discovery
 
-import com.esotericsoftware.kryo.serializers.DefaultSerializers.TreeMapSerializer
-import com.twitter.chill.{Input, Output, ScalaKryoInstantiator}
+import com.esotericsoftware.kryo.Kryo
+import com.esotericsoftware.kryo.io.{Input, Output}
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.temporal_ind.data.column.data.AbstractColumnVersion
-import de.hpi.temporal_ind.data.column.data.original.{ColumnHistory, OrderedColumnHistory, OrderedColumnVersionList, ValidationVariant}
+import de.hpi.temporal_ind.data.column.data.original.{ColumnHistory, KryoSerializableColumnHistory, OrderedColumnHistory, OrderedColumnVersionList, ValidationVariant}
 import de.hpi.temporal_ind.data.ind.{ConstantWeightFunction, ShifteddRelaxedCustomFunctionTemporalIND, SimpleTimeWindowTemporalIND}
 import de.hpi.temporal_ind.data.ind.variant4.TimeUtil
 import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
 import de.metanome.algorithms.many.bitvectors.BitVector
 import org.json4s.scalap.scalasig.ClassFileParser.byte
 
+import java.util
 import scala.collection.mutable
 import scala.jdk.CollectionConverters.{ListHasAsScala, SeqHasAsJava}
 //import org.nustaq.serialization.{FSTConfiguration, FSTObjectInput, FSTObjectOutput}
@@ -26,10 +27,13 @@ class RelaxedShiftedTemporalINDDiscovery(val sourceDirs: IndexedSeq[File],
                                          val targetDir: File,
                                          val epsilon: Double,
                                          val deltaInNanos: Long,
-                                         val version:String,
+                                         val versionParam:String,
                                          val subsetValidation:Boolean,
                                          val bloomfilterSize:Int,
+                                         val interactiveIndexBuilding:Boolean,
                                          val random:Random = new Random(13)) extends StrictLogging{
+
+  def version = if(interactiveIndexBuilding) versionParam + "_interactive" else versionParam
 
   val absoluteEpsilonNanos = (GLOBAL_CONFIG.totalTimeInNanos*epsilon).toLong
   val resultPR = new PrintWriter(targetDir + "/discoveredINDs.jsonl")
@@ -39,14 +43,8 @@ class RelaxedShiftedTemporalINDDiscovery(val sourceDirs: IndexedSeq[File],
   totalResultsStats.println(TotalResultStats.schema)
   individualStats.println(IndividualResultStats.schema)
   basicQueryInfoRow.println(BasicQueryInfoRow.schema)
-  val instantiator = (new ScalaKryoInstantiator).setRegistrationRequired(false)
-  val kryo = instantiator.newKryo
-  //kryo.reg
-  //kryo.register(mutable.TreeMap.getClass,com.esotericsoftware.kryo.serializers.DefaultSerializers.TreeMapSerializer)
-  kryo.register(OrderedColumnHistory.getClass)
-  kryo.register(OrderedColumnHistory.getClass)
-  //kryo.register(scala.collection.immutable.IndexedSeq.getClass)
-  //kryo.register(OrderedColumnVersionList.getClass)
+  val kryo = new Kryo();
+
 
 
   def loadHistories() =
@@ -66,10 +64,10 @@ class RelaxedShiftedTemporalINDDiscovery(val sourceDirs: IndexedSeq[File],
       (e:EnrichedColumnHistory) => Seq(e.requiredValues))
   }
 
-  def getIndexForTimeSlice(historiesEnriched:ColumnHistoryStorage,lower:Instant, upper:Instant) = {
+  def getIndexForTimeSlice(historiesEnriched:ColumnHistoryStorage,lower:Instant, upper:Instant,size:Int=bloomfilterSize) = {
     val (beginDelta,endDelta) = (lower.minusNanos(deltaInNanos),upper.plusNanos(deltaInNanos))
     new BloomfilterIndex(historiesEnriched.histories,
-      bloomfilterSize,
+      size,
       (e:EnrichedColumnHistory) => e.valueSetInWindow(beginDelta,endDelta),
       (e:EnrichedColumnHistory) => e.och.versionsInWindowNew(lower,upper).map(_._2.values).toSeq)
   }
@@ -83,8 +81,10 @@ class RelaxedShiftedTemporalINDDiscovery(val sourceDirs: IndexedSeq[File],
 
   def serializeAsBinary(histories: IndexedSeq[OrderedColumnHistory], path: String) = {
     val os = new Output(new FileOutputStream(new File(path)))
-    val historySerializable = histories.map(och => och.toColumnHistory)
-    kryo.writeClassAndObject(os,historySerializable)
+    val historySerializable = histories.map(och => och.toKryoSerializableColumnHistory)
+    val list = new util.ArrayList[KryoSerializableColumnHistory]()
+    historySerializable.foreach(list.add(_))
+    kryo.writeClassAndObject(os,list)
     //os.write(kryo.toBytesWithClass(histories.toBuffer))//.writeClassAndObject(os,histories.toBuffer)
     os.close()
   }
@@ -92,9 +92,9 @@ class RelaxedShiftedTemporalINDDiscovery(val sourceDirs: IndexedSeq[File],
   def loadAsBinary(path:String) = {
     val is = new Input(new FileInputStream(path))
     val res = kryo.readClassAndObject(is)
-      .asInstanceOf[collection.IndexedSeq[ColumnHistory]]
+      .asInstanceOf[java.util.List[KryoSerializableColumnHistory]]
     is.close()
-    res.map(_.asOrderedHistory).toIndexedSeq
+    res.asScala.map(k => OrderedColumnHistory.fromKryoSerializableColumnHistory(k)).toIndexedSeq
   }
 
   def buildTimeSliceIndices(historiesEnriched: ColumnHistoryStorage,indicesToBuild:Int) = {
@@ -127,7 +127,33 @@ class RelaxedShiftedTemporalINDDiscovery(val sourceDirs: IndexedSeq[File],
     println("Check successful, binary file intact")
   }
 
-  def runDiscovery(sampleSize:Int,numTimeSliceIndicesList:IndexedSeq[Int]) = {
+  def interactiveTimeSliceIndicesBuilding(historiesEnriched: ColumnHistoryStorage) = {
+    var done = false
+    val allSlices = GLOBAL_CONFIG.partitionTimePeriodIntoSlices(absoluteEpsilonNanos)
+    val slices = random.shuffle(allSlices)
+    var buildTimes = collection.mutable.ArrayBuffer[Double]()
+    while(!done){
+      println("Please enter <number of indices to build,bloomfilter-size>, q to quit")
+      val line = scala.io.StdIn.readLine()
+      if(line == "q"){
+        done = true
+      } else {
+        val numberOfIndices = line.split(",")(0).toInt
+        val bloomfilterSizeNew = line.split(",")(1).toInt
+        val curIndexMap = slices.take(numberOfIndices).map { case (begin, end) => {
+          val (timeSliceIndex, timeSliceIndexBuild) = TimeUtil.executionTimeInMS(getIndexForTimeSlice(historiesEnriched, begin, end,bloomfilterSizeNew))
+          buildTimes += timeSliceIndexBuild
+          ((begin, end), timeSliceIndex)
+        }
+        }.toMap
+        println("Done with indexing, please confirm continuation by hitting any key")
+        scala.io.StdIn.readLine()
+      }
+    }
+    (null, buildTimes)
+  }
+
+  def runDiscovery(sampleSize:Int, numTimeSliceIndicesList:IndexedSeq[Int]) = {
     val beforePreparation = System.nanoTime()
     val (histories,timeLoadingJson) = TimeUtil.executionTimeInMS(loadData())
     println(s"Data Loading Json,$timeLoadingJson")
@@ -138,7 +164,11 @@ class RelaxedShiftedTemporalINDDiscovery(val sourceDirs: IndexedSeq[File],
     val dataLoadingTimeMS = (afterPreparation - beforePreparation) / 1000000.0
     val (indexEntireValueset,requirecValuesIndexBuildTime) = TimeUtil.executionTimeInMS(getIndexForEntireValueset(historiesEnriched))
     //time slice values index:
-    val (timeSliceIndices,indexBuildTimes) = buildTimeSliceIndices(historiesEnriched,numTimeSliceIndicesList.max)
+    val (timeSliceIndices,indexBuildTimes) = if(interactiveIndexBuilding){
+      interactiveTimeSliceIndicesBuilding(historiesEnriched)
+    } else {
+      buildTimeSliceIndices(historiesEnriched,numTimeSliceIndicesList.max)
+    }
     //query all:
     val sample = random.shuffle(historiesEnriched.histories.zipWithIndex).take(sampleSize)
     numTimeSliceIndicesList.foreach(numTimeSliceIndices => {

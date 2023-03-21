@@ -21,6 +21,7 @@ object DiscoveryMain extends App {
   val subsetValidation = true
   val sampleSize=100
   val bloomfilterSize = 1024
+  val interactiveIndexBuilding = true
   val relaxedShiftedTemporalINDDiscovery = new RelaxedShiftedTemporalINDDiscovery(sourceDirs,
     targetFileBinary,
     targetDir,
@@ -28,6 +29,7 @@ object DiscoveryMain extends App {
     TimeUtil.nanosPerDay*deltaInDays,
     version,
     subsetValidation,
-    bloomfilterSize)
+    bloomfilterSize,
+    interactiveIndexBuilding)
   relaxedShiftedTemporalINDDiscovery.discover(IndexedSeq(0,1,2,3,4,5,6,7,8,9,10,15,20),sampleSize)
 }

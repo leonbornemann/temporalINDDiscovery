@@ -4,15 +4,25 @@ import de.hpi.temporal_ind.data.column.data.{AbstractColumnVersion, AbstractOrde
 
 import java.io.File
 import java.time.Instant
+import java.util
+import scala.jdk.CollectionConverters.{ListHasAsScala, SeqHasAsJava}
 
 class OrderedColumnHistory(val id: String,
                            val tableId: String,
                            val pageID: String,
                            val pageTitle: String,
                            val history: OrderedColumnVersionList) extends AbstractOrderedColumnHistory[String] with Serializable{
-  def toColumnHistory  = {
-    val hist = collection.mutable.ArrayBuffer() ++ history.versions.values.map(acv => acv.asInstanceOf[ColumnVersion])
-    ColumnHistory(id, tableId, pageID, pageTitle, hist)
+  def toKryoSerializableColumnHistory  = {
+    val hist = history.versions.values.map(acv => acv.asInstanceOf[ColumnVersion].toKryoSerializableColumnHistory).toIndexedSeq
+    val list = new util.ArrayList[KryoSerializableColumnVersion]()
+    hist.foreach(list.add(_))
+    val res = new KryoSerializableColumnHistory()
+    res.id =id
+    res.tableId=tableId
+    res.pageID=pageID
+    res.pageTitle=pageTitle
+    res.hist=list
+    res
   }
 
   def compositeID = s"$pageID--$tableId--$id"
@@ -43,6 +53,20 @@ object OrderedColumnHistory {
     ColumnHistory
       .iterableFromJsonObjectPerLineDir(sourceDir,true)
       .map(ch => ch.asOrderedHistory)
+  }
+
+  def fromKryoSerializableColumnHistory(kryo:KryoSerializableColumnHistory) = {
+    val versionMap = kryo.hist.asScala
+      .map(k => {
+        val version = ColumnVersion.fromKryoSerializableColumnHistory(k)
+        (version.timestamp,version)
+      })
+    val versionList = new OrderedColumnVersionList(collection.mutable.TreeMap[Instant,ColumnVersion]() ++ versionMap)
+    new OrderedColumnHistory(kryo.id,
+      kryo.tableId,
+      kryo.pageID,
+      kryo.pageTitle,
+      versionList)
   }
 
 }

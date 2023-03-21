@@ -6,6 +6,7 @@ import de.hpi.temporal_ind.data.column.io.Dictionary
 import de.hpi.temporal_ind.util.Util
 
 import java.io.{File, PrintWriter}
+import scala.jdk.CollectionConverters.{SetHasAsJava, SetHasAsScala}
 
 case class ColumnVersion(revisionID: String,
                          revisionDate: String,
@@ -13,6 +14,18 @@ case class ColumnVersion(revisionID: String,
                          header:Option[String],
                          position:Option[Int],
                          columnNotPresent:Boolean) extends AbstractColumnVersion[String]{
+  def toKryoSerializableColumnHistory = {
+    val valueSet = new java.util.HashSet[String]()
+    values.foreach(valueSet.add(_))
+    val res = new KryoSerializableColumnVersion()
+    res.revisionID=revisionID
+    res.revisionDate=revisionDate
+    res.values=valueSet
+    res.header=header.getOrElse(null)
+    res.columnNotPresent=columnNotPresent
+    res
+  }
+
 
   def applyDictionary(dict: Dictionary): ColumnVersionEncoded = {
     ColumnVersionEncoded(revisionID,revisionDate,values.map(v => dict.allValues(v)),columnNotPresent)
@@ -44,4 +57,14 @@ object ColumnVersion {
   }
 
   def COLUMN_DELETE(revisionID: String, revisionDate: String): ColumnVersion = ColumnVersion(revisionID,revisionDate,Set(),None,None,true)
+
+  def fromKryoSerializableColumnHistory(kryo:KryoSerializableColumnVersion) = {
+    ColumnVersion(kryo.revisionID,
+      kryo.revisionDate,
+      kryo.values.asScala.toSet,
+      if(kryo.header==null) None else Some(kryo.header),
+      if(kryo.position== -1) None else Some(kryo.position),
+      kryo.columnNotPresent
+    )
+  }
 }
