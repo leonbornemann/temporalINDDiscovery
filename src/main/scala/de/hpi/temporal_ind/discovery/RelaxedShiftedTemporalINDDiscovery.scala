@@ -22,8 +22,7 @@ import java.time.Instant
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 
-class RelaxedShiftedTemporalINDDiscovery(val sourceDirs: IndexedSeq[File],
-                                         val targetFileBinary:String,
+class RelaxedShiftedTemporalINDDiscovery(val dataManager:InputDataManager,
                                          val targetDir: File,
                                          val epsilon: Double,
                                          val deltaInNanos: Long,
@@ -43,16 +42,6 @@ class RelaxedShiftedTemporalINDDiscovery(val sourceDirs: IndexedSeq[File],
   totalResultsStats.println(TotalResultStats.schema)
   individualStats.println(IndividualResultStats.schema)
   basicQueryInfoRow.println(BasicQueryInfoRow.schema)
-  val kryo = new Kryo();
-  kryo.setRegistrationRequired(false)
-
-
-
-  def loadHistories() =
-    sourceDirs
-      .flatMap(sourceDir => OrderedColumnHistory
-        .readFromFiles(sourceDir)
-        .toIndexedSeq)
 
   def enrichWithHistory(histories: IndexedSeq[OrderedColumnHistory]) = {
     new ColumnHistoryStorage(histories.map(och => new EnrichedColumnHistory(och,absoluteEpsilonNanos)))
@@ -80,62 +69,18 @@ class RelaxedShiftedTemporalINDDiscovery(val sourceDirs: IndexedSeq[File],
     }).filter(_.isValid)
   }
 
-  def serializeAsBinary(histories: IndexedSeq[OrderedColumnHistory], path: String) = {
-    val os = new Output(new FileOutputStream(new File(path)))
-    val historySerializable = histories.map(och => och.toKryoSerializableColumnHistory)
-    val list = new util.ArrayList[KryoSerializableColumnHistory]()
-    historySerializable.foreach(list.add(_))
-    kryo.writeClassAndObject(os,list)
-    //os.write(kryo.toBytesWithClass(histories.toBuffer))//.writeClassAndObject(os,histories.toBuffer)
-    os.close()
-  }
-
-  def loadAsBinary(path:String) = {
-    val is = new Input(new FileInputStream(path))
-    val res = kryo.readClassAndObject(is)
-      .asInstanceOf[java.util.List[KryoSerializableColumnHistory]]
-    is.close()
-    res.asScala.map(k => OrderedColumnHistory.fromKryoSerializableColumnHistory(k)).toIndexedSeq
-  }
-
   def buildTimeSliceIndices(historiesEnriched: ColumnHistoryStorage,indicesToBuild:Int) = {
     val allSlices = GLOBAL_CONFIG.partitionTimePeriodIntoSlices(absoluteEpsilonNanos)
     logger.debug("Found ",allSlices.size," time slices")
     val slices = random.shuffle(allSlices)
       .take(indicesToBuild)
     var buildTimes = collection.mutable.ArrayBuffer[Double]()
-    val indexMap = slices.map{case (begin,end) => {
+    val indexMap = collection.mutable.TreeMap[(Instant,Instant),BloomfilterIndex]() ++ slices.map{case (begin,end) => {
       val (timeSliceIndex, timeSliceIndexBuild) = TimeUtil.executionTimeInMS(getIndexForTimeSlice(historiesEnriched,begin,end))
       buildTimes+=timeSliceIndexBuild
       ((begin,end),timeSliceIndex)
-    }}.toMap
+    }}
     (indexMap,buildTimes)
-  }
-
-  def testBinaryLoading(histories:IndexedSeq[OrderedColumnHistory]) = {
-    serializeAsBinary(histories, targetFileBinary)
-    val (historiesFromBinary,timeLoadingBinary) = TimeUtil.executionTimeInMS(loadAsBinary(targetFileBinary))
-    println(s"Data Loading Binary,$timeLoadingBinary")
-    assert(historiesFromBinary.size == histories.size)
-    historiesFromBinary.zip(histories).foreach { case (h1, h2) => {
-      if(!(h1.tableId == h2.tableId)
-       && (h1.pageID == h2.pageID)
-      && (h1.pageTitle == h2.pageTitle)
-      && (h1.history.versions.isInstanceOf[collection.SortedMap[Instant,AbstractColumnVersion[String]]])
-      && (h1.history.versions == h2.history.versions)){
-        println(s"${h1.id},${h2.id}")
-        println(s"${h1.pageID},${h2.pageID}")
-        println(s"${h1.pageTitle},${h2.pageTitle}")
-        println(h1.history.versions.getClass)
-        println(h2.history.versions.getClass)
-        println(s"${h1.history.versions}")
-        println(h2.history.versions)
-        println(s"${h1.id},${h2.id}")
-        assert(false)
-      }
-    }
-    }
-    println("Check successful, binary file intact")
   }
 
   def interactiveTimeSliceIndicesBuilding(historiesEnriched: ColumnHistoryStorage) = {
@@ -166,28 +111,34 @@ class RelaxedShiftedTemporalINDDiscovery(val sourceDirs: IndexedSeq[File],
     (null, buildTimes)
   }
 
+  def buildMultiIndexStructure(historiesEnriched: ColumnHistoryStorage,numTimeSliceIndices:Int) = {
+    val (indexEntireValueset,requiredValuesIndexBuildTime) = TimeUtil.executionTimeInMS(getIndexForEntireValueset(historiesEnriched))
+    val (timeSliceIndices, timeSliceIndexBuildTimes) = if (interactiveIndexBuilding) {
+      interactiveTimeSliceIndicesBuilding(historiesEnriched)
+    } else {
+      buildTimeSliceIndices(historiesEnriched, numTimeSliceIndices)
+    }
+    new MultiLevelIndexStructure(indexEntireValueset,timeSliceIndices,requiredValuesIndexBuildTime,timeSliceIndexBuildTimes)
+  }
+
   def runDiscovery(sampleSize:Int, numTimeSliceIndicesList:IndexedSeq[Int]) = {
     val beforePreparation = System.nanoTime()
-    val (histories,timeLoadingJson) = TimeUtil.executionTimeInMS(loadData())
-    println(s"Data Loading Json,$timeLoadingJson")
-    testBinaryLoading(histories)
+//    val histories = dataManager.loadData()
+    val histories = dataManager.loadJsonHistories()
+    dataManager.testBinaryLoading(histories)
     val historiesEnriched = enrichWithHistory(histories)
     //required values index:
     val afterPreparation = System.nanoTime()
     val dataLoadingTimeMS = (afterPreparation - beforePreparation) / 1000000.0
-    val (indexEntireValueset,requirecValuesIndexBuildTime) = TimeUtil.executionTimeInMS(getIndexForEntireValueset(historiesEnriched))
+    val multiIndexStructure = buildMultiIndexStructure(historiesEnriched,numTimeSliceIndicesList.max)
     //time slice values index:
-    val (timeSliceIndices,indexBuildTimes) = if(interactiveIndexBuilding){
-      interactiveTimeSliceIndicesBuilding(historiesEnriched)
-    } else {
-      buildTimeSliceIndices(historiesEnriched,numTimeSliceIndicesList.max)
-    }
     //query all:
     val sample = random.shuffle(historiesEnriched.histories.zipWithIndex).take(sampleSize)
     numTimeSliceIndicesList.foreach(numTimeSliceIndices => {
       logger.debug(s"Processing $numTimeSliceIndices")
-      val (totalQueryTime,totalSubsetValidationTime,totalTemporalValidationTime) =  qeuryAll(historiesEnriched,sample,indexEntireValueset,timeSliceIndices.take(numTimeSliceIndices))
-      val totalResultSTatsLine = TotalResultStats(numTimeSliceIndices,dataLoadingTimeMS,requirecValuesIndexBuildTime,indexBuildTimes.take(numTimeSliceIndices).sum,totalQueryTime,totalSubsetValidationTime,totalTemporalValidationTime)
+      val curIndex = multiIndexStructure.limitTimeSliceIndices(numTimeSliceIndices)
+      val (totalQueryTime,totalSubsetValidationTime,totalTemporalValidationTime) =  queryAll(sample,curIndex)
+      val totalResultSTatsLine = TotalResultStats(numTimeSliceIndices,dataLoadingTimeMS,curIndex.requiredValuesIndexBuildTime,curIndex.totalTimeSliceIndexBuildTime,totalQueryTime,totalSubsetValidationTime,totalTemporalValidationTime)
       totalResultsStats.println(totalResultSTatsLine.toCSV)
       totalResultsStats.flush()
     })
@@ -197,43 +148,21 @@ class RelaxedShiftedTemporalINDDiscovery(val sourceDirs: IndexedSeq[File],
     basicQueryInfoRow.close()
   }
 
-  def queryTimeSliceIndices(candidatesRequiredValues: BitVector[_], timeSliceIndices: Map[(Instant, Instant), BloomfilterIndex], query: EnrichedColumnHistory, queryNumber: Int) = {
-    var curCandidates = candidatesRequiredValues
-    val queryTimesSlices = collection.mutable.ArrayBuffer[Double]()
-    val queryAndValidationTimes = timeSliceIndices
-      .zipWithIndex
-      .map { case (((begin, end), index), indexOrder) => {
-        val (candidatesIndexSlice, queryTimeSliceTime,timeSliceValidationTime) = index.queryWithBitVectorResult(query,
-          Some(curCandidates), false)
-        curCandidates = candidatesIndexSlice
-        queryTimesSlices += queryTimeSliceTime
-        (queryTimeSliceTime,timeSliceValidationTime)
-      }
-      }
-    val queryTimeTotal = queryAndValidationTimes.map(_._1).sum
-    val validationTimeTotal = queryAndValidationTimes.map(_._2).sum
-    (curCandidates,queryTimeTotal)
-  }
 
-  private def qeuryAll(historiesEnriched: ColumnHistoryStorage,
-                       sample:IndexedSeq[(EnrichedColumnHistory,Int)],
-                       entireValuesetIndex:BloomfilterIndex,
-                       timeSliceIndices:Map[(Instant,Instant),BloomfilterIndex]) = {
+
+  private def queryAll(sample:IndexedSeq[(EnrichedColumnHistory,Int)],
+                       multiLevelIndexStructure: MultiLevelIndexStructure) = {
     val queryAndValidationAndTemporalValidationTimes = sample.map{case (query,queryNumber) => {
-      val (candidatesRequiredValues, queryTimeRQValues) = queryRequiredValuesIndex(historiesEnriched, entireValuesetIndex, query, queryNumber)
-      val (curCandidates, queryTimeIndexTimeSlice) = queryTimeSliceIndices(candidatesRequiredValues,timeSliceIndices,query,queryNumber)
+      val (candidatesRequiredValues, queryTimeRQValues) = multiLevelIndexStructure.queryRequiredValuesIndex( query)
+      val (curCandidates, queryTimeIndexTimeSlice) = multiLevelIndexStructure.queryTimeSliceIndices(query,candidatesRequiredValues)
       val numCandidatesAfterIndexQuery = curCandidates.count()-1
       //validate curCandidates after all candidates have already been pruned
       val subsetValidationTime = if(subsetValidation){
-        val (_, subsetValidationTime) = TimeUtil.executionTimeInMS({
-          entireValuesetIndex.validateContainment(query, curCandidates)
-          timeSliceIndices.foreach(index => index._2.validateContainment(query, curCandidates))
-        })
-        subsetValidationTime
+        multiLevelIndexStructure.validateContainments(query,curCandidates)
       } else {
         0.0
       }
-      val candidateLineages = entireValuesetIndex
+      val candidateLineages = multiLevelIndexStructure
         .bitVectorToColumns(curCandidates) //does not matter which index transforms it back because all have them in the same order
         .filter(_ != query)
       val numCandidatesAfterSubsetValidation = candidateLineages.size
@@ -244,12 +173,12 @@ class RelaxedShiftedTemporalINDDiscovery(val sourceDirs: IndexedSeq[File],
         query.och.tableId,
         query.och.id)
       basicQueryInfoRow.println(validationStatRow.toCSVLine)
-      val avgVersionsPerTimeSliceWindow = timeSliceIndices
+      val avgVersionsPerTimeSliceWindow = multiLevelIndexStructure.timeSliceIndices
         .keys
         .map{case (s,e) => query.och.versionsInWindow(s,e).size}
-        .sum / timeSliceIndices.size.toDouble
+        .sum / multiLevelIndexStructure.timeSliceIndices.size.toDouble
       val individualStatLine = IndividualResultStats(queryNumber,
-        timeSliceIndices.size,
+        multiLevelIndexStructure.timeSliceIndices.size,
         queryTimeRQValues+queryTimeIndexTimeSlice,
         subsetValidationTime,
         validationTime,
@@ -268,26 +197,12 @@ class RelaxedShiftedTemporalINDDiscovery(val sourceDirs: IndexedSeq[File],
     (totalQueryTime,totalIndexValidationTime,totalTemporalValidationTime)
   }
 
-  private def queryRequiredValuesIndex(historiesEnriched: ColumnHistoryStorage,
-                                       entireValuesetIndex: BloomfilterIndex,
-                                       query: EnrichedColumnHistory,
-                                       queryNumber: Int) = {
-    val (candidatesRequiredValues, queryTime,validationTime) = entireValuesetIndex.queryWithBitVectorResult(query,
-      None,
-      false)
-    (candidatesRequiredValues, queryTime)
-  }
 
   private def validate(query: EnrichedColumnHistory, actualCandidates: ArrayBuffer[EnrichedColumnHistory]) = {
     val (trueTemporalINDs, validationTime) = TimeUtil.executionTimeInMS(validateCandidates(query,actualCandidates))
     val truePositiveCount = trueTemporalINDs.size
     trueTemporalINDs.foreach(c => c.toCandidateIDs.appendToWriter(resultPR))
     (validationTime,truePositiveCount)
-  }
-
-  private def loadData() = {
-    val (histories, timeDataLoading) = TimeUtil.executionTimeInMS(loadHistories())
-    histories
   }
 
   def discover(timeSliceIndexNumbers:IndexedSeq[Int],sampleSize:Int) = {
