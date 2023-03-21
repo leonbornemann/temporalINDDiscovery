@@ -134,6 +134,7 @@ class RelaxedShiftedTemporalINDDiscovery(val sourceDirs: IndexedSeq[File],
     var buildTimes = collection.mutable.ArrayBuffer[Double]()
     while(!done){
       println("Please enter <number of indices to build,bloomfilter-size>, q to quit")
+      System.gc()
       val line = scala.io.StdIn.readLine()
       if(line == "q"){
         done = true
@@ -146,7 +147,7 @@ class RelaxedShiftedTemporalINDDiscovery(val sourceDirs: IndexedSeq[File],
           ((begin, end), timeSliceIndex)
         }
         }.toMap
-        println("Done with indexing, please confirm continuation by hitting any key")
+        println(curIndexMap.size,"Done with indexing, please confirm continuation by hitting any key")
         scala.io.StdIn.readLine()
       }
     }
