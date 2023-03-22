@@ -100,6 +100,7 @@ class RelaxedShiftedTemporalINDDiscovery(val dataManager:InputDataManager,
         }.toMap
         println(curIndexMap.size,"Done with indexing, please confirm continuation by hitting any key")
         scala.io.StdIn.readLine()
+        println(curIndexMap.size)
       }
     }
     (null, buildTimes)
@@ -117,9 +118,7 @@ class RelaxedShiftedTemporalINDDiscovery(val dataManager:InputDataManager,
 
   def runDiscovery(sampleSize:Int, numTimeSliceIndicesList:IndexedSeq[Int]) = {
     val beforePreparation = System.nanoTime()
-    //val histories = dataManager.loadData()
-    val histories = dataManager.loadJsonHistories()
-    dataManager.testBinaryLoading(histories)
+    val histories = dataManager.loadData()
     val historiesEnriched = enrichWithHistory(histories)
     //required values index:
     val afterPreparation = System.nanoTime()
