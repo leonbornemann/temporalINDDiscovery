@@ -9,7 +9,7 @@ object DiscoveryMain extends App {
   println(s"Called with ${args.toIndexedSeq}")
   GLOBAL_CONFIG.setSettingsForDataSource("wikipedia")
   println(GLOBAL_CONFIG.totalTimeInDays)
-  val version = "0.7" //TODO: update this if discovery algorithm changes!
+  val version = "0.8" //TODO: update this if discovery algorithm changes!
   val sourceDirs = args(0).split(",")
     .map(new File(_))
     .toIndexedSeq
@@ -20,11 +20,11 @@ object DiscoveryMain extends App {
   val deltaInDays = args(4).toLong
   val subsetValidation = true
   val sampleSize=100
-  val bloomfilterSize = 1024
+  val bloomfilterSize = 2048
   val interactiveIndexBuilding = false
   val dataLoader = new InputDataManager(targetFileBinary,None)
   val relaxedShiftedTemporalINDDiscovery = new RelaxedShiftedTemporalINDDiscovery(dataLoader,
-    new ResultSerializer(targetDir),
+    new StandardResultSerializer(targetDir),
     epsilon,
     TimeUtil.nanosPerDay*deltaInDays,
     version,
