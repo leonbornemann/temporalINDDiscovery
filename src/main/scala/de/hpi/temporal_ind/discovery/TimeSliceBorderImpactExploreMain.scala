@@ -1,12 +1,13 @@
 package de.hpi.temporal_ind.discovery
 
+import com.typesafe.scalalogging.StrictLogging
 import de.hpi.temporal_ind.data.ind.variant4.TimeUtil
 import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
 
 import java.io.{File, PrintWriter}
 import java.time.Instant
 
-object TimeSliceBorderImpactExploreMain extends App {
+object TimeSliceBorderImpactExploreMain extends App with StrictLogging{
   println(s"Called with ${args.toIndexedSeq}")
   GLOBAL_CONFIG.setSettingsForDataSource("wikipedia")
   println(GLOBAL_CONFIG.totalTimeInDays)
@@ -22,7 +23,7 @@ object TimeSliceBorderImpactExploreMain extends App {
   val deltaInDays = args(4).toLong
   val subsetValidation = true
   val sampleSize = 1000
-  val bloomfilterSize = 1024
+  val bloomfilterSize = 2048
   val interactiveIndexBuilding = true
   val dataLoader = new InputDataManager(targetFileBinary)
   val relaxedShiftedTemporalINDDiscovery = new RelaxedShiftedTemporalINDDiscovery(dataLoader,
@@ -35,6 +36,7 @@ object TimeSliceBorderImpactExploreMain extends App {
     interactiveIndexBuilding)
   relaxedShiftedTemporalINDDiscovery.discover(IndexedSeq(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20), sampleSize)
   val resultPR = new PrintWriter(targetDir.getAbsolutePath + "/pruningStats.csv")
+  resultPR.println(TimeSliceIndexTuningStatRow.schema)
   val (data,_) = relaxedShiftedTemporalINDDiscovery.loadData()
   val requiredValueIndex = relaxedShiftedTemporalINDDiscovery.getRequiredValuesetIndex(data)
   val indexStructures = relaxedShiftedTemporalINDDiscovery.getIterableForTimeSliceIndices(data)
@@ -45,6 +47,7 @@ object TimeSliceBorderImpactExploreMain extends App {
     .toMap
   indexStructures
     .foreach {case (timePeriod,index) =>
+      logger.debug(s"beginning $timePeriod")
       val indexMap = collection.mutable.TreeMap[(Instant, Instant), BloomfilterIndex]() ++ Seq((timePeriod, index))
       val multiLevelIndexStructure = new MultiLevelIndexStructure(requiredValueIndex,indexMap,0,IndexedSeq(0))
       sampleTOQuery.foreach{case (query,queryNum) => {
