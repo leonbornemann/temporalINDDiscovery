@@ -21,7 +21,7 @@ object DiscoveryMain extends App {
   val subsetValidation = true
   val sampleSize=100
   val bloomfilterSize = 1024
-  val interactiveIndexBuilding = true
+  val interactiveIndexBuilding = false
   val dataLoader = new InputDataManager(targetFileBinary,None)
   val relaxedShiftedTemporalINDDiscovery = new RelaxedShiftedTemporalINDDiscovery(dataLoader,
     new ResultSerializer(targetDir),
