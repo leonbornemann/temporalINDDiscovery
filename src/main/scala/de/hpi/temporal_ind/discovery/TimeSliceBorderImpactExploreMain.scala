@@ -3,26 +3,25 @@ package de.hpi.temporal_ind.discovery
 import de.hpi.temporal_ind.data.ind.variant4.TimeUtil
 import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
 
-import java.io.File
+import java.io.{File, PrintWriter}
+import java.time.Instant
 
 object TimeSliceBorderImpactExploreMain extends App {
   println(s"Called with ${args.toIndexedSeq}")
   GLOBAL_CONFIG.setSettingsForDataSource("wikipedia")
   println(GLOBAL_CONFIG.totalTimeInDays)
   val version = "0.7_explore_time_slice" //TODO: update this if discovery algorithm changes!
-
-
   //TODO: continue adapting here!
   val sourceDirs = args(0).split(",")
     .map(new File(_))
     .toIndexedSeq
-  val targetDir = new File(args(1) + s"/$version/")
+  val targetDir = new File(args(1) + s"/${version}/")
   targetDir.mkdir()
   val targetFileBinary = args(2)
   val epsilon = args(3).toDouble
   val deltaInDays = args(4).toLong
   val subsetValidation = true
-  val sampleSize = 100
+  val sampleSize = 1000
   val bloomfilterSize = 1024
   val interactiveIndexBuilding = true
   val dataLoader = new InputDataManager(targetFileBinary)
@@ -35,5 +34,27 @@ object TimeSliceBorderImpactExploreMain extends App {
     bloomfilterSize,
     interactiveIndexBuilding)
   relaxedShiftedTemporalINDDiscovery.discover(IndexedSeq(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20), sampleSize)
+  val resultPR = new PrintWriter(targetDir.getAbsolutePath + "/pruningStats.csv")
+  val (data,_) = relaxedShiftedTemporalINDDiscovery.loadData()
+  val requiredValueIndex = relaxedShiftedTemporalINDDiscovery.getRequiredValuesetIndex(data)
+  val indexStructures = relaxedShiftedTemporalINDDiscovery.getIterableForTimeSliceIndices(data)
+  val sampleTOQuery = relaxedShiftedTemporalINDDiscovery.getRandomSampleOfInputData(data,sampleSize)
+  val rqIndex = new MultiLevelIndexStructure(requiredValueIndex,collection.SortedMap(),0,IndexedSeq(0))
+  val requiredIndexResults = sampleTOQuery
+    .map{case (c,_) => (c,rqIndex.queryRequiredValuesIndex(c)._1)}
+    .toMap
+  indexStructures
+    .foreach {case (timePeriod,index) =>
+      val indexMap = collection.mutable.TreeMap[(Instant, Instant), BloomfilterIndex]() ++ Seq((timePeriod, index))
+      val multiLevelIndexStructure = new MultiLevelIndexStructure(requiredValueIndex,indexMap,0,IndexedSeq(0))
+      sampleTOQuery.foreach{case (query,queryNum) => {
+        val candidatesRequiredValues = requiredIndexResults(query)
+        val (curCandidates, _) = multiLevelIndexStructure.queryTimeSliceIndices(query, candidatesRequiredValues)
+        val statRow = new TimeSliceIndexTuningStatRow(queryNum,timePeriod._1,timePeriod._2,candidatesRequiredValues.count(),curCandidates.count())
+        resultPR.println(statRow.toCSVLine)
+        resultPR.flush()
+      }}
+    }
+  resultPR.close()
 
 }

@@ -41,7 +41,7 @@ class RelaxedShiftedTemporalINDDiscovery(val dataManager:InputDataManager,
     new ColumnHistoryStorage(histories.map(och => new EnrichedColumnHistory(och,absoluteEpsilonNanos)))
   }
 
-  def getIndexForEntireValueset(historiesEnriched: ColumnHistoryStorage) = {
+  def getRequiredValuesetIndex(historiesEnriched: ColumnHistoryStorage) = {
     new BloomfilterIndex(historiesEnriched.histories,
       bloomfilterSize,
       (e:EnrichedColumnHistory) => e.allValues,
@@ -61,6 +61,17 @@ class RelaxedShiftedTemporalINDDiscovery(val dataManager:InputDataManager,
       //new TemporalShifted
       new ShifteddRelaxedCustomFunctionTemporalIND[String](query.och, refCandidate.och, deltaInNanos, absoluteEpsilonNanos, new ConstantWeightFunction(), ValidationVariant.FULL_TIME_PERIOD)
     }).filter(_.isValid)
+  }
+
+  def getIterableForTimeSliceIndices(historiesEnriched: ColumnHistoryStorage) = {
+    val allSlices = GLOBAL_CONFIG.partitionTimePeriodIntoSlices(absoluteEpsilonNanos)
+    logger.debug("Found ", allSlices.size, " time slices")
+    val slices = random.shuffle(allSlices)
+      .iterator
+      .map { case (begin, end) =>
+        ((begin,end),getIndexForTimeSlice(historiesEnriched,begin,end))
+      }
+    slices
   }
 
   def buildTimeSliceIndices(historiesEnriched: ColumnHistoryStorage,indicesToBuild:Int) = {
@@ -107,7 +118,7 @@ class RelaxedShiftedTemporalINDDiscovery(val dataManager:InputDataManager,
   }
 
   def buildMultiIndexStructure(historiesEnriched: ColumnHistoryStorage,numTimeSliceIndices:Int) = {
-    val (indexEntireValueset,requiredValuesIndexBuildTime) = TimeUtil.executionTimeInMS(getIndexForEntireValueset(historiesEnriched))
+    val (indexEntireValueset,requiredValuesIndexBuildTime) = TimeUtil.executionTimeInMS(getRequiredValuesetIndex(historiesEnriched))
     val (timeSliceIndices, timeSliceIndexBuildTimes) = if (interactiveIndexBuilding) {
       interactiveTimeSliceIndicesBuilding(historiesEnriched)
     } else {
@@ -117,16 +128,11 @@ class RelaxedShiftedTemporalINDDiscovery(val dataManager:InputDataManager,
   }
 
   def runDiscovery(sampleSize:Int, numTimeSliceIndicesList:IndexedSeq[Int]) = {
-    val beforePreparation = System.nanoTime()
-    val histories = dataManager.loadData()
-    val historiesEnriched = enrichWithHistory(histories)
-    //required values index:
-    val afterPreparation = System.nanoTime()
-    val dataLoadingTimeMS = (afterPreparation - beforePreparation) / 1000000.0
+    val (historiesEnriched: ColumnHistoryStorage, dataLoadingTimeMS: Double) = loadData()
     val multiIndexStructure = buildMultiIndexStructure(historiesEnriched,numTimeSliceIndicesList.max)
     //time slice values index:
     //query all:
-    val sample = random.shuffle(historiesEnriched.histories.zipWithIndex).take(sampleSize)
+    val sample = getRandomSampleOfInputData(historiesEnriched,sampleSize )
     numTimeSliceIndicesList.foreach(numTimeSliceIndices => {
       logger.debug(s"Processing $numTimeSliceIndices")
       val curIndex = multiIndexStructure.limitTimeSliceIndices(numTimeSliceIndices)
@@ -138,8 +144,21 @@ class RelaxedShiftedTemporalINDDiscovery(val dataManager:InputDataManager,
   }
 
 
+  def getRandomSampleOfInputData(historiesEnriched: ColumnHistoryStorage,sampleSize: Int) = {
+    random.shuffle(historiesEnriched.histories.zipWithIndex).take(sampleSize)
+  }
 
-  private def queryAll(sample:IndexedSeq[(EnrichedColumnHistory,Int)],
+  def loadData() = {
+    val beforePreparation = System.nanoTime()
+    val histories = dataManager.loadData()
+    val historiesEnriched = enrichWithHistory(histories)
+    //required values index:
+    val afterPreparation = System.nanoTime()
+    val dataLoadingTimeMS = (afterPreparation - beforePreparation) / 1000000.0
+    (historiesEnriched, dataLoadingTimeMS)
+  }
+
+  def queryAll(sample:IndexedSeq[(EnrichedColumnHistory,Int)],
                        multiLevelIndexStructure: MultiLevelIndexStructure) = {
     val queryAndValidationAndTemporalValidationTimes = sample.map{case (query,queryNumber) => {
       val (candidatesRequiredValues, queryTimeRQValues) = multiLevelIndexStructure.queryRequiredValuesIndex( query)

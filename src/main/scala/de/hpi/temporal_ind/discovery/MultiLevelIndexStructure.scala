@@ -9,7 +9,7 @@ import scala.collection.mutable.ArrayBuffer
 class MultiLevelIndexStructure(val indexEntireValueset: BloomfilterIndex,
                                val timeSliceIndices: collection.SortedMap[(Instant, Instant), BloomfilterIndex],
                                val requiredValuesIndexBuildTime: Double,
-                               val timeSliceIndexBuildTimes: ArrayBuffer[Double]) {
+                               val timeSliceIndexBuildTimes: collection.IndexedSeq[Double]) {
   def bitVectorToColumns(curCandidates: BitVector[_]) = indexEntireValueset.bitVectorToColumns(curCandidates)
 
   /***
