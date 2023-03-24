@@ -24,7 +24,7 @@ object TimeSliceBorderImpactExploreMain extends App with StrictLogging{
   val subsetValidation = true
   val sampleSize = 1000
   val bloomfilterSize = 2048
-  val interactiveIndexBuilding = true
+  val interactiveIndexBuilding = false
   val dataLoader = new InputDataManager(targetFileBinary)
   val relaxedShiftedTemporalINDDiscovery = new RelaxedShiftedTemporalINDDiscovery(dataLoader,
     new TimeSliceImpactResultSerializer(targetDir),
@@ -34,7 +34,6 @@ object TimeSliceBorderImpactExploreMain extends App with StrictLogging{
     subsetValidation,
     bloomfilterSize,
     interactiveIndexBuilding)
-  relaxedShiftedTemporalINDDiscovery.discover(IndexedSeq(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20), sampleSize)
   val resultPR = new PrintWriter(targetDir.getAbsolutePath + "/pruningStats.csv")
   resultPR.println(TimeSliceIndexTuningStatRow.schema)
   val (data,_) = relaxedShiftedTemporalINDDiscovery.loadData()
