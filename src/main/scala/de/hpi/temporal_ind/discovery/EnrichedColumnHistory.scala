@@ -5,6 +5,8 @@ import de.hpi.temporal_ind.data.column.data.original.OrderedColumnHistory
 import java.time.Instant
 
 class EnrichedColumnHistory(val och: OrderedColumnHistory,absoluteEpsilon:Long) {
+  def clearTimeWindowCache() = windowToValueSetMap.clear()
+
   def valueSetInWindow(beginDelta: Instant, endDelta: Instant): collection.Set[String] = {
     windowToValueSetMap.getOrElseUpdate((beginDelta,endDelta),och.valueSetInWindow(beginDelta,endDelta))
   }

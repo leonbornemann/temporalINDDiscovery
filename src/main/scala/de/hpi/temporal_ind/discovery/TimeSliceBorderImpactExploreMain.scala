@@ -22,8 +22,8 @@ object TimeSliceBorderImpactExploreMain extends App with StrictLogging{
   val epsilon = args(3).toDouble
   val deltaInDays = args(4).toLong
   val subsetValidation = true
-  val sampleSize = 1000
-  val bloomfilterSize = 2048
+  val sampleSize = 10000
+  val bloomfilterSize = 4096
   val interactiveIndexBuilding = false
   val dataLoader = new InputDataManager(targetFileBinary)
   val relaxedShiftedTemporalINDDiscovery = new RelaxedShiftedTemporalINDDiscovery(dataLoader,
@@ -56,6 +56,7 @@ object TimeSliceBorderImpactExploreMain extends App with StrictLogging{
         resultPR.println(statRow.toCSVLine)
         resultPR.flush()
       }}
+      data.histories.foreach(eh => eh.clearTimeWindowCache())
     }
   resultPR.close()
 
