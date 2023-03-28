@@ -32,7 +32,7 @@ object TimeSliceStatisticsExportMain extends App {
     subsetValidation,
     bloomfilterSize,
     interactiveIndexBuilding)
-  val resultPR = new PrintWriter(targetDir.getAbsolutePath + "/pruningStats.csv")
+  val resultPR = new PrintWriter(targetDir.getAbsolutePath + "/timeSliceStats.csv")
   resultPR.println(TimeSliceIndexTuningStatRow.schema)
   val (data, _) = relaxedShiftedTemporalINDDiscovery.loadData()
   val absoluteEpsilonNanos = (GLOBAL_CONFIG.totalTimeInNanos * epsilon).toLong
