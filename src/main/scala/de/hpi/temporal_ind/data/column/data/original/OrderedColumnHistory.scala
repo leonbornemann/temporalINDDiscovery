@@ -1,6 +1,8 @@
 package de.hpi.temporal_ind.data.column.data.original
 
 import de.hpi.temporal_ind.data.column.data.{AbstractColumnVersion, AbstractOrderedColumnHistory}
+import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
+import de.hpi.temporal_ind.discovery.TimeSliceStats
 
 import java.io.File
 import java.time.Instant
@@ -12,6 +14,17 @@ class OrderedColumnHistory(val id: String,
                            val pageID: String,
                            val pageTitle: String,
                            val history: OrderedColumnVersionList) extends AbstractOrderedColumnHistory[String] with Serializable{
+  def extractStatsForTimeRange(timeRange:(Instant,Instant),stats:TimeSliceStats) = {
+    val begin = if(history.versions.contains(timeRange._1)) timeRange._1 else history.versions.maxBefore(timeRange._1).map(_._1).getOrElse(GLOBAL_CONFIG.earliestInstant)
+    val end = timeRange._2
+    val versionsInRange = history.versions.range(begin,end)
+    if(!versionsInRange.isEmpty){
+      stats.numHistoriesWithVersionPresent+=1
+    }
+    stats.numVersionsPresentSum += versionsInRange.size
+    stats.hashedDistinctValues.addAll(versionsInRange.flatMap(_._2.values.map(_.hashCode)))
+  }
+
   def toKryoSerializableColumnHistory  = {
     val hist = history.versions.values.map(acv => acv.asInstanceOf[ColumnVersion].toKryoSerializableColumnHistory).toIndexedSeq
     val list = new util.ArrayList[KryoSerializableColumnVersion]()

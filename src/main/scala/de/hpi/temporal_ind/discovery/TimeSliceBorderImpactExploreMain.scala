@@ -23,7 +23,7 @@ object TimeSliceBorderImpactExploreMain extends App with StrictLogging{
   val deltaInDays = args(4).toLong
   val subsetValidation = true
   val sampleSize = 10000
-  val bloomfilterSize = 4096
+  val bloomfilterSize = 2048
   val interactiveIndexBuilding = false
   val dataLoader = new InputDataManager(targetFileBinary)
   val relaxedShiftedTemporalINDDiscovery = new RelaxedShiftedTemporalINDDiscovery(dataLoader,
