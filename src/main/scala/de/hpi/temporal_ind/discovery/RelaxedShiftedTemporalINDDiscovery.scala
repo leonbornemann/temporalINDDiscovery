@@ -74,8 +74,8 @@ class RelaxedShiftedTemporalINDDiscovery(val dataManager:InputDataManager,
   }
 
   def buildTimeSliceIndices(historiesEnriched: ColumnHistoryStorage,indicesToBuild:Int) = {
-    val slices = getTimeSlices(historiesEnriched)
-      .take(indicesToBuild)
+    val slices = TimeUtil.printExecutionTimeInMS(getTimeSlices(historiesEnriched)
+      .take(indicesToBuild),"Time Slice Selection")
     var buildTimes = collection.mutable.ArrayBuffer[Double]()
     val indexMap = collection.mutable.TreeMap[(Instant,Instant),BloomfilterIndex]() ++ slices.map{case (begin,end) => {
       val (timeSliceIndex, timeSliceIndexBuild) = TimeUtil.executionTimeInMS(getIndexForTimeSlice(historiesEnriched,begin,end))
