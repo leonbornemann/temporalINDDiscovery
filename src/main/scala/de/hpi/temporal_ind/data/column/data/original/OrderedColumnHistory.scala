@@ -7,6 +7,7 @@ import de.hpi.temporal_ind.discovery.TimeSliceStats
 import java.io.File
 import java.time.Instant
 import java.util
+import scala.collection.mutable
 import scala.jdk.CollectionConverters.{ListHasAsScala, SeqHasAsJava}
 
 class OrderedColumnHistory(val id: String,
@@ -14,6 +15,32 @@ class OrderedColumnHistory(val id: String,
                            val pageID: String,
                            val pageTitle: String,
                            val history: OrderedColumnVersionList) extends AbstractOrderedColumnHistory[String] with Serializable{
+  def addPresenceForTimeRanges(timeSliceToOccurrences: mutable.TreeMap[Instant,( Instant, SimpleCounter)]) {
+    val it = new PeekableIterator(history.versions.valuesIterator)
+    val rangesToAddTo = collection.mutable.HashSet[Instant]()
+    while(it.hasNext){
+      val cur = it.next()
+      val next = it.peek
+      if(!cur.isDelete){
+        val begin = if(timeSliceToOccurrences.contains(cur.timestamp))
+          cur.timestamp
+        else
+          timeSliceToOccurrences
+            .maxBefore(cur.timestamp)
+            .map(_._1)
+            .getOrElse(timeSliceToOccurrences.head._1)
+        val end = if(next.isDefined) timeSliceToOccurrences.maxBefore(next.get.timestamp).get._1.plusNanos(1) else timeSliceToOccurrences.last._1
+        val timeSlicesToAddTo = timeSliceToOccurrences
+          .range(begin,end)
+          .keySet
+        rangesToAddTo ++=timeSlicesToAddTo
+      }
+    }
+    rangesToAddTo.foreach(begin => {
+      timeSliceToOccurrences(begin)._2.count+=1
+    })
+  }
+
   def extractStatsForTimeRange(timeRange:(Instant,Instant),stats:TimeSliceStats) = {
     val begin = if(history.versions.contains(timeRange._1)) timeRange._1 else history.versions.maxBefore(timeRange._1).map(_._1).getOrElse(GLOBAL_CONFIG.earliestInstant)
     val end = timeRange._2

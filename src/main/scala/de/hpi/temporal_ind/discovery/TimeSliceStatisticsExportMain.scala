@@ -31,9 +31,10 @@ object TimeSliceStatisticsExportMain extends App {
     version,
     subsetValidation,
     bloomfilterSize,
-    interactiveIndexBuilding)
+    interactiveIndexBuilding,
+    TimeSliceChoiceMethod.RANDOM)
+
   val resultPR = new PrintWriter(targetDir.getAbsolutePath + "/timeSliceStats.csv")
-  resultPR.println(TimeSliceIndexTuningStatRow.schema)
   val (data, _) = relaxedShiftedTemporalINDDiscovery.loadData()
   val absoluteEpsilonNanos = (GLOBAL_CONFIG.totalTimeInNanos * epsilon).toLong
   val allSlices = GLOBAL_CONFIG.partitionTimePeriodIntoSlices(absoluteEpsilonNanos)

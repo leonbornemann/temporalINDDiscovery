@@ -4,7 +4,7 @@ import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.io.{Input, Output}
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.temporal_ind.data.column.data.AbstractColumnVersion
-import de.hpi.temporal_ind.data.column.data.original.{ColumnHistory, KryoSerializableColumnHistory, OrderedColumnHistory, OrderedColumnVersionList, ValidationVariant}
+import de.hpi.temporal_ind.data.column.data.original.{ColumnHistory, KryoSerializableColumnHistory, OrderedColumnHistory, OrderedColumnVersionList, SimpleCounter, ValidationVariant}
 import de.hpi.temporal_ind.data.ind.{ConstantWeightFunction, ShifteddRelaxedCustomFunctionTemporalIND, SimpleTimeWindowTemporalIND}
 import de.hpi.temporal_ind.data.ind.variant4.TimeUtil
 import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
@@ -30,6 +30,7 @@ class RelaxedShiftedTemporalINDDiscovery(val dataManager:InputDataManager,
                                          val subsetValidation:Boolean,
                                          val bloomfilterSize:Int,
                                          val interactiveIndexBuilding:Boolean,
+                                         val timeSliceChoiceMethod:TimeSliceChoiceMethod.Value,
                                          val random:Random = new Random(13)) extends StrictLogging{
 
   def version = if(interactiveIndexBuilding) versionParam + "_interactive" else versionParam
@@ -64,9 +65,7 @@ class RelaxedShiftedTemporalINDDiscovery(val dataManager:InputDataManager,
   }
 
   def getIterableForTimeSliceIndices(historiesEnriched: ColumnHistoryStorage) = {
-    val allSlices = GLOBAL_CONFIG.partitionTimePeriodIntoSlices(absoluteEpsilonNanos)
-    logger.debug("Found ", allSlices.size, " time slices")
-    val slices = random.shuffle(allSlices)
+    val slices = getTimeSlices(historiesEnriched)
       .iterator
       .map { case (begin, end) =>
         ((begin,end),getIndexForTimeSlice(historiesEnriched,begin,end))
@@ -75,9 +74,7 @@ class RelaxedShiftedTemporalINDDiscovery(val dataManager:InputDataManager,
   }
 
   def buildTimeSliceIndices(historiesEnriched: ColumnHistoryStorage,indicesToBuild:Int) = {
-    val allSlices = GLOBAL_CONFIG.partitionTimePeriodIntoSlices(absoluteEpsilonNanos)
-    logger.debug("Found ",allSlices.size," time slices")
-    val slices = random.shuffle(allSlices)
+    val slices = getTimeSlices(historiesEnriched)
       .take(indicesToBuild)
     var buildTimes = collection.mutable.ArrayBuffer[Double]()
     val indexMap = collection.mutable.TreeMap[(Instant,Instant),BloomfilterIndex]() ++ slices.map{case (begin,end) => {
@@ -88,11 +85,31 @@ class RelaxedShiftedTemporalINDDiscovery(val dataManager:InputDataManager,
     (indexMap,buildTimes)
   }
 
+  def getTimeSlices(historiesEnriched:ColumnHistoryStorage):IndexedSeq[(Instant,Instant)] = {
+    val allSlices = GLOBAL_CONFIG.partitionTimePeriodIntoSlices(absoluteEpsilonNanos)
+    if(timeSliceChoiceMethod==TimeSliceChoiceMethod.RANDOM){
+      random.shuffle(allSlices)
+    } else {
+      val timeSliceToOccurrences = collection.mutable.TreeMap[Instant, (Instant, SimpleCounter)]() ++ allSlices.map(s => (s._1, (s._2, SimpleCounter())))
+      historiesEnriched
+        .histories
+        .foreach(e => e.och.addPresenceForTimeRanges(timeSliceToOccurrences))
+      if (timeSliceChoiceMethod == TimeSliceChoiceMethod.BESTX) {
+        //using simple mutable counter is more efficient than immutable int since we don't haven to reassign in the map
+        timeSliceToOccurrences
+          .toIndexedSeq
+          .sortBy(_._2._2.count)
+          .map(t => (t._1,t._2._1))
+      } else {
+        //do weighted random selection
+        new WeightedRandomShuffler(random).shuffle(timeSliceToOccurrences.map(t => ((t._1,t._2._1),t._2._2.count)))
+      }
+    }
+  }
+
   def interactiveTimeSliceIndicesBuilding(historiesEnriched: ColumnHistoryStorage) = {
     var done = false
-    val allSlices = GLOBAL_CONFIG.partitionTimePeriodIntoSlices(absoluteEpsilonNanos)
-    logger.debug("Found " + allSlices.size + " time slices")
-    val slices = random.shuffle(allSlices)
+    val slices = getTimeSlices(historiesEnriched)
     var buildTimes = collection.mutable.ArrayBuffer[Double]()
     while(!done){
       println("Please enter <number of indices to build,bloomfilter-size>, q to quit")

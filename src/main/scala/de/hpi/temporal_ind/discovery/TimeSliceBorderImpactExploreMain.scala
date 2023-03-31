@@ -33,7 +33,8 @@ object TimeSliceBorderImpactExploreMain extends App with StrictLogging{
     version,
     subsetValidation,
     bloomfilterSize,
-    interactiveIndexBuilding)
+    interactiveIndexBuilding,
+    TimeSliceChoiceMethod.RANDOM)
   val resultPR = new PrintWriter(targetDir.getAbsolutePath + "/pruningStats.csv")
   resultPR.println(TimeSliceIndexTuningStatRow.schema)
   val (data,_) = relaxedShiftedTemporalINDDiscovery.loadData()

@@ -16,7 +16,7 @@ class TimeSliceStatisticsExtractor(data: IndexedSeq[OrderedColumnHistory],
       logger.debug(s"Processing Slice $slice")
       val stats = TimeSliceStats()
       data.foreach(och => och.extractStatsForTimeRange(slice,stats))
-      resultPR.println(s"${slice._1}.${slice._2},${stats.numHistoriesWithVersionPresent},${stats.numVersionsPresentSum},${stats.hashedDistinctValues.size}")
+      resultPR.println(s"${slice._1},${slice._2},${stats.numHistoriesWithVersionPresent},${stats.numVersionsPresentSum},${stats.hashedDistinctValues.size}")
     })
     resultPR.close()
   }
