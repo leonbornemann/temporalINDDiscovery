@@ -31,6 +31,7 @@ class RelaxedShiftedTemporalINDDiscovery(val dataManager:InputDataManager,
                                          val bloomfilterSize:Int,
                                          val interactiveIndexBuilding:Boolean,
                                          val timeSliceChoiceMethod:TimeSliceChoiceMethod.Value,
+                                         val enableEarlyAbort:Boolean,
                                          val random:Random = new Random(13)) extends StrictLogging{
 
   def version = if(interactiveIndexBuilding) versionParam + "_interactive" else versionParam
@@ -46,7 +47,8 @@ class RelaxedShiftedTemporalINDDiscovery(val dataManager:InputDataManager,
     new BloomfilterIndex(historiesEnriched.histories,
       bloomfilterSize,
       (e:EnrichedColumnHistory) => e.allValues,
-      (e:EnrichedColumnHistory) => Seq(e.requiredValues))
+      (e:EnrichedColumnHistory) => Seq(new ValuesInTimeWindow(GLOBAL_CONFIG.earliestInstant,GLOBAL_CONFIG.lastInstant,e.requiredValues)),
+      absoluteEpsilonNanos)
   }
 
   def getIndexForTimeSlice(historiesEnriched:ColumnHistoryStorage,lower:Instant, upper:Instant,size:Int=bloomfilterSize) = {
@@ -54,7 +56,8 @@ class RelaxedShiftedTemporalINDDiscovery(val dataManager:InputDataManager,
     new BloomfilterIndex(historiesEnriched.histories,
       size,
       (e:EnrichedColumnHistory) => e.valueSetInWindow(beginDelta,endDelta),
-      (e:EnrichedColumnHistory) => e.och.versionsInWindowNew(lower,upper).map(_._2.values).toSeq)
+      (e:EnrichedColumnHistory) => e.och.versionsInWindowNew(lower,upper).map(t => new ValuesInTimeWindow(lower,upper,t._2.values)).toSeq,
+      absoluteEpsilonNanos)
   }
 
   def validateCandidates(query:EnrichedColumnHistory,candidatesRequiredValues: ArrayBuffer[EnrichedColumnHistory]) = {
@@ -141,7 +144,8 @@ class RelaxedShiftedTemporalINDDiscovery(val dataManager:InputDataManager,
     } else {
       buildTimeSliceIndices(historiesEnriched, numTimeSliceIndices)
     }
-    new MultiLevelIndexStructure(indexEntireValueset,timeSliceIndices,requiredValuesIndexBuildTime,timeSliceIndexBuildTimes)
+    val timeSliceIndexStructure = new MultiTimeSliceIndexStructure(timeSliceIndices, timeSliceIndexBuildTimes, enableEarlyAbort, absoluteEpsilonNanos)
+    new MultiLevelIndexStructure(indexEntireValueset,timeSliceIndexStructure,requiredValuesIndexBuildTime)
   }
 
   def runDiscovery(sampleSize:Int, numTimeSliceIndicesList:IndexedSeq[Int]) = {
@@ -198,12 +202,14 @@ class RelaxedShiftedTemporalINDDiscovery(val dataManager:InputDataManager,
         query.och.tableId,
         query.och.id)
       resultSerializer.addBasicQueryInfoRow(validationStatRow)
-      val avgVersionsPerTimeSliceWindow = multiLevelIndexStructure.timeSliceIndices
+      val avgVersionsPerTimeSliceWindow = multiLevelIndexStructure
+        .timeSliceIndices
+        .timeSliceIndices
         .keys
         .map{case (s,e) => query.och.versionsInWindow(s,e).size}
-        .sum / multiLevelIndexStructure.timeSliceIndices.size.toDouble
+        .sum / multiLevelIndexStructure.timeSliceIndices.timeSliceIndices.size.toDouble
       val individualStatLine = IndividualResultStats(queryNumber,
-        multiLevelIndexStructure.timeSliceIndices.size,
+        multiLevelIndexStructure.timeSliceIndices.timeSliceIndices.size,
         queryTimeRQValues+queryTimeIndexTimeSlice,
         subsetValidationTime,
         validationTime,

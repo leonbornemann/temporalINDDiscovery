@@ -34,14 +34,15 @@ object TimeSliceBorderImpactExploreMain extends App with StrictLogging{
     subsetValidation,
     bloomfilterSize,
     interactiveIndexBuilding,
-    TimeSliceChoiceMethod.RANDOM)
+    TimeSliceChoiceMethod.RANDOM,
+    true)
   val resultPR = new PrintWriter(targetDir.getAbsolutePath + "/pruningStats.csv")
   resultPR.println(TimeSliceIndexTuningStatRow.schema)
   val (data,_) = relaxedShiftedTemporalINDDiscovery.loadData()
   val requiredValueIndex = relaxedShiftedTemporalINDDiscovery.getRequiredValuesetIndex(data)
   val indexStructures = relaxedShiftedTemporalINDDiscovery.getIterableForTimeSliceIndices(data)
   val sampleTOQuery = relaxedShiftedTemporalINDDiscovery.getRandomSampleOfInputData(data,sampleSize)
-  val rqIndex = new MultiLevelIndexStructure(requiredValueIndex,collection.SortedMap(),0,IndexedSeq(0))
+  val rqIndex = new MultiLevelIndexStructure(requiredValueIndex,new MultiTimeSliceIndexStructure(collection.SortedMap(),IndexedSeq(),false,1),0)
   val requiredIndexResults = sampleTOQuery
     .map{case (c,_) => (c,rqIndex.queryRequiredValuesIndex(c)._1)}
     .toMap
@@ -49,7 +50,8 @@ object TimeSliceBorderImpactExploreMain extends App with StrictLogging{
     .foreach {case (timePeriod,index) =>
       logger.debug(s"beginning $timePeriod")
       val indexMap = collection.mutable.TreeMap[(Instant, Instant), BloomfilterIndex]() ++ Seq((timePeriod, index))
-      val multiLevelIndexStructure = new MultiLevelIndexStructure(requiredValueIndex,indexMap,0,IndexedSeq(0))
+      val curTimeSliceIndex = new MultiTimeSliceIndexStructure(indexMap,IndexedSeq(),false,1)
+      val multiLevelIndexStructure = new MultiLevelIndexStructure(requiredValueIndex,curTimeSliceIndex,0)
       sampleTOQuery.foreach{case (query,queryNum) => {
         val candidatesRequiredValues = requiredIndexResults(query)
         val (curCandidates, _) = multiLevelIndexStructure.queryTimeSliceIndices(query, candidatesRequiredValues)

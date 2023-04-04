@@ -20,7 +20,8 @@ import collection.JavaConverters._
 class BloomfilterIndex(input: IndexedSeq[EnrichedColumnHistory],
                        bloomfilterSize:Int,
                        generateValueSetToIndex:(EnrichedColumnHistory => collection.Set[String]),
-                       generateQueryValueSets:(EnrichedColumnHistory => Seq[collection.Set[String]])) extends StrictLogging{
+                       generateQueryValueSets:(EnrichedColumnHistory => Seq[ValuesInTimeWindow]),
+                       absoluteEpsilonNanos:Long) extends StrictLogging{
   val outFile = "/home/leon/data/temporalINDDiscovery/wikipedia/discovery/testOutput/test.txt"
   val many = new MANY()
 
@@ -74,13 +75,28 @@ class BloomfilterIndex(input: IndexedSeq[EnrichedColumnHistory],
     validateContainmentOfSets(generateQueryValueSets(query),res)
   }
 
-  def validateContainmentOfSets(queryValueSets: Seq[collection.Set[String]],
+  def iterateThroughSetBitsOfBitVector(bv:BitVector[_]):Iterator[Int] = {
+    new Iterator[Int]() {
+
+      var cur = bv.next(0)
+
+      override def hasNext: Boolean = cur!= -1
+
+      override def next(): Int = {
+        val toReturn = cur
+        cur = bv.next(cur)
+        toReturn
+      }
+    }
+  }
+
+  def validateContainmentOfSets(queryValueSets: Seq[ValuesInTimeWindow],
                           res: BitVector[_]) = {
     var curColumnIndex = res.next(0)
     val toSetTo0 = collection.mutable.ArrayBuffer[Int]()
     while (curColumnIndex != -1) {
       val curCol = input(curColumnIndex)
-      if(!queryValueSets.exists(_.subsetOf(generateValueSetToIndex(curCol)))){
+      if(!queryValueSets.exists(_.values.subsetOf(generateValueSetToIndex(curCol)))){
         toSetTo0 += curColumnIndex
       }
       curColumnIndex = res.next(curColumnIndex)
@@ -88,38 +104,78 @@ class BloomfilterIndex(input: IndexedSeq[EnrichedColumnHistory],
     toSetTo0.foreach(i => res.clear(i))
   }
 
+  private def noEarlyAbortIndexQuery(queryValueSet: ValuesInTimeWindow,
+                                     preFilteredCandidates:Option[BitVector[_]] = None,
+                                     previousResult:Option[BitVector[_]]) = {
+    var resNew = executeQuery(preFilteredCandidates, queryValueSet)
+    if (previousResult.isEmpty) {
+      resNew
+    } else {
+      resNew = previousResult.get.or(resNew) // we take the or here because if any of the versions within a time slice is contained, we cannot prune the candidate
+      if (preFilteredCandidates.isDefined)
+        resNew = resNew.and(preFilteredCandidates.get) //doing the and again is probably not necessary (?)
+      resNew
+    }
+  }
+
   def queryWithBitVectorResult(q:EnrichedColumnHistory,
                                preFilteredCandidates:Option[BitVector[_]] = None,
-                               validate:Boolean=true) = {
-    var res:BitVector[_] = null
+                               validate:Boolean=true,
+                               candidateToViolationMap:Option[collection.mutable.HashMap[Int,Long]]=None) = {
+    var res:Option[BitVector[_]] = None
+
     val (_,queryTime) = TimeUtil.executionTimeInMS({
-      val queryValueSets: Seq[collection.Set[String]] = generateQueryValueSets(q)
-      if(queryValueSets.size==0){
-        println()
-      }
-      queryValueSets.foreach{queryValueSet =>
-        val querySig = many.applyBloomfilter(queryValueSet.asJava)
-        val worker = new INDDetectionWorkerQuery(many, querySig, 0)
-        val resNew = if (preFilteredCandidates.isDefined)
-          worker.executeQuery(preFilteredCandidates.get)
-        else {
-          worker.executeQuery()
+      val queryValueSets = generateQueryValueSets(q)
+      if(queryValueSets.size==1){
+        // we know that we have the exact pruning power we need
+        val queryValueSet = queryValueSets.head
+        res = Some(noEarlyAbortIndexQuery(queryValueSet,preFilteredCandidates,res))
+      } else if(candidateToViolationMap.isEmpty) {
+        queryValueSets.foreach { queryValueSet =>
+          res = Some(noEarlyAbortIndexQuery(queryValueSet, preFilteredCandidates, res))
         }
-        if(res == null){
-          res = resNew
-        } else {
-          res = res.or(resNew) // we take the or here because if any of the versions within a time slice is contained, we cannot prune the candidate
-          if(preFilteredCandidates.isDefined)
-            res.and(preFilteredCandidates.get) //doing the and again is probably not necessary (?)
+        res
+      } else {
+        res = Some(preFilteredCandidates.get.copy())
+        queryValueSets.foreach { queryValueSet =>
+          val queryWeightInNanos = TimeUtil.durationNanos(queryValueSet.beginInclusive, queryValueSet.endExclusive)
+          val resNew = executeQuery(preFilteredCandidates, queryValueSet)
+          val toTrack = res.get.copy().and(resNew.copy().flip())
+          val it = iterateThroughSetBitsOfBitVector(toTrack)
+          it.foreach(curBit => {
+            val prev = candidateToViolationMap.get.getOrElse(curBit,0L)
+            if(prev+queryWeightInNanos<absoluteEpsilonNanos){
+              //add new violation score
+              candidateToViolationMap.get(curBit) = prev+queryWeightInNanos
+            } else {
+              //we can prune,, remove the bit from the map and clear the bit in the in the original result, so it will never show up again
+              candidateToViolationMap.get.remove(curBit)
+              res.get.clear(curBit)
+            }
+          })
+          res.get.and(toTrack.or(resNew)) //updates initial candidates
         }
       }
     })
     val validationTime = if(validate){
-      TimeUtil.executionTimeInMS(validateContainment(q,res))._2
+      TimeUtil.executionTimeInMS(validateContainment(q,res.get))._2
     } else {
       0.0
     }
-    (res,queryTime,validationTime)
+    if(res.isEmpty)
+      println()
+    (res.get,queryTime,validationTime)
+  }
+
+  private def executeQuery(preFilteredCandidates: Option[BitVector[_]], queryValueSet: ValuesInTimeWindow) = {
+    val querySig = many.applyBloomfilter(queryValueSet.values.asJava)
+    val worker = new INDDetectionWorkerQuery(many, querySig, 0)
+    val resNew = if (preFilteredCandidates.isDefined)
+      worker.executeQuery(preFilteredCandidates.get)
+    else {
+      worker.executeQuery()
+    }
+    resNew
   }
 
   def query(q:EnrichedColumnHistory) = {

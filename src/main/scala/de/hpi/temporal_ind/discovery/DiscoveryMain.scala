@@ -16,7 +16,8 @@ object DiscoveryMain extends App {
   val epsilon = args(3).toDouble
   val deltaInDays = args(4).toLong
   val timeSliceChoiceMethod = TimeSliceChoiceMethod.withName(args(5))
-  val version = "0.92_" + timeSliceChoiceMethod //TODO: update this if discovery algorithm changes!
+  val enableEarlyAbort = true
+  val version = "0.93_" + timeSliceChoiceMethod //TODO: update this if discovery algorithm changes!
   val targetDir = new File(args(1) + s"/$version/")
   targetDir.mkdir()
   val subsetValidation = true
@@ -32,6 +33,7 @@ object DiscoveryMain extends App {
     subsetValidation,
     bloomfilterSize,
     interactiveIndexBuilding,
-    timeSliceChoiceMethod)
+    timeSliceChoiceMethod,
+    enableEarlyAbort)
   relaxedShiftedTemporalINDDiscovery.discover(IndexedSeq(0,1,2,3,4,5,6,7,8,9,10),sampleSize)
 }

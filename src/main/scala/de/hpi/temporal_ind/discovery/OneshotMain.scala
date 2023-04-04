@@ -1,25 +1,35 @@
 package de.hpi.temporal_ind.discovery
 
+import de.metanome.algorithms.many.bitvectors.{BitVector, LongArrayBitVector}
+
 import java.io.PrintWriter
 import scala.io.Source
 import scala.util.Random
 
 object OneshotMain extends App {
-  val target = new PrintWriter("/home/leon/data/temporalINDDiscovery/wikipedia/discovery/fromIsfet/0.7_explore_time_slice/timeSliceStatsFixed.csv")
-  val lines = Source
-    .fromFile("/home/leon/data/temporalINDDiscovery/wikipedia/discovery/fromIsfet/0.7_explore_time_slice/timeSliceStats_bad.csv")
-    .getLines()
-    .toIndexedSeq
-  target.println(lines.head)
-  lines
-    .tail
-    .map(s => {
-      val tokens = s.split(",")
-      val tokens1 = tokens(0).split("Z\\.")
-      val newTokens = Seq(tokens1(0)+"Z",tokens1(1)) ++ tokens.tail
-      target.println(newTokens.mkString(","))
-    })
-  target.close()
+
+  val a = new LongArrayBitVector(16)
+  println(a)
+  a.set(1)
+  a.set(3)
+  println(a)
+  println(a.flip())
+
+//  val target = new PrintWriter("/home/leon/data/temporalINDDiscovery/wikipedia/discovery/fromIsfet/0.7_explore_time_slice/timeSliceStatsFixed.csv")
+//  val lines = Source
+//    .fromFile("/home/leon/data/temporalINDDiscovery/wikipedia/discovery/fromIsfet/0.7_explore_time_slice/timeSliceStats_bad.csv")
+//    .getLines()
+//    .toIndexedSeq
+//  target.println(lines.head)
+//  lines
+//    .tail
+//    .map(s => {
+//      val tokens = s.split(",")
+//      val tokens1 = tokens(0).split("Z\\.")
+//      val newTokens = Seq(tokens1(0)+"Z",tokens1(1)) ++ tokens.tail
+//      target.println(newTokens.mkString(","))
+//    })
+//  target.close()
 
 //
 //  val weights = IndexedSeq(("B", 3),
