@@ -12,7 +12,6 @@ object DiscoveryMain extends App {
   val sourceDirs = args(0).split(",")
     .map(new File(_))
     .toIndexedSeq
-
   val targetFileBinary = args(2)
   val epsilon = args(3).toDouble
   val deltaInDays = args(4).toLong

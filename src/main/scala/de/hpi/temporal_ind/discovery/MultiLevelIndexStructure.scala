@@ -7,9 +7,8 @@ import java.time.Instant
 import scala.collection.mutable.ArrayBuffer
 
 class MultiLevelIndexStructure(val indexEntireValueset: BloomfilterIndex,
-                               val timeSliceIndices: collection.SortedMap[(Instant, Instant), BloomfilterIndex],
-                               val requiredValuesIndexBuildTime: Double,
-                               val timeSliceIndexBuildTimes: collection.IndexedSeq[Double]) {
+                               val timeSliceIndices: MultiTimeSliceIndexStructure,
+                               val requiredValuesIndexBuildTime: Double) {
   def bitVectorToColumns(curCandidates: BitVector[_]) = indexEntireValueset.bitVectorToColumns(curCandidates)
 
   /***
@@ -18,17 +17,17 @@ class MultiLevelIndexStructure(val indexEntireValueset: BloomfilterIndex,
   def validateContainments(query: EnrichedColumnHistory, candidates: BitVector[_]) = {
     val (_, subsetValidationTime) = TimeUtil.executionTimeInMS({
       indexEntireValueset.validateContainment(query, candidates)
-      timeSliceIndices.foreach(index => index._2.validateContainment(query, candidates))
+      timeSliceIndices.validateContainments(query, candidates)
     })
     subsetValidationTime
   }
 
-  def totalTimeSliceIndexBuildTime: Double = timeSliceIndexBuildTimes.sum
+  def totalTimeSliceIndexBuildTime: Double = timeSliceIndices.timeSliceIndexBuildTimes.sum
 
-  def limitTimeSliceIndices(numTimeSliceIndices: Int) = new MultiLevelIndexStructure(indexEntireValueset,
-    timeSliceIndices.take(numTimeSliceIndices),
-    requiredValuesIndexBuildTime,
-    timeSliceIndexBuildTimes.take(numTimeSliceIndices))
+  def limitTimeSliceIndices(numTimeSliceIndices: Int) =
+    new MultiLevelIndexStructure(indexEntireValueset,
+    timeSliceIndices.limitTimeSliceIndices(numTimeSliceIndices),
+    requiredValuesIndexBuildTime)
 
   def queryRequiredValuesIndex(query: EnrichedColumnHistory) = {
     val (candidatesRequiredValues, queryTime, _) = indexEntireValueset.queryWithBitVectorResult(query,
@@ -38,21 +37,8 @@ class MultiLevelIndexStructure(val indexEntireValueset: BloomfilterIndex,
   }
 
   def queryTimeSliceIndices(query: EnrichedColumnHistory,initialCandidates: BitVector[_]) = {
-    var curCandidates = initialCandidates
-    val queryTimesSlices = collection.mutable.ArrayBuffer[Double]()
-    val queryAndValidationTimes = timeSliceIndices
-      .zipWithIndex
-      .map { case (((begin, end), index), indexOrder) => {
-        val (candidatesIndexSlice, queryTimeSliceTime, timeSliceValidationTime) = index.queryWithBitVectorResult(query,
-          Some(curCandidates), false)
-        curCandidates = candidatesIndexSlice
-        queryTimesSlices += queryTimeSliceTime
-        (queryTimeSliceTime, timeSliceValidationTime)
-      }
-      }
-    val queryTimeTotal = queryAndValidationTimes.map(_._1).sum
-    val validationTimeTotal = queryAndValidationTimes.map(_._2).sum
-    (curCandidates, queryTimeTotal)
+    timeSliceIndices.executeQuery(query,initialCandidates)
+
   }
 
 }
