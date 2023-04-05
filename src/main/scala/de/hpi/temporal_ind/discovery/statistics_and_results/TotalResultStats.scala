@@ -1,7 +1,7 @@
-package de.hpi.temporal_ind.discovery
+package de.hpi.temporal_ind.discovery.statistics_and_results
 
 import de.hpi.temporal_ind.data.JsonWritable
-import de.hpi.temporal_ind.discovery.TimeSliceChoiceMethod.TimeSliceChoiceMethod
+import de.hpi.temporal_ind.discovery.indexing.TimeSliceChoiceMethod
 
 case class TotalResultStats(version:String,
                             sampleSize:Int,

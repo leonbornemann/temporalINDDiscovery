@@ -1,4 +1,4 @@
-package de.hpi.temporal_ind.discovery
+package de.hpi.temporal_ind.discovery.input_data
 
 import de.hpi.temporal_ind.data.column.data.original.OrderedColumnHistory
 

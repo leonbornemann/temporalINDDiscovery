@@ -1,5 +1,6 @@
-package de.hpi.temporal_ind.discovery
+package de.hpi.temporal_ind.discovery.indexing
 
+import de.hpi.temporal_ind.discovery.input_data.EnrichedColumnHistory
 import de.metanome.algorithms.many.bitvectors.BitVector
 
 import java.time.Instant

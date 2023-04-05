@@ -1,5 +1,6 @@
-package de.hpi.temporal_ind.discovery
+package de.hpi.temporal_ind.discovery.statistics_and_results
 
+import de.hpi.temporal_ind.discovery.input_data.EnrichedColumnHistory
 import java.time.Instant
 
 case class QueryStatRow(queryNumber: Int, query: EnrichedColumnHistory, timeInMS: Double, indexType: String, inputSize: Int, outputSize: Int, begin: Option[Instant], end: Option[Instant], indexOrder:Option[Int]) {

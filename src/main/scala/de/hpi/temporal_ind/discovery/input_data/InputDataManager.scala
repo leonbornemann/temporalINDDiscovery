@@ -1,13 +1,13 @@
-package de.hpi.temporal_ind.discovery
-import com.esotericsoftware.kryo.{Kryo, KryoException}
+package de.hpi.temporal_ind.discovery.input_data
+
 import com.esotericsoftware.kryo.io.{Input, Output}
+import com.esotericsoftware.kryo.{Kryo, KryoException}
 import de.hpi.temporal_ind.data.column.data.AbstractColumnVersion
 import de.hpi.temporal_ind.data.column.data.original.{KryoSerializableColumnHistory, OrderedColumnHistory}
 import de.hpi.temporal_ind.data.ind.variant4.TimeUtil
 
 import java.io.{File, FileInputStream, FileOutputStream}
 import java.time.Instant
-import scala.jdk.CollectionConverters.ListHasAsScala
 
 class InputDataManager(binaryFile: String,jsonSourceDirs:Option[IndexedSeq[File]]=None) {
 

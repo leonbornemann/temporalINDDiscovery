@@ -1,4 +1,4 @@
-package de.hpi.temporal_ind.discovery
+package de.hpi.temporal_ind.discovery.statistics_and_results
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.temporal_ind.data.column.data.original.OrderedColumnHistory

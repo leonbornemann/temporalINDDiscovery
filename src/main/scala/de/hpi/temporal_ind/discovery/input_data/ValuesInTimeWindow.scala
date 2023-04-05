@@ -1,4 +1,4 @@
-package de.hpi.temporal_ind.discovery
+package de.hpi.temporal_ind.discovery.input_data
 
 import java.time.Instant
 

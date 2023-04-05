@@ -1,15 +1,14 @@
-package de.hpi.temporal_ind.discovery
+package de.hpi.temporal_ind.discovery.indexing
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.temporal_ind.data.ind.variant4.TimeUtil
-import de.metanome.algorithm_integration.result_receiver.InclusionDependencyResultReceiver
-import de.metanome.algorithms.many.bitvectors.{BitVector, LongArrayBitVector}
-import de.metanome.algorithms.many.driver.SynchronizedDiscInclusionDependencyResultReceiver
-import de.metanome.algorithms.many.{Column, INDDetectionWorker, INDDetectionWorkerQuery, MANY}
+import de.hpi.temporal_ind.discovery.input_data.{EnrichedColumnHistory, ValuesInTimeWindow}
+import de.hpi.temporal_ind.discovery.INDResultCounter
+import de.metanome.algorithms.many.bitvectors.BitVector
+import de.metanome.algorithms.many.{Column, INDDetectionWorkerQuery, MANY}
 
-import java.io.PrintWriter
 import java.util
-import collection.JavaConverters._
+import scala.collection.JavaConverters._
 
 /***
  *

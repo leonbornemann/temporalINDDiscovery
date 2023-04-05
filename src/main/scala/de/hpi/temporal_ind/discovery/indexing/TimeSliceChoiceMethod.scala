@@ -1,4 +1,4 @@
-package de.hpi.temporal_ind.discovery
+package de.hpi.temporal_ind.discovery.indexing
 
 object TimeSliceChoiceMethod extends Enumeration {
 

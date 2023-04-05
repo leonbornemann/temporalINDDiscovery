@@ -2,7 +2,7 @@ package de.hpi.temporal_ind.data.column.data.original
 
 import de.hpi.temporal_ind.data.column.data.{AbstractColumnVersion, AbstractOrderedColumnHistory}
 import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
-import de.hpi.temporal_ind.discovery.TimeSliceStats
+import de.hpi.temporal_ind.discovery.statistics_and_results.TimeSliceStats
 
 import java.io.File
 import java.time.Instant

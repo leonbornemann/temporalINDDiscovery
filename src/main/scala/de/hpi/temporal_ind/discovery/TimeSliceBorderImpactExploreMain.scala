@@ -3,6 +3,9 @@ package de.hpi.temporal_ind.discovery
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.temporal_ind.data.ind.variant4.TimeUtil
 import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
+import de.hpi.temporal_ind.discovery.indexing.{BloomfilterIndex, MultiLevelIndexStructure, MultiTimeSliceIndexStructure, TimeSliceChoiceMethod}
+import de.hpi.temporal_ind.discovery.input_data.InputDataManager
+import de.hpi.temporal_ind.discovery.statistics_and_results.{TimeSliceImpactResultSerializer, TimeSliceIndexTuningStatRow}
 
 import java.io.{File, PrintWriter}
 import java.time.Instant
