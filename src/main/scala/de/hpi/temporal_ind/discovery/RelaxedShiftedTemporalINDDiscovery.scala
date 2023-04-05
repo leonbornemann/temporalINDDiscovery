@@ -31,7 +31,7 @@ class RelaxedShiftedTemporalINDDiscovery(val dataManager:InputDataManager,
                                          val bloomfilterSize:Int,
                                          val interactiveIndexBuilding:Boolean,
                                          val timeSliceChoiceMethod:TimeSliceChoiceMethod.Value,
-                                         val enableEarlyAbort:Boolean,
+                                         val useViolationTracking:Boolean,
                                          val random:Random = new Random(13)) extends StrictLogging{
 
   def version = if(interactiveIndexBuilding) versionParam + "_interactive" else versionParam
@@ -144,7 +144,7 @@ class RelaxedShiftedTemporalINDDiscovery(val dataManager:InputDataManager,
     } else {
       buildTimeSliceIndices(historiesEnriched, numTimeSliceIndices)
     }
-    val timeSliceIndexStructure = new MultiTimeSliceIndexStructure(timeSliceIndices, timeSliceIndexBuildTimes, enableEarlyAbort, absoluteEpsilonNanos)
+    val timeSliceIndexStructure = new MultiTimeSliceIndexStructure(timeSliceIndices, timeSliceIndexBuildTimes, useViolationTracking, absoluteEpsilonNanos)
     new MultiLevelIndexStructure(indexEntireValueset,timeSliceIndexStructure,requiredValuesIndexBuildTime)
   }
 
@@ -158,7 +158,7 @@ class RelaxedShiftedTemporalINDDiscovery(val dataManager:InputDataManager,
       logger.debug(s"Processing $numTimeSliceIndices")
       val curIndex = multiIndexStructure.limitTimeSliceIndices(numTimeSliceIndices)
       val (totalQueryTime,totalSubsetValidationTime,totalTemporalValidationTime) =  queryAll(sample,curIndex)
-      val totalResultSTatsLine = TotalResultStats(numTimeSliceIndices,dataLoadingTimeMS,curIndex.requiredValuesIndexBuildTime,curIndex.totalTimeSliceIndexBuildTime,totalQueryTime,totalSubsetValidationTime,totalTemporalValidationTime)
+      val totalResultSTatsLine = TotalResultStats(version,sampleSize,bloomfilterSize,useViolationTracking,timeSliceChoiceMethod,numTimeSliceIndices,dataLoadingTimeMS,curIndex.requiredValuesIndexBuildTime,curIndex.totalTimeSliceIndexBuildTime,totalQueryTime,totalSubsetValidationTime,totalTemporalValidationTime)
       resultSerializer.addTotalResultStats(totalResultSTatsLine)
     })
     resultSerializer.closeAll()
@@ -217,8 +217,12 @@ class RelaxedShiftedTemporalINDDiscovery(val dataManager:InputDataManager,
         numCandidatesAfterSubsetValidation,
         truePositiveCount,
         avgVersionsPerTimeSliceWindow,
-        version
-        ) //TODO: append this to a writer,
+        version,
+        sample.size,
+        bloomfilterSize,
+        useViolationTracking,
+        timeSliceChoiceMethod
+        )
       resultSerializer.addIndividualResultStats(individualStatLine)
       (queryTimeRQValues+queryTimeIndexTimeSlice,subsetValidationTime,validationTime)
     }}

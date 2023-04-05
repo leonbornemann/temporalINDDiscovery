@@ -16,13 +16,13 @@ object DiscoveryMain extends App {
   val epsilon = args(3).toDouble
   val deltaInDays = args(4).toLong
   val timeSliceChoiceMethod = TimeSliceChoiceMethod.withName(args(5))
-  val enableEarlyAbort = true
-  val version = "0.93_" + timeSliceChoiceMethod //TODO: update this if discovery algorithm changes!
+  val bloomFilterSize = args(6).toInt
+  val enableEarlyAbort = args(7).toBoolean
+  val sampleSize = args(8).toInt
+  val version = "0.93" //TODO: update this if discovery algorithm changes!
   val targetDir = new File(args(1) + s"/$version/")
   targetDir.mkdir()
   val subsetValidation = true
-  val sampleSize=1000
-  val bloomfilterSize = 4096
   val interactiveIndexBuilding = false
   val dataLoader = new InputDataManager(targetFileBinary,None)
   val relaxedShiftedTemporalINDDiscovery = new RelaxedShiftedTemporalINDDiscovery(dataLoader,
@@ -31,9 +31,9 @@ object DiscoveryMain extends App {
     TimeUtil.nanosPerDay*deltaInDays,
     version,
     subsetValidation,
-    bloomfilterSize,
+    bloomFilterSize,
     interactiveIndexBuilding,
     timeSliceChoiceMethod,
     enableEarlyAbort)
-  relaxedShiftedTemporalINDDiscovery.discover(IndexedSeq(0,1,2,3,4,5,6,7,8,9,10),sampleSize)
+  relaxedShiftedTemporalINDDiscovery.discover(IndexedSeq(0,1,2,3,4,5,6,7,8,9,10,15,20),sampleSize)
 }
