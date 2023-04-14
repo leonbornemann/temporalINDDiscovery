@@ -42,5 +42,6 @@ object DiscoveryMain extends App {
     timeSliceChoiceMethod,
     enableEarlyAbort,
     seed)
-  relaxedShiftedTemporalINDDiscovery.discover(queryIDs,IndexedSeq(0,1,2,3,4,5,6,7,8,9,10,15,20),sampleSize)
+  relaxedShiftedTemporalINDDiscovery.discoverForSample(queryIDs,IndexedSeq(0,1,2,3,4,5,6,7,8,9,10,15,20))
+  //relaxedShiftedTemporalINDDiscovery.discoverAll(20,1)
 }

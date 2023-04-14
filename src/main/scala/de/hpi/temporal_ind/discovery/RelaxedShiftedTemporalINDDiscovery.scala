@@ -15,7 +15,9 @@ import de.metanome.algorithms.many.bitvectors.BitVector
 import org.json4s.scalap.scalasig.ClassFileParser.byte
 
 import java.util
+import java.util.concurrent.Semaphore
 import scala.collection.mutable
+import scala.concurrent.Future
 import scala.jdk.CollectionConverters.{ListHasAsScala, SeqHasAsJava}
 //import org.nustaq.serialization.{FSTConfiguration, FSTObjectInput, FSTObjectOutput}
 //import org.nustaq.serialization.util.FSTOutputStream
@@ -36,6 +38,7 @@ class RelaxedShiftedTemporalINDDiscovery(val dataManager:InputDataManager,
                                          val timeSliceChoiceMethod:TimeSliceChoiceMethod.Value,
                                          val useViolationTracking:Boolean,
                                          val seed:Long) extends StrictLogging{
+
 
   val random:Random = new Random(seed)
   def version = if(interactiveIndexBuilding) versionParam + "_interactive" else versionParam
@@ -153,22 +156,26 @@ class RelaxedShiftedTemporalINDDiscovery(val dataManager:InputDataManager,
     new MultiLevelIndexStructure(indexEntireValueset,timeSliceIndexStructure,requiredValuesIndexBuildTime)
   }
 
-  def runDiscovery(queryIDs:Set[ColumnHistoryID],sampleSize:Int, numTimeSliceIndicesList:IndexedSeq[Int]) = {
+  def runDiscovery(queryIDs:Option[Set[ColumnHistoryID]], numTimeSliceIndicesList:IndexedSeq[Int],nThreads:Int=1) = {
     val (historiesEnriched: ColumnHistoryStorage, dataLoadingTimeMS: Double) = loadData()
     val multiIndexStructure = buildMultiIndexStructure(historiesEnriched,numTimeSliceIndicesList.max)
     //time slice values index:
     //old
     //val sample = getRandomSampleOfInputData(historiesEnriched,sampleSize )
-    val sample = historiesEnriched
-      .histories
-      .filter(h => queryIDs.contains(h.och.columnHistoryID))
-      .zipWithIndex
-    logger.debug(s"Processing query sample of size ${sample.size}")
+    val sample = if(queryIDs.isDefined){
+      historiesEnriched
+        .histories
+        .filter(h => queryIDs.get.contains(h.och.columnHistoryID))
+        .zipWithIndex
+    } else {
+      historiesEnriched.histories.zipWithIndex
+    }
+    logger.debug(s"Processing ${sample.size} queries")
     numTimeSliceIndicesList.foreach(numTimeSliceIndices => {
       logger.debug(s"Processing $numTimeSliceIndices")
       val curIndex = multiIndexStructure.limitTimeSliceIndices(numTimeSliceIndices)
-      val (totalQueryTime,totalSubsetValidationTime,totalTemporalValidationTime) =  queryAll(sample,curIndex)
-      val totalResultSTatsLine = TotalResultStats(version,seed,sampleSize,bloomfilterSize,useViolationTracking,timeSliceChoiceMethod,numTimeSliceIndices,dataLoadingTimeMS,curIndex.requiredValuesIndexBuildTime,curIndex.totalTimeSliceIndexBuildTime,totalQueryTime,totalSubsetValidationTime,totalTemporalValidationTime)
+      val (totalQueryTime, totalSubsetValidationTime, totalTemporalValidationTime) = queryAll(sample, curIndex,nThreads)
+      val totalResultSTatsLine = TotalResultStats(version, seed, queryIDs.size, bloomfilterSize, useViolationTracking, timeSliceChoiceMethod, numTimeSliceIndices, dataLoadingTimeMS, curIndex.requiredValuesIndexBuildTime, curIndex.totalTimeSliceIndexBuildTime, totalQueryTime, totalSubsetValidationTime, totalTemporalValidationTime)
       resultSerializer.addTotalResultStats(totalResultSTatsLine)
     })
     resultSerializer.closeAll()
@@ -190,56 +197,71 @@ class RelaxedShiftedTemporalINDDiscovery(val dataManager:InputDataManager,
   }
 
   def queryAll(sample:IndexedSeq[(EnrichedColumnHistory,Int)],
-                       multiLevelIndexStructure: MultiLevelIndexStructure) = {
-    val queryAndValidationAndTemporalValidationTimes = sample.map{case (query,queryNumber) => {
-      val (candidatesRequiredValues, queryTimeRQValues) = multiLevelIndexStructure.queryRequiredValuesIndex( query)
-      val (curCandidates, queryTimeIndexTimeSlice) = multiLevelIndexStructure.queryTimeSliceIndices(query,candidatesRequiredValues)
-      val numCandidatesAfterIndexQuery = curCandidates.count()-1
-      //validate curCandidates after all candidates have already been pruned
-      val subsetValidationTime = if(subsetValidation){
-        multiLevelIndexStructure.validateContainments(query,curCandidates)
-      } else {
-        0.0
-      }
-      val candidateLineages = multiLevelIndexStructure
-        .bitVectorToColumns(curCandidates) //does not matter which index transforms it back because all have them in the same order
-        .filter(_ != query)
-      val numCandidatesAfterSubsetValidation = candidateLineages.size
-      val (validationTime,truePositiveCount) = validate(query, candidateLineages)
-      val validationStatRow = BasicQueryInfoRow(queryNumber,
-        query.och.activeRevisionURLAtTimestamp(GLOBAL_CONFIG.lastInstant),
-        query.och.pageID,
-        query.och.tableId,
-        query.och.id)
-      resultSerializer.addBasicQueryInfoRow(validationStatRow)
-      val avgVersionsPerTimeSliceWindow = multiLevelIndexStructure
-        .timeSliceIndices
-        .timeSliceIndices
-        .keys
-        .map{case (s,e) => query.och.versionsInWindow(s,e).size}
-        .sum / multiLevelIndexStructure.timeSliceIndices.timeSliceIndices.size.toDouble
-      val individualStatLine = IndividualResultStats(queryNumber,
-        multiLevelIndexStructure.timeSliceIndices.timeSliceIndices.size,
-        queryTimeRQValues+queryTimeIndexTimeSlice,
-        subsetValidationTime,
-        validationTime,
-        numCandidatesAfterIndexQuery,
-        numCandidatesAfterSubsetValidation,
-        truePositiveCount,
-        avgVersionsPerTimeSliceWindow,
-        version,
-        sample.size,
-        bloomfilterSize,
-        useViolationTracking,
-        timeSliceChoiceMethod
+               multiLevelIndexStructure: MultiLevelIndexStructure,
+               nThreads:Int=1):(Double, Double, Double) = {
+    if(nThreads==1){
+      val queryAndValidationAndTemporalValidationTimes = sample.map { case (query, queryNumber) => {
+        val (candidatesRequiredValues, queryTimeRQValues) = multiLevelIndexStructure.queryRequiredValuesIndex(query)
+        val (curCandidates, queryTimeIndexTimeSlice) = multiLevelIndexStructure.queryTimeSliceIndices(query, candidatesRequiredValues)
+        val numCandidatesAfterIndexQuery = curCandidates.count() - 1
+        //validate curCandidates after all candidates have already been pruned
+        val subsetValidationTime = if (subsetValidation) {
+          multiLevelIndexStructure.validateContainments(query, curCandidates)
+        } else {
+          0.0
+        }
+        val candidateLineages = multiLevelIndexStructure
+          .bitVectorToColumns(curCandidates) //does not matter which index transforms it back because all have them in the same order
+          .filter(_ != query)
+        val numCandidatesAfterSubsetValidation = candidateLineages.size
+        val (validationTime, truePositiveCount) = validate(query, candidateLineages)
+        val validationStatRow = BasicQueryInfoRow(queryNumber,
+          query.och.activeRevisionURLAtTimestamp(GLOBAL_CONFIG.lastInstant),
+          query.och.pageID,
+          query.och.tableId,
+          query.och.id)
+        resultSerializer.addBasicQueryInfoRow(validationStatRow)
+        val avgVersionsPerTimeSliceWindow = multiLevelIndexStructure
+          .timeSliceIndices
+          .timeSliceIndices
+          .keys
+          .map { case (s, e) => query.och.versionsInWindow(s, e).size }
+          .sum / multiLevelIndexStructure.timeSliceIndices.timeSliceIndices.size.toDouble
+        val individualStatLine = IndividualResultStats(queryNumber,
+          multiLevelIndexStructure.timeSliceIndices.timeSliceIndices.size,
+          queryTimeRQValues + queryTimeIndexTimeSlice,
+          subsetValidationTime,
+          validationTime,
+          numCandidatesAfterIndexQuery,
+          numCandidatesAfterSubsetValidation,
+          truePositiveCount,
+          avgVersionsPerTimeSliceWindow,
+          version,
+          sample.size,
+          bloomfilterSize,
+          useViolationTracking,
+          timeSliceChoiceMethod
         )
-      resultSerializer.addIndividualResultStats(individualStatLine)
-      (queryTimeRQValues+queryTimeIndexTimeSlice,subsetValidationTime,validationTime)
-    }}
-    val totalQueryTime = queryAndValidationAndTemporalValidationTimes.map(_._1).sum
-    val totalIndexValidationTime = queryAndValidationAndTemporalValidationTimes.map(_._2).sum
-    val totalTemporalValidationTime = queryAndValidationAndTemporalValidationTimes.map(_._3).sum
-    (totalQueryTime,totalIndexValidationTime,totalTemporalValidationTime)
+        resultSerializer.addIndividualResultStats(individualStatLine)
+        (queryTimeRQValues + queryTimeIndexTimeSlice, subsetValidationTime, validationTime)
+      }
+      }
+      val totalQueryTime = queryAndValidationAndTemporalValidationTimes.map(_._1).sum
+      val totalIndexValidationTime = queryAndValidationAndTemporalValidationTimes.map(_._2).sum
+      val totalTemporalValidationTime = queryAndValidationAndTemporalValidationTimes.map(_._3).sum
+      (totalQueryTime, totalIndexValidationTime, totalTemporalValidationTime)
+    } else {
+      //TODO: parallelize:
+      val batchSize = 100
+      val batches = sample.sliding(100,100)
+//      sample.foreach(batch => {
+//        val f = Future{
+//
+//        }
+//      })
+      null
+    }
+
   }
 
 
@@ -250,11 +272,18 @@ class RelaxedShiftedTemporalINDDiscovery(val dataManager:InputDataManager,
     (validationTime,truePositiveCount)
   }
 
-  def discover(queryIDs:Set[ColumnHistoryID],timeSliceIndexNumbers:IndexedSeq[Int],sampleSize:Int) = {
+  def discoverForSample(queryIDs:Set[ColumnHistoryID], timeSliceIndexNumbers:IndexedSeq[Int]) = {
     val (_,totalTime) = TimeUtil.executionTimeInMS{
-      runDiscovery(queryIDs,sampleSize,timeSliceIndexNumbers)
+      runDiscovery(Some(queryIDs),timeSliceIndexNumbers)
     }
     TimeUtil.logRuntime(totalTime,"ms","Total Execution Time")
+  }
+
+  def discoverAll(numTimeSliceIndices: Int,nThreads:Int) = {
+    val (_, totalTime) = TimeUtil.executionTimeInMS {
+      runDiscovery(None, IndexedSeq(numTimeSliceIndices),nThreads)
+    }
+    TimeUtil.logRuntime(totalTime, "ms", "Total Execution Time")
   }
 
 }
