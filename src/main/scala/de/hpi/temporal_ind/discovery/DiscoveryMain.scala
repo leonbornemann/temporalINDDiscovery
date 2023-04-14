@@ -32,7 +32,7 @@ object DiscoveryMain extends App {
     .fromJsonObjectPerLineFile(queryFile)
     .toSet
   val relaxedShiftedTemporalINDDiscovery = new RelaxedShiftedTemporalINDDiscovery(dataLoader,
-    new StandardResultSerializer(targetDir,bloomFilterSize,enableEarlyAbort,sampleSize,timeSliceChoiceMethod),
+    new StandardResultSerializer(targetDir,bloomFilterSize,enableEarlyAbort,sampleSize,timeSliceChoiceMethod,seed),
     epsilon,
     TimeUtil.nanosPerDay*deltaInDays,
     version,
