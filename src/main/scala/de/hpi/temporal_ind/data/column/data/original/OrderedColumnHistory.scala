@@ -1,6 +1,6 @@
 package de.hpi.temporal_ind.data.column.data.original
 
-import de.hpi.temporal_ind.data.column.data.{AbstractColumnVersion, AbstractOrderedColumnHistory}
+import de.hpi.temporal_ind.data.column.data.{AbstractColumnVersion, AbstractOrderedColumnHistory, ColumnHistoryID}
 import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
 import de.hpi.temporal_ind.discovery.statistics_and_results.TimeSliceStats
 
@@ -15,6 +15,8 @@ class OrderedColumnHistory(val id: String,
                            val pageID: String,
                            val pageTitle: String,
                            val history: OrderedColumnVersionList) extends AbstractOrderedColumnHistory[String] with Serializable{
+  def columnHistoryID: ColumnHistoryID = ColumnHistoryID(pageID, tableId, id)
+
   def addPresenceForTimeRanges(timeSliceToOccurrences: mutable.TreeMap[Instant,( Instant, SimpleCounter)]) {
     val it = new PeekableIterator(history.versions.valuesIterator)
     val rangesToAddTo = collection.mutable.HashSet[Instant]()

@@ -1,5 +1,6 @@
 package de.hpi.temporal_ind.data.ind
 
+import de.hpi.temporal_ind.data.column.data.ColumnHistoryID
 import de.hpi.temporal_ind.data.{JsonReadable, JsonWritable}
 
 case class INDCandidateIDs(lhsPageID:String,
@@ -8,6 +9,7 @@ case class INDCandidateIDs(lhsPageID:String,
                            rhsPageID:String,
                            rhsTableID:String,
                            rhsColumnID:String) extends JsonWritable[INDCandidateIDs]{
+  def lhs = ColumnHistoryID(lhsPageID,lhsTableID,lhsColumnID)
 
 
 }

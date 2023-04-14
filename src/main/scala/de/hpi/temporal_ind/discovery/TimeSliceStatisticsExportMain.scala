@@ -36,7 +36,8 @@ object TimeSliceStatisticsExportMain extends App {
     bloomfilterSize,
     interactiveIndexBuilding,
     TimeSliceChoiceMethod.RANDOM,
-    true)
+    true,
+    13)
 
   val resultPR = new PrintWriter(targetDir.getAbsolutePath + "/timeSliceStats.csv")
   val (data, _) = relaxedShiftedTemporalINDDiscovery.loadData()

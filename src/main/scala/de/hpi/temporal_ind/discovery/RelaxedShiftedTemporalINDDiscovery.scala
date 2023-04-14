@@ -3,7 +3,7 @@ package de.hpi.temporal_ind.discovery
 import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.io.{Input, Output}
 import com.typesafe.scalalogging.StrictLogging
-import de.hpi.temporal_ind.data.column.data.AbstractColumnVersion
+import de.hpi.temporal_ind.data.column.data.{AbstractColumnVersion, ColumnHistoryID}
 import de.hpi.temporal_ind.data.column.data.original.{ColumnHistory, KryoSerializableColumnHistory, OrderedColumnHistory, OrderedColumnVersionList, SimpleCounter, ValidationVariant}
 import de.hpi.temporal_ind.data.ind.{ConstantWeightFunction, ShifteddRelaxedCustomFunctionTemporalIND, SimpleTimeWindowTemporalIND}
 import de.hpi.temporal_ind.data.ind.variant4.TimeUtil
@@ -35,8 +35,9 @@ class RelaxedShiftedTemporalINDDiscovery(val dataManager:InputDataManager,
                                          val interactiveIndexBuilding:Boolean,
                                          val timeSliceChoiceMethod:TimeSliceChoiceMethod.Value,
                                          val useViolationTracking:Boolean,
-                                         val random:Random = new Random(13)) extends StrictLogging{
+                                         val seed:Long) extends StrictLogging{
 
+  val random:Random = new Random(seed)
   def version = if(interactiveIndexBuilding) versionParam + "_interactive" else versionParam
 
   val absoluteEpsilonNanos = (GLOBAL_CONFIG.totalTimeInNanos*epsilon).toLong
@@ -80,8 +81,9 @@ class RelaxedShiftedTemporalINDDiscovery(val dataManager:InputDataManager,
   }
 
   def buildTimeSliceIndices(historiesEnriched: ColumnHistoryStorage,indicesToBuild:Int) = {
-    val slices = TimeUtil.printExecutionTimeInMS(getTimeSlices(historiesEnriched)
-      .take(indicesToBuild),"Time Slice Selection")
+    val slices = getTimeSlices(historiesEnriched)
+      .take(indicesToBuild)
+    logger.debug(s"Running Index Build with time slices: $slices")
     var buildTimes = collection.mutable.ArrayBuffer[Double]()
     val indexMap = collection.mutable.TreeMap[(Instant,Instant),BloomfilterIndex]() ++ slices.map{case (begin,end) => {
       val (timeSliceIndex, timeSliceIndexBuild) = TimeUtil.executionTimeInMS(getIndexForTimeSlice(historiesEnriched,begin,end))
@@ -151,17 +153,22 @@ class RelaxedShiftedTemporalINDDiscovery(val dataManager:InputDataManager,
     new MultiLevelIndexStructure(indexEntireValueset,timeSliceIndexStructure,requiredValuesIndexBuildTime)
   }
 
-  def runDiscovery(sampleSize:Int, numTimeSliceIndicesList:IndexedSeq[Int]) = {
+  def runDiscovery(queryIDs:Set[ColumnHistoryID],sampleSize:Int, numTimeSliceIndicesList:IndexedSeq[Int]) = {
     val (historiesEnriched: ColumnHistoryStorage, dataLoadingTimeMS: Double) = loadData()
     val multiIndexStructure = buildMultiIndexStructure(historiesEnriched,numTimeSliceIndicesList.max)
     //time slice values index:
-    //query all:
-    val sample = getRandomSampleOfInputData(historiesEnriched,sampleSize )
+    //old
+    //val sample = getRandomSampleOfInputData(historiesEnriched,sampleSize )
+    val sample = historiesEnriched
+      .histories
+      .filter(h => queryIDs.contains(h.och.columnHistoryID))
+      .zipWithIndex
+    logger.debug(s"Processing query sample of size ${sample.size}")
     numTimeSliceIndicesList.foreach(numTimeSliceIndices => {
       logger.debug(s"Processing $numTimeSliceIndices")
       val curIndex = multiIndexStructure.limitTimeSliceIndices(numTimeSliceIndices)
       val (totalQueryTime,totalSubsetValidationTime,totalTemporalValidationTime) =  queryAll(sample,curIndex)
-      val totalResultSTatsLine = TotalResultStats(version,sampleSize,bloomfilterSize,useViolationTracking,timeSliceChoiceMethod,numTimeSliceIndices,dataLoadingTimeMS,curIndex.requiredValuesIndexBuildTime,curIndex.totalTimeSliceIndexBuildTime,totalQueryTime,totalSubsetValidationTime,totalTemporalValidationTime)
+      val totalResultSTatsLine = TotalResultStats(version,seed,sampleSize,bloomfilterSize,useViolationTracking,timeSliceChoiceMethod,numTimeSliceIndices,dataLoadingTimeMS,curIndex.requiredValuesIndexBuildTime,curIndex.totalTimeSliceIndexBuildTime,totalQueryTime,totalSubsetValidationTime,totalTemporalValidationTime)
       resultSerializer.addTotalResultStats(totalResultSTatsLine)
     })
     resultSerializer.closeAll()
@@ -243,9 +250,9 @@ class RelaxedShiftedTemporalINDDiscovery(val dataManager:InputDataManager,
     (validationTime,truePositiveCount)
   }
 
-  def discover(timeSliceIndexNumbers:IndexedSeq[Int],sampleSize:Int) = {
+  def discover(queryIDs:Set[ColumnHistoryID],timeSliceIndexNumbers:IndexedSeq[Int],sampleSize:Int) = {
     val (_,totalTime) = TimeUtil.executionTimeInMS{
-      runDiscovery(sampleSize,timeSliceIndexNumbers)
+      runDiscovery(queryIDs,sampleSize,timeSliceIndexNumbers)
     }
     TimeUtil.logRuntime(totalTime,"ms","Total Execution Time")
   }
