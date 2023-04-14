@@ -9,14 +9,19 @@ import scala.util.Random
 
 object OneshotMain extends App {
 
-  val source = "/home/leon/data/temporalINDDiscovery/wikipedia/discovery/fromIsfet/0.93/4096_false_10000_RANDOM__discoveredINDs.jsonl"
-  val source2 = "/home/leon/data/temporalINDDiscovery/wikipedia/discovery/fromIsfet/0.93/4096_false_10000_WEIGHTED_RANDOM__discoveredINDs.jsonl"
-  val target = new PrintWriter("/home/leon/sampleQueries.jsonl")
-  val res1 = INDCandidateIDs.iterableFromJsonObjectPerLineFile(source)
-    .map(id => id.lhs)
-    .foreach(_.appendToWriter(target))
-  target.close()
-  
+  val random = new Random(13)
+  println((0 until 10)
+    .map(i => random.nextLong())
+    .toSeq)
+
+//  val source = "/home/leon/data/temporalINDDiscovery/wikipedia/discovery/fromIsfet/0.93/4096_false_10000_RANDOM__discoveredINDs.jsonl"
+//  val source2 = "/home/leon/data/temporalINDDiscovery/wikipedia/discovery/fromIsfet/0.93/4096_false_10000_WEIGHTED_RANDOM__discoveredINDs.jsonl"
+//  val target = new PrintWriter("/home/leon/sampleQueries.jsonl")
+//  val res1 = INDCandidateIDs.iterableFromJsonObjectPerLineFile(source)
+//    .map(id => id.lhs)
+//    .foreach(_.appendToWriter(target))
+//  target.close()
+//
 
 //  val target = new PrintWriter("/home/leon/data/temporalINDDiscovery/wikipedia/discovery/fromIsfet/0.7_explore_time_slice/timeSliceStatsFixed.csv")
 //  val lines = Source
