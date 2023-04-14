@@ -6,5 +6,6 @@ do
   inputPath=$basePathInput/$bucket/
   outputPath=basePathResults/$bucket
   echo "Running seed $seed "
-
+  java -ea -Xmx240g -cp code/temporalINDDiscovery/target/scala-2.13/INDInTemporalData-assembly-0.1.jar de.hpi.temporal_ind.discovery.DiscoveryMain /san2/data/change-exploration/temporalIND/columnHistories/sampleQueries.jsonl /san2/data/change-exploration/temporalIND/discovery/ /san2/data/change-exploration/temporalIND/columnHistories/binaries/4-20000.binary 0.001485149 90 RANDOM 4096 true 10000 $seed
+java -ea -Xmx240g -cp code/temporalINDDiscovery/target/scala-2.13/INDInTemporalData-assembly-0.1.jar de.hpi.temporal_ind.discovery.DiscoveryMain /san2/data/change-exploration/temporalIND/columnHistories/sampleQueries.jsonl /san2/data/change-exploration/temporalIND/discovery/ /san2/data/change-exploration/temporalIND/columnHistories/binaries/4-20000.binary 0.001485149 90 WEIGHTED_RANDOM 4096 true 10000 $seed
 done

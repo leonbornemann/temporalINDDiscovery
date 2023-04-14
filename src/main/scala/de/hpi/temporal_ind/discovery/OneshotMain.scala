@@ -1,7 +1,7 @@
 package de.hpi.temporal_ind.discovery
 
 import de.hpi.temporal_ind.data.ind.INDCandidateIDs
-import de.metanome.algorithms.many.bitvectors.{BitVector, LongArrayBitVector}
+import de.hpi.temporal_ind.discovery.input_data.InputDataManager
 
 import java.io.PrintWriter
 import scala.io.Source
@@ -9,12 +9,7 @@ import scala.util.Random
 
 object OneshotMain extends App {
 
-  val random = new Random(13)
-  println((0 until 10)
-    .map(i => random.nextLong())
-    .toSeq)
-
-//  val source = "/home/leon/data/temporalINDDiscovery/wikipedia/discovery/fromIsfet/0.93/4096_false_10000_RANDOM__discoveredINDs.jsonl"
+  //  val source = "/home/leon/data/temporalINDDiscovery/wikipedia/discovery/fromIsfet/0.93/4096_false_10000_RANDOM__discoveredINDs.jsonl"
 //  val source2 = "/home/leon/data/temporalINDDiscovery/wikipedia/discovery/fromIsfet/0.93/4096_false_10000_WEIGHTED_RANDOM__discoveredINDs.jsonl"
 //  val target = new PrintWriter("/home/leon/sampleQueries.jsonl")
 //  val res1 = INDCandidateIDs.iterableFromJsonObjectPerLineFile(source)
