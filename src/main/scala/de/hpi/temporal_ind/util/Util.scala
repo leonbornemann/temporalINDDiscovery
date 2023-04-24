@@ -18,7 +18,7 @@ object Util {
       .replace('\\','/')
   }
 
-  def numberRegex = "-?[0-9]+[\\.,][0-9]+"//"TODO: Borrow from natural key discovery"
+  def numberRegex = "[+-−\\u2212]?[0-9]*[\\.,]?[0-9]+"//"TODO: Borrow from natural key discovery"
 
   val wikipediaDateTimeFormatter = DateTimeFormatter.ofPattern("E MMM dd HH:mm:ss[.SSSSSSSSS] z yyyy")
 

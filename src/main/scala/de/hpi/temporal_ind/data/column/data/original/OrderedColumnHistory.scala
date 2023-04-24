@@ -17,6 +17,10 @@ class OrderedColumnHistory(val id: String,
                            val history: OrderedColumnVersionList) extends AbstractOrderedColumnHistory[String] with Serializable{
   def columnHistoryID: ColumnHistoryID = ColumnHistoryID(pageID, tableId, id)
 
+  def toColumnHistory = {
+    ColumnHistory(id , tableId , pageID, pageTitle , columnVersions = collection.mutable.ArrayBuffer() ++ history.versions.toIndexedSeq.map(_._2.asInstanceOf[ColumnVersion]))
+  }
+
   def addPresenceForTimeRanges(timeSliceToOccurrences: mutable.TreeMap[Instant,( Instant, SimpleCounter)]) {
     val it = new PeekableIterator(history.versions.valuesIterator)
     val rangesToAddTo = collection.mutable.HashSet[Instant]()

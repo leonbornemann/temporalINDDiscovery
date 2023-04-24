@@ -50,7 +50,7 @@ object ExportForManyMain extends App with StrictLogging{
               vhs._1.existsNonDeleteInVersionRange(beginTimestamp, endTimestampExclusive.get)
             nonDelete &&
               !preparer.mostlyNumeric(vhs._1) &&
-              !preparer.isNumeric(vhs._1.columnVersions.findLast(!_.isDelete).get.values) &&
+              !preparer.isMostlyNumeric(vhs._1.columnVersions.findLast(!_.isDelete).get.values) &&
               (!applyBasiCFilter || satisfiesBasicFilter(vhs))
           })
         filtered

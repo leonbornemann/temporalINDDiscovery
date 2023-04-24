@@ -9,7 +9,6 @@ import java.time.temporal.ChronoUnit
 
 class WikipediaDataPreparer {
 
-
   def removeTableHeader(tableHistory: TableHistory):TableHistory = {
     tableHistory.withoutHeader
   }
@@ -73,14 +72,17 @@ class WikipediaDataPreparer {
     strings.map(s => if(GLOBAL_CONFIG.NULL_VALUE_EQUIVALENTS.contains(s)) GLOBAL_CONFIG.CANONICAL_NULL_VALUE else s)
   }
 
-  def isNumeric(values: Set[String]): Boolean = {
-    values.forall(s => s.trim.matches(Util.numberRegex))
+  def isMostlyNumeric(values: Set[String]): Boolean = {
+    val numericValCount = values.filter(s => s.trim.matches(Util.numberRegex)).size
+    numericValCount / values.size.toDouble > 0.9 || numericValCount == values.size-1
   }
 
   def mostlyNumeric(ch:ColumnHistory) = {
+    if(ch.pageID=="39262760" && ch.id=="4b186a64-983f-4671-8843-5f2097ba0e9b")
+      println()
     //if 50% of the alive time the column is purely numeric we consider this a numeric column
     val numericTime = ch.nonDeleteVersionsWithAliveTime(GLOBAL_CONFIG.lastInstant)
-      .map{case (cv,aliveTime) => if(isNumeric(cv.values)) aliveTime else 0L}
+      .map{case (cv,aliveTime) => if(isMostlyNumeric(cv.values)) aliveTime else 0L}
       .sum
     val totalTime = ch.nonDeleteVersionsWithAliveTime(GLOBAL_CONFIG.lastInstant)
       .map(_._2)
