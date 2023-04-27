@@ -9,6 +9,12 @@ import scala.util.Random
 
 object OneshotMain extends App {
 
+  val dataManager = new InputDataManager("/home/leon/data/temporalINDDiscovery/finalExperiments/columnHistories/binaryTestSample.bin")
+  val pr = new PrintWriter("/home/leon/data/temporalINDDiscovery/finalExperiments/columnHistories/queries/testQuery.jsonl")
+  val histories = dataManager.loadData()
+  histories.map(och => och.columnHistoryID)
+    .foreach(_.appendToWriter(pr))
+  pr.close()
   //  val source = "/home/leon/data/temporalINDDiscovery/wikipedia/discovery/fromIsfet/0.93/4096_false_10000_RANDOM__discoveredINDs.jsonl"
 //  val source2 = "/home/leon/data/temporalINDDiscovery/wikipedia/discovery/fromIsfet/0.93/4096_false_10000_WEIGHTED_RANDOM__discoveredINDs.jsonl"
 //  val target = new PrintWriter("/home/leon/sampleQueries.jsonl")

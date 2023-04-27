@@ -3,6 +3,7 @@ package de.hpi.temporal_ind.util
 import scala.collection.mutable.ListBuffer
 
 object TableFormatter {
+
   def printTable(header: Seq[Any], table: Seq[Seq[Any]]) = {
     println(format(Seq(header) ++ table))
   }

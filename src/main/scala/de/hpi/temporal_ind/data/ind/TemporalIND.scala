@@ -38,7 +38,8 @@ abstract class TemporalIND[T <% Ordered[T]](lhs: AbstractOrderedColumnHistory[T]
   }
 
   def allIntervals():TimeIntervalSequence = {
-    val list = lhsAndRhsVersionTimestamps.toIndexedSeq
+    val leftAndRight = lhsAndRhsVersionTimestamps.toIndexedSeq
+    val list = if(leftAndRight.contains(GLOBAL_CONFIG.earliestInstant)) leftAndRight else IndexedSeq(GLOBAL_CONFIG.earliestInstant) ++ leftAndRight
     if (list.last == GLOBAL_CONFIG.lastInstant)
       TimeIntervalSequence.fromSortedStartTimes(list.slice(0, list.size - 1), list.last)
     else
