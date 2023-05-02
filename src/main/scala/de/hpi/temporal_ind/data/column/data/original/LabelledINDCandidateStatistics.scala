@@ -44,12 +44,9 @@ case class LabelledINDCandidateStatistics[T <% Ordered[T]](label:String, candida
 
   def serializeTimeShiftedSimpleRelaxedIND(pr: PrintWriter, d: Long, validationTypes: IndexedSeq[ValidationVariant.Value]) = {
     for(validationType <- validationTypes) {
-      val violationTimeNoWildcard = new SimpleTimeWindowTemporalIND[T](lhs,rhs,d,0,false,validationType)
-        .relativeViolationTime()
-      val violationTimeWildcard = new SimpleTimeWindowTemporalIND[T](lhs,rhs,d,0,true,validationType)
+      val violationTimeNoWildcard = new ShifteddRelaxedCustomFunctionTemporalIND(lhs,rhs,TINDParameters(0,d,new ConstantWeightFunction()),ValidationVariant.FULL_TIME_PERIOD)
         .relativeViolationTime()
       pr.println(s"$idCSVString,$label,timeShiftedSimple,false,$validationType,$d,1,$violationTimeNoWildcard")
-      pr.println(s"$idCSVString,$label,timeShiftedSimple,true,$validationType,$d,1,$violationTimeWildcard")
     }
   }
 
