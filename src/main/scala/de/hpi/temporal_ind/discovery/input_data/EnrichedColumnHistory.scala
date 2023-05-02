@@ -1,10 +1,11 @@
 package de.hpi.temporal_ind.discovery.input_data
 
 import de.hpi.temporal_ind.data.column.data.original.OrderedColumnHistory
+import de.hpi.temporal_ind.discovery.TINDParameters
 
 import java.time.Instant
 
-class EnrichedColumnHistory(val och: OrderedColumnHistory,absoluteEpsilon:Long) {
+class EnrichedColumnHistory(val och: OrderedColumnHistory) {
   def clearTimeWindowCache() = windowToValueSetMap.clear()
 
   def valueSetInWindow(beginDelta: Instant, endDelta: Instant): collection.Set[String] = {
@@ -12,20 +13,12 @@ class EnrichedColumnHistory(val och: OrderedColumnHistory,absoluteEpsilon:Long) 
   }
 
   var windowToValueSetMap = collection.mutable.HashMap[(Instant,Instant),collection.Set[String]]()
-  var requiredValuesVar:Option[Set[String]] = None
   def colID: String = och.id
   def tableID: String = och.tableId
 
 
-  def requiredValues = {
-    if(requiredValuesVar.isDefined) {
-      requiredValuesVar.get
-    }
-    else{
-      requiredValuesVar = Some(och.history.requiredValues(absoluteEpsilon).keys.toSet)
-      requiredValuesVar.get
-    }
-
+  def requiredValues(queryParameters:TINDParameters) = {
+    och.history.requiredValues(queryParameters).keys.toSet
   }
   def allValues = och.allValues
 

@@ -1,8 +1,11 @@
 package de.hpi.temporal_ind.discovery.indexing
 
 import de.hpi.temporal_ind.data.ind.variant4.TimeUtil
+import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
+import de.hpi.temporal_ind.discovery.TINDParameters
 import de.hpi.temporal_ind.discovery.input_data.EnrichedColumnHistory
 import de.metanome.algorithms.many.bitvectors.BitVector
+import de.hpi.temporal_ind.discovery.input_data.ValuesInTimeWindow
 
 class MultiLevelIndexStructure(val indexEntireValueset: BloomfilterIndex,
                                val timeSliceIndices: MultiTimeSliceIndexStructure,
@@ -13,10 +16,11 @@ class MultiLevelIndexStructure(val indexEntireValueset: BloomfilterIndex,
   /***
    * Validation happens in-place!
    */
-  def validateContainments(query: EnrichedColumnHistory, candidates: BitVector[_]) = {
+  def validateContainments(query: EnrichedColumnHistory, queryParameters: TINDParameters, candidates: BitVector[_]) = {
     val (_, subsetValidationTime) = TimeUtil.executionTimeInMS({
-      indexEntireValueset.validateContainment(query, candidates)
-      timeSliceIndices.validateContainments(query, candidates)
+      val requiredValues = new ValuesInTimeWindow(GLOBAL_CONFIG.earliestInstant,GLOBAL_CONFIG.lastInstant,query.requiredValues(queryParameters))
+      indexEntireValueset.validateContainmentOfSets(IndexedSeq(requiredValues),queryParameters, candidates)
+      timeSliceIndices.validateContainments(query,queryParameters, candidates)
     })
     subsetValidationTime
   }
@@ -28,15 +32,16 @@ class MultiLevelIndexStructure(val indexEntireValueset: BloomfilterIndex,
     timeSliceIndices.limitTimeSliceIndices(numTimeSliceIndices),
     requiredValuesIndexBuildTime)
 
-  def queryRequiredValuesIndex(query: EnrichedColumnHistory) = {
-    val (candidatesRequiredValues, queryTime, _) = indexEntireValueset.queryWithBitVectorResult(query,
-      None,
-      false)
+  def queryRequiredValuesIndex(query: EnrichedColumnHistory,queryParameters:TINDParameters) = {
+    val requiredValues = new ValuesInTimeWindow(GLOBAL_CONFIG.earliestInstant,GLOBAL_CONFIG.lastInstant,query.requiredValues(queryParameters))
+    val (candidatesRequiredValues, queryTime, _) = indexEntireValueset.queryWithBitVectorResult(IndexedSeq(requiredValues),
+      queryParameters,
+      None)
     (candidatesRequiredValues, queryTime)
   }
 
-  def queryTimeSliceIndices(query: EnrichedColumnHistory,initialCandidates: BitVector[_]) = {
-    timeSliceIndices.executeQuery(query,initialCandidates)
+  def queryTimeSliceIndices(query: EnrichedColumnHistory,queryParamters:TINDParameters,initialCandidates: BitVector[_]) = {
+    timeSliceIndices.executeQuery(query,queryParamters,initialCandidates)
 
   }
 

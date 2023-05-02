@@ -4,6 +4,7 @@ import de.hpi.temporal_ind.data.column.data.{IncrementalIndexedColumnHistories, 
 import de.hpi.temporal_ind.data.ind.{ConstantWeightFunction, ExponentialDecayWeightFunction, ShifteddRelaxedCustomFunctionTemporalIND, SimpleRelaxedTemporalIND, SimpleTimeWindowTemporalIND, StrictTemporalIND}
 import de.hpi.temporal_ind.data.ind.variant4.{TimeShiftedRelaxedTemporalIND, TimeUtil}
 import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
+import de.hpi.temporal_ind.discovery.TINDParameters
 
 import java.io.PrintWriter
 import java.time.temporal.ChronoUnit
@@ -22,7 +23,7 @@ case class LabelledINDCandidateStatistics[T <% Ordered[T]](label:String, candida
     violationTimeSimple!=violationTimeComplex
   }
 
-  def serializeSimpleRelaxedIND(pr: PrintWriter, validationTypes: ValidationVariant.ValueSet) = {
+  def serializeSimpleRelaxedIND(pr: PrintWriter, validationTypes: IndexedSeq[ValidationVariant.Value]) = {
     for(validationType <- validationTypes) {
       val simpleRelaxedTemporalINDWildcardLogic = new SimpleRelaxedTemporalIND[T](lhs, rhs, 1L, true,validationType)
       val simpleVariantViolationTimeWildcardLogic = simpleRelaxedTemporalINDWildcardLogic.relativeViolationTime()
@@ -41,7 +42,7 @@ case class LabelledINDCandidateStatistics[T <% Ordered[T]](label:String, candida
     })
   }
 
-  def serializeTimeShiftedSimpleRelaxedIND(pr: PrintWriter, d: Long, validationTypes: ValidationVariant.ValueSet) = {
+  def serializeTimeShiftedSimpleRelaxedIND(pr: PrintWriter, d: Long, validationTypes: IndexedSeq[ValidationVariant.Value]) = {
     for(validationType <- validationTypes) {
       val violationTimeNoWildcard = new SimpleTimeWindowTemporalIND[T](lhs,rhs,d,0,false,validationType)
         .relativeViolationTime()
@@ -52,17 +53,17 @@ case class LabelledINDCandidateStatistics[T <% Ordered[T]](label:String, candida
     }
   }
 
-  def serializeTimeShiftedExponentialDecayedIND(pr: PrintWriter, d: Long, validationTypes: ValidationVariant.ValueSet,alphas:Seq[Double]) = {
+  def serializeTimeShiftedExponentialDecayedIND(pr: PrintWriter, d: Long, validationTypes: IndexedSeq[ValidationVariant.Value],alphas:Seq[Double]) = {
     for (validationType <- validationTypes) {
       alphas.foreach(a => {
         val decayFunction = new ExponentialDecayWeightFunction(a,ChronoUnit.DAYS)
-        val violationTimeNoWildcard = new ShifteddRelaxedCustomFunctionTemporalIND[T](lhs, rhs, d, 0, decayFunction, validationType)
+        val violationTimeNoWildcard = new ShifteddRelaxedCustomFunctionTemporalIND[T](lhs, rhs, TINDParameters(0,d,decayFunction), validationType)
           .relativeViolationTime()
         pr.println(s"$idCSVString,$label,timeShiftedExponentialDecay,false,$validationType,$d,$a,$violationTimeNoWildcard")
       })
       //add alpha 1:
       val decayFunction = new ConstantWeightFunction()
-      val violationTimeNoWildcard = new ShifteddRelaxedCustomFunctionTemporalIND[T](lhs, rhs, d, 0, decayFunction, validationType)
+      val violationTimeNoWildcard = new ShifteddRelaxedCustomFunctionTemporalIND[T](lhs, rhs, TINDParameters(0,d,decayFunction), validationType)
         .relativeViolationTime()
       pr.println(s"$idCSVString,$label,timeShiftedExponentialDecay,false,$validationType,$d,1,$violationTimeNoWildcard")
     }
@@ -80,7 +81,7 @@ case class LabelledINDCandidateStatistics[T <% Ordered[T]](label:String, candida
   }
 
   def serializeValidityStatistics(pr:PrintWriter,prTimeStats:Option[PrintWriter]) = {
-    val normalizationTypes = ValidationVariant.values
+    val normalizationTypes = IndexedSeq(ValidationVariant.FULL_TIME_PERIOD)
     serializeStrictTemporalIND(pr)
     serializeSimpleRelaxedIND(pr,normalizationTypes)
     val deltas = Seq(TimeUtil.nanosPerDay,
@@ -106,7 +107,7 @@ case class LabelledINDCandidateStatistics[T <% Ordered[T]](label:String, candida
     //serializeTimeShiftedComplexRelaxedIND(pr,deltas)
     deltas.foreach(d => {
       val (simpleRelaxed,timeSimple) = TimeUtil.executionTimeInMS(new SimpleTimeWindowTemporalIND(lhs,rhs,d,0,false,ValidationVariant.FULL_TIME_PERIOD))
-      val (shifteNew,timeNew) = TimeUtil.executionTimeInMS(new ShifteddRelaxedCustomFunctionTemporalIND(lhs,rhs,d,0,new ConstantWeightFunction(),ValidationVariant.FULL_TIME_PERIOD))
+      val (shifteNew,timeNew) = TimeUtil.executionTimeInMS(new ShifteddRelaxedCustomFunctionTemporalIND(lhs,rhs,TINDParameters(0,d,new ConstantWeightFunction()),ValidationVariant.FULL_TIME_PERIOD))
       if(!(shifteNew.absoluteViolationScore == simpleRelaxed.absoluteViolationScore)){
         println("Difference between simpleRelaxed",simpleRelaxed.absoluteViolationScore)
         println("and new Variant",shifteNew.absoluteViolationScore)

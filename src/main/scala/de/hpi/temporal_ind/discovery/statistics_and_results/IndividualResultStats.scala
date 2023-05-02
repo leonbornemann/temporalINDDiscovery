@@ -14,7 +14,6 @@ case class IndividualResultStats(queryNumber: Int,
                                  version:String,
                                  sampleSize: Int,
                                  bloomFilterSize: Int,
-                                 violationTrackingEnabled: Boolean,
                                  timeSliceChoiceMethod:TimeSliceChoiceMethod.Value) {
 
   def toCSVLine = s"$queryNumber," +
@@ -29,7 +28,6 @@ case class IndividualResultStats(queryNumber: Int,
     s"$version," +
     s"$sampleSize," +
     s"$bloomFilterSize," +
-    s"$violationTrackingEnabled," +
     s"$timeSliceChoiceMethod"
 }
 
@@ -46,6 +44,5 @@ object IndividualResultStats {
     "version," +
     "sampleSize," +
     "bloomFilterSize," +
-    "violationTrackingEnabled," +
     "timeSliceChoiceMethod"
 }

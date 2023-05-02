@@ -1,6 +1,7 @@
 package de.hpi.temporal_ind.discovery
 
 import com.typesafe.scalalogging.StrictLogging
+import de.hpi.temporal_ind.data.ind.ConstantWeightFunction
 import de.hpi.temporal_ind.data.ind.variant4.TimeUtil
 import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
 import de.hpi.temporal_ind.discovery.indexing.{BloomfilterIndex, MultiLevelIndexStructure, MultiTimeSliceIndexStructure, TimeSliceChoiceMethod}
@@ -29,16 +30,14 @@ object TimeSliceBorderImpactExploreMain extends App with StrictLogging{
   val bloomfilterSize = 2048
   val interactiveIndexBuilding = false
   val dataLoader = new InputDataManager(targetFileBinary)
-  val relaxedShiftedTemporalINDDiscovery = new RelaxedShiftedTemporalINDDiscovery(dataLoader,
+  val expectedQueryParams = TINDParameters(epsilon,TimeUtil.nanosPerDay * deltaInDays,new ConstantWeightFunction())
+  val relaxedShiftedTemporalINDDiscovery = new TINDSearcher(dataLoader,
     new TimeSliceImpactResultSerializer(targetDir),
-    epsilon,
-    TimeUtil.nanosPerDay * deltaInDays,
+    expectedQueryParams,
     version,
     subsetValidation,
     bloomfilterSize,
-    interactiveIndexBuilding,
     TimeSliceChoiceMethod.RANDOM,
-    true,
     13)
   val resultPR = new PrintWriter(targetDir.getAbsolutePath + "/pruningStats.csv")
   resultPR.println(TimeSliceIndexTuningStatRow.schema)
@@ -46,19 +45,19 @@ object TimeSliceBorderImpactExploreMain extends App with StrictLogging{
   val requiredValueIndex = relaxedShiftedTemporalINDDiscovery.getRequiredValuesetIndex(data)
   val indexStructures = relaxedShiftedTemporalINDDiscovery.getIterableForTimeSliceIndices(data)
   val sampleTOQuery = relaxedShiftedTemporalINDDiscovery.getRandomSampleOfInputData(data,sampleSize)
-  val rqIndex = new MultiLevelIndexStructure(requiredValueIndex,new MultiTimeSliceIndexStructure(collection.SortedMap(),IndexedSeq(),false,1),0)
+  val rqIndex = new MultiLevelIndexStructure(requiredValueIndex,new MultiTimeSliceIndexStructure(collection.SortedMap(),IndexedSeq()),0)
   val requiredIndexResults = sampleTOQuery
-    .map{case (c,_) => (c,rqIndex.queryRequiredValuesIndex(c)._1)}
+    .map{case (c,_) => (c,rqIndex.queryRequiredValuesIndex(c,expectedQueryParams)._1)}
     .toMap
   indexStructures
     .foreach {case (timePeriod,index) =>
       logger.debug(s"beginning $timePeriod")
       val indexMap = collection.mutable.TreeMap[(Instant, Instant), BloomfilterIndex]() ++ Seq((timePeriod, index))
-      val curTimeSliceIndex = new MultiTimeSliceIndexStructure(indexMap,IndexedSeq(),false,1)
+      val curTimeSliceIndex = new MultiTimeSliceIndexStructure(indexMap,IndexedSeq())
       val multiLevelIndexStructure = new MultiLevelIndexStructure(requiredValueIndex,curTimeSliceIndex,0)
       sampleTOQuery.foreach{case (query,queryNum) => {
         val candidatesRequiredValues = requiredIndexResults(query)
-        val (curCandidates, _) = multiLevelIndexStructure.queryTimeSliceIndices(query, candidatesRequiredValues)
+        val (curCandidates, _) = multiLevelIndexStructure.queryTimeSliceIndices(query,expectedQueryParams, candidatesRequiredValues)
         val statRow = new TimeSliceIndexTuningStatRow(queryNum,timePeriod._1,timePeriod._2,candidatesRequiredValues.count(),curCandidates.count())
         resultPR.println(statRow.toCSVLine)
         resultPR.flush()

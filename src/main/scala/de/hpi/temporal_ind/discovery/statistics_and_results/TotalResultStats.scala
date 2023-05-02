@@ -7,7 +7,6 @@ case class TotalResultStats(version:String,
                             seed:Long,
                             sampleSize:Int,
                             bloomFilterSize:Int,
-                            violationTrackingEnabled:Boolean,
                             timeSliceChoiceMethod: TimeSliceChoiceMethod.Value,
                             numTimeSliceIndices: Int,
                             dataLoadingTimeMS: Double,
@@ -18,10 +17,10 @@ case class TotalResultStats(version:String,
                             totalTemporalValidationTime: Double) extends JsonWritable[TotalResultStats] {
 
 
-  def toCSV = s"$version,$seed,$sampleSize,$bloomFilterSize,$violationTrackingEnabled,$timeSliceChoiceMethod,$numTimeSliceIndices,$dataLoadingTimeMS,$requirecValuesIndexBuildTime,$summedTimeSliceIndicesBuildTimes,$totalIndexQueryTime,$totalSubsetValidationTime,$totalTemporalValidationTime"
+  def toCSV = s"$version,$seed,$sampleSize,$bloomFilterSize,$timeSliceChoiceMethod,$numTimeSliceIndices,$dataLoadingTimeMS,$requirecValuesIndexBuildTime,$summedTimeSliceIndicesBuildTimes,$totalIndexQueryTime,$totalSubsetValidationTime,$totalTemporalValidationTime"
 }
 
 object TotalResultStats {
 
-  def schema = "version,seed,sampleSize,bloomFilterSize,violationTrackingEnabled,timeSliceChoiceMethod,numTimeSliceIndices,dataLoadingTimeMS,requirecValuesIndexBuildTime,summedTimeSliceIndicesBuildTimes,totalIndexQueryTime,totalSubsetValidationTime,totalTemporalValidationTime"
+  def schema = "version,seed,sampleSize,bloomFilterSize,timeSliceChoiceMethod,numTimeSliceIndices,dataLoadingTimeMS,requirecValuesIndexBuildTime,summedTimeSliceIndicesBuildTimes,totalIndexQueryTime,totalSubsetValidationTime,totalTemporalValidationTime"
 }

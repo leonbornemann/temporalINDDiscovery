@@ -9,8 +9,6 @@ import scala.collection.mutable.ArrayBuffer
 
 class StandardResultSerializer(targetDir:File,
                                bloomFilterSize:Int,
-                               enableEarlyAbort:Boolean,
-                               sampleSize:Int,
                                timeSliceChoiceMethod:TimeSliceChoiceMethod.Value,
                                seed:Long) extends ResultSerializer{
   def addTrueTemporalINDs(trueTemporalINDs: ArrayBuffer[ShifteddRelaxedCustomFunctionTemporalIND[String]]) =
@@ -32,7 +30,7 @@ class StandardResultSerializer(targetDir:File,
     totalResultsStats.flush()
   }
 
-  val filePrefix = s"${bloomFilterSize}_${enableEarlyAbort}_${sampleSize}_${timeSliceChoiceMethod}_${seed}_"
+  val filePrefix = s"${bloomFilterSize}_${timeSliceChoiceMethod}_${seed}_"
   val resultPR = new PrintWriter(targetDir + s"/${filePrefix}_discoveredINDs.jsonl")
   val basicQueryInfoRow = new PrintWriter(targetDir + s"/${filePrefix}_basicQueryInfo.csv")
   val totalResultsStats = new PrintWriter(targetDir + s"/${filePrefix}_totalStats.csv")

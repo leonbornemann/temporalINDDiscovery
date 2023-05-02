@@ -12,11 +12,11 @@ class ExponentialDecayWeightFunction(a:Double,timeUnit:ChronoUnit) extends Times
 
   def getTimestamp(t: Instant) = maxTimestamp-timeUnit.between(t,GLOBAL_CONFIG.lastInstant)
 
-  override def weight(startInclusive: Instant, endExclusive: Instant): Double = {
+  def weightOfInterval(startInclusive: Instant, endExclusive: Instant):Double = {
     val end = getTimestamp(endExclusive)
     val start = getTimestamp(startInclusive)
-    (math.pow(a, maxTimestamp) * (math.pow(a, -end) - math.pow(a, -start)) / (1 - a)) / timeUnit.between(startInclusive,endExclusive)
+    (math.pow(a, maxTimestamp) * (math.pow(a, -end) - math.pow(a, -start)) / (1 - a)) / timeUnit.between(startInclusive, endExclusive)
   }
 
-  override def summedWeightNanos(startInclusive: Instant, endExclusive: Instant) = ChronoUnit.NANOS.between(startInclusive,endExclusive)*weight(startInclusive,endExclusive)
+  override def weight(startInclusive: Instant, endExclusive: Instant) = ChronoUnit.NANOS.between(startInclusive,endExclusive)*weightOfInterval(startInclusive,endExclusive)
 }

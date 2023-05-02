@@ -2,6 +2,7 @@ import TestUtilMethods.{toHistory, toInstant}
 import de.hpi.temporal_ind.data.column.data.original.ValidationVariant
 import de.hpi.temporal_ind.data.ind.{ConstantWeightFunction, ExponentialDecayWeightFunction, ShifteddRelaxedCustomFunctionTemporalIND, SimpleTimeWindowTemporalIND}
 import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
+import de.hpi.temporal_ind.discovery.TINDParameters
 import org.scalatest.flatspec.AnyFlatSpec
 
 import java.time.temporal.ChronoUnit
@@ -32,7 +33,7 @@ class TemporalINDExponentialDecayTest extends AnyFlatSpec{
     val decayParams = Seq(0.999,0.99,0.9,0.8,0.7,0.6,0.5)
     decayParams.foreach(a => {
       val function = new ExponentialDecayWeightFunction(a, ChronoUnit.NANOS)
-      var shiftedTemporalINDCustomFunction = new ShifteddRelaxedCustomFunctionTemporalIND(history1, history2, 2, 0,function, ValidationVariant.FULL_TIME_PERIOD)
+      var shiftedTemporalINDCustomFunction = new ShifteddRelaxedCustomFunctionTemporalIND(history1, history2, TINDParameters(0,2,function), ValidationVariant.FULL_TIME_PERIOD)
       println(a,shiftedTemporalINDCustomFunction.absoluteViolationScore)
     })
 

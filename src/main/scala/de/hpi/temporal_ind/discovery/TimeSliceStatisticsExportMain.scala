@@ -1,5 +1,6 @@
 package de.hpi.temporal_ind.discovery
 
+import de.hpi.temporal_ind.data.ind.ConstantWeightFunction
 import de.hpi.temporal_ind.data.ind.variant4.TimeUtil
 import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
 import de.hpi.temporal_ind.discovery.indexing.TimeSliceChoiceMethod
@@ -27,22 +28,20 @@ object TimeSliceStatisticsExportMain extends App {
   val bloomfilterSize = 4096
   val interactiveIndexBuilding = false
   val dataLoader = new InputDataManager(targetFileBinary)
-  val relaxedShiftedTemporalINDDiscovery = new RelaxedShiftedTemporalINDDiscovery(dataLoader,
+  val expectedQueryParams = TINDParameters(epsilon,TimeUtil.nanosPerDay * deltaInDays,new ConstantWeightFunction())
+  val relaxedShiftedTemporalINDDiscovery = new TINDSearcher(dataLoader,
     new TimeSliceImpactResultSerializer(targetDir),
-    epsilon,
-    TimeUtil.nanosPerDay * deltaInDays,
+    expectedQueryParams,
     version,
     subsetValidation,
     bloomfilterSize,
-    interactiveIndexBuilding,
     TimeSliceChoiceMethod.RANDOM,
-    true,
     13)
 
   val resultPR = new PrintWriter(targetDir.getAbsolutePath + "/timeSliceStats.csv")
   val (data, _) = relaxedShiftedTemporalINDDiscovery.loadData()
   val absoluteEpsilonNanos = (GLOBAL_CONFIG.totalTimeInNanos * epsilon).toLong
-  val allSlices = GLOBAL_CONFIG.partitionTimePeriodIntoSlices(absoluteEpsilonNanos)
+  val allSlices = GLOBAL_CONFIG.partitionTimePeriodIntoSlices(expectedQueryParams)
   val timeSLiceStatGatherer = new TimeSliceStatisticsExtractor(data.histories.map(_.och), allSlices, resultPR)
   timeSLiceStatGatherer.extractForAll()
 

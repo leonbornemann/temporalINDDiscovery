@@ -1,6 +1,7 @@
 package de.hpi.temporal_ind.data.wikipedia
 
 import de.hpi.temporal_ind.data.ind.variant4.TimeUtil
+import de.hpi.temporal_ind.discovery.TINDParameters
 
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -9,7 +10,10 @@ object GLOBAL_CONFIG {
   var totalTimeNew = 0.0
   var totalTimeOld = 0.0
 
-  def partitionTimePeriodIntoSlices(sliceSizeNanos: Long) = {
+  def partitionTimePeriodIntoSlices(expectedQueryParameters: TINDParameters) = {
+    //assert(false) //needs rework
+    println("WARNING- using old version of partitionTimePeriodIntoSlices - this still needs a rework ")
+    val sliceSizeNanos = expectedQueryParameters.absoluteEpsilon.toLong
     val numSlices = Math.ceil(TimeUtil.durationNanos(earliestInstant,lastInstant)/sliceSizeNanos.toDouble).toLong
     (0L until numSlices)
       .map(i => {

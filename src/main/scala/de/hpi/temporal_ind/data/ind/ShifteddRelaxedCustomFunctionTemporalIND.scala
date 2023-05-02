@@ -4,37 +4,36 @@ import de.hpi.temporal_ind.data.column.data.AbstractOrderedColumnHistory
 import de.hpi.temporal_ind.data.column.data.original.ValidationVariant
 import de.hpi.temporal_ind.data.ind.variant4.TimeUtil
 import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
+import de.hpi.temporal_ind.discovery.TINDParameters
 
 import java.time.{Duration, Instant}
 
 class ShifteddRelaxedCustomFunctionTemporalIND[T <% Ordered[T]](lhs: AbstractOrderedColumnHistory[T],
                                                                 rhs: AbstractOrderedColumnHistory[T],
-                                                                deltaInNanos: Long,
-                                                                absoluteEpsilonInNanos:Double,
-                                                                weightFunction:TimestampWeightFunction,
+                                                                queryParameters:TINDParameters,
                                                                 validationVariant:ValidationVariant.Value) extends TemporalIND(lhs,rhs,validationVariant){
+
+  assert(validationVariant==ValidationVariant.FULL_TIME_PERIOD)
+  val weightFunction = queryParameters.omega
+  val deltaInNanos = queryParameters.absDeltaInNanos
+  val absoluteEpsilon = queryParameters.absoluteEpsilon
 
   def rhsIsWildcardOnlyInRange(lower: Instant, upper: Instant): Boolean = {
     val rhsVersions = rhs.versionsInWindow(lower,upper)
     rhsVersions.size==1 && rhs.versionAt(rhsVersions.head).columnNotPresent
   }
 
-  def absoluteViolationScore = {
-    val movingTimeWindow = new MovingTimWindow(relevantValidationIntervals,lhs,rhs,weightFunction,deltaInNanos)
-    val windows = movingTimeWindow.toIndexedSeq
-    val totalViolationTime = windows
-      .map(_.cost)
-      .sum
-    totalViolationTime
-  }
+//  def absoluteViolationScore = {
+//    val movingTimeWindow = new MovingTimWindow(relevantValidationIntervals,lhs,rhs,weightFunction,deltaInNanos)
+//    val windows = movingTimeWindow.toIndexedSeq
+//    val totalViolationTime = windows
+//      .map(_.cost)
+//      .sum
+//    totalViolationTime
+//  }
 
-  def debugViolationScores = {
-    val movingTimeWindow = new MovingTimWindow(relevantValidationIntervals, lhs, rhs, weightFunction, deltaInNanos)
-    val windows = movingTimeWindow.toIndexedSeq
-    windows
-  }
 
-  override def toString: String = s"GeneralizedTemporalIND(${lhs.id},${rhs.id},$deltaInNanos,$absoluteEpsilonInNanos)"
+  override def toString: String = s"GeneralizedTemporalIND(${lhs.id},${rhs.id},$deltaInNanos,$absoluteEpsilon)"
 
   def relevantValidationIntervals: Iterable[(Instant,Instant)] = {
     val validationIntervalsMap = collection.mutable.TreeMap[Instant,(Instant,Instant)]() ++ validationIntervals
@@ -70,7 +69,7 @@ class ShifteddRelaxedCustomFunctionTemporalIND[T <% Ordered[T]](lhs: AbstractOrd
       //.map(t => getDurationInValidationIntervals(t,validationIntervalsMap))
   }
 
-  def absoluteViolationScoreNew = {
+  def absoluteViolationScore = {
     val intervals = intervalsForValidationNew
     val movingTimeWindow = new MovingTimWindow(intervals, lhs, rhs, weightFunction, deltaInNanos)
     val totalViolationTime = movingTimeWindow
@@ -148,9 +147,9 @@ class ShifteddRelaxedCustomFunctionTemporalIND[T <% Ordered[T]](lhs: AbstractOrd
     val intervals = intervalsForValidationNew
     var totalCost = 0.0
     val movingTimeWindow = new MovingTimWindow(intervals, lhs, rhs, weightFunction, deltaInNanos)
-    while(movingTimeWindow.hasNext && totalCost<=absoluteEpsilonInNanos){
+    while(movingTimeWindow.hasNext && totalCost<=absoluteEpsilon){
       totalCost += movingTimeWindow.next().cost
     }
-    totalCost <=absoluteEpsilonInNanos
+    totalCost <=absoluteEpsilon
   }
 }

@@ -3,7 +3,7 @@ package de.hpi.temporal_ind.discovery.indexing
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.temporal_ind.data.ind.variant4.TimeUtil
 import de.hpi.temporal_ind.discovery.input_data.{EnrichedColumnHistory, ValuesInTimeWindow}
-import de.hpi.temporal_ind.discovery.INDResultCounter
+import de.hpi.temporal_ind.discovery.{INDResultCounter, TINDParameters}
 import de.metanome.algorithms.many.bitvectors.BitVector
 import de.metanome.algorithms.many.{Column, INDDetectionWorkerQuery, MANY}
 
@@ -18,9 +18,7 @@ import scala.collection.JavaConverters._
  */
 class BloomfilterIndex(input: IndexedSeq[EnrichedColumnHistory],
                        bloomfilterSize:Int,
-                       generateValueSetToIndex:(EnrichedColumnHistory => collection.Set[String]),
-                       generateQueryValueSets:(EnrichedColumnHistory => Seq[ValuesInTimeWindow]),
-                       absoluteEpsilonNanos:Long) extends StrictLogging{
+                       generateValueSetToIndex:(EnrichedColumnHistory => collection.Set[String])) extends StrictLogging{
   val outFile = "/home/leon/data/temporalINDDiscovery/wikipedia/discovery/testOutput/test.txt"
   val many = new MANY()
 
@@ -70,10 +68,6 @@ class BloomfilterIndex(input: IndexedSeq[EnrichedColumnHistory],
     columns
   }
 
-  def validateContainment(query:EnrichedColumnHistory,res:BitVector[_]) = {
-    validateContainmentOfSets(generateQueryValueSets(query),res)
-  }
-
   def iterateThroughSetBitsOfBitVector(bv:BitVector[_]):Iterator[Int] = {
     new Iterator[Int]() {
 
@@ -90,14 +84,32 @@ class BloomfilterIndex(input: IndexedSeq[EnrichedColumnHistory],
   }
 
   def validateContainmentOfSets(queryValueSets: Seq[ValuesInTimeWindow],
-                          res: BitVector[_]) = {
+                                queryParameters: TINDParameters,
+                                res: BitVector[_],
+                                candidateToViolationMap:Option[collection.mutable.HashMap[Int,Double]]=None
+                               ) = {
     var curColumnIndex = res.next(0)
     val toSetTo0 = collection.mutable.ArrayBuffer[Int]()
+    if(candidateToViolationMap.isEmpty){
+      assert(queryValueSets.size==1)
+    }
     while (curColumnIndex != -1) {
       val curCol = input(curColumnIndex)
-      if(!queryValueSets.exists(_.values.subsetOf(generateValueSetToIndex(curCol)))){
-        toSetTo0 += curColumnIndex
-      }
+      queryValueSets.foreach(q => {
+        if(!q.values.subsetOf(generateValueSetToIndex(curCol))){
+          if(candidateToViolationMap.isEmpty){
+            //we have an immediate violation because this is a required values bloomfilter
+            toSetTo0 += curColumnIndex
+          } else {
+            //we track violations
+            val newViolation = candidateToViolationMap.get.getOrElse(curColumnIndex, 0.0) + queryParameters.omega.weight(q.beginInclusive, q.endExclusive)
+            candidateToViolationMap.get(curColumnIndex) = newViolation
+            if (newViolation > queryParameters.absoluteEpsilon) {
+              toSetTo0 += curColumnIndex
+            }
+          }
+        }
+      })
       curColumnIndex = res.next(curColumnIndex)
     }
     toSetTo0.foreach(i => res.clear(i))
@@ -117,35 +129,29 @@ class BloomfilterIndex(input: IndexedSeq[EnrichedColumnHistory],
     }
   }
 
-  def queryWithBitVectorResult(q:EnrichedColumnHistory,
+  def queryWithBitVectorResult(queryValueSets:Seq[ValuesInTimeWindow],
+                               queryParameters:TINDParameters,
                                preFilteredCandidates:Option[BitVector[_]] = None,
-                               validate:Boolean=true,
-                               candidateToViolationMap:Option[collection.mutable.HashMap[Int,Long]]=None) = {
+                               candidateToViolationMap:Option[collection.mutable.HashMap[Int,Double]]=None) = {
     var res:Option[BitVector[_]] = None
 
     val (_,queryTime) = TimeUtil.executionTimeInMS({
-      val queryValueSets = generateQueryValueSets(q)
-      if(queryValueSets.size==1){
+      if(queryValueSets.size==1 && queryParameters.omega.weight(queryValueSets.head.beginInclusive,queryValueSets.head.endExclusive)>queryParameters.absoluteEpsilon){
         // we know that we have the exact pruning power we need
         val queryValueSet = queryValueSets.head
         res = Some(noEarlyAbortIndexQuery(queryValueSet,preFilteredCandidates,res))
-      } else if(candidateToViolationMap.isEmpty) {
-        queryValueSets.foreach { queryValueSet =>
-          res = Some(noEarlyAbortIndexQuery(queryValueSet, preFilteredCandidates, res))
-        }
-        res
       } else {
         res = Some(preFilteredCandidates.get.copy())
         queryValueSets.foreach { queryValueSet =>
-          val queryWeightInNanos = TimeUtil.durationNanos(queryValueSet.beginInclusive, queryValueSet.endExclusive)
+          val queryWeight = queryParameters.omega.weight(queryValueSet.beginInclusive, queryValueSet.endExclusive)
           val resNew = executeQuery(preFilteredCandidates, queryValueSet)
           val toTrack = res.get.copy().and(resNew.copy().flip())
           val it = iterateThroughSetBitsOfBitVector(toTrack)
           it.foreach(curBit => {
-            val prev = candidateToViolationMap.get.getOrElse(curBit,0L)
-            if(prev+queryWeightInNanos<absoluteEpsilonNanos){
+            val prev = candidateToViolationMap.get.getOrElse(curBit,0.0)
+            if(prev+queryWeight<=queryParameters.absoluteEpsilon){
               //add new violation score
-              candidateToViolationMap.get(curBit) = prev+queryWeightInNanos
+              candidateToViolationMap.get(curBit) = prev+queryWeight
             } else {
               //we can prune,, remove the bit from the map and clear the bit in the in the original result, so it will never show up again
               candidateToViolationMap.get.remove(curBit)
@@ -156,14 +162,9 @@ class BloomfilterIndex(input: IndexedSeq[EnrichedColumnHistory],
         }
       }
     })
-    val validationTime = if(validate){
-      TimeUtil.executionTimeInMS(validateContainment(q,res.get))._2
-    } else {
-      0.0
-    }
     if(res.isEmpty)
       println()
-    (res.get,queryTime,validationTime)
+    (res.get,queryTime,0.0)
   }
 
   private def executeQuery(preFilteredCandidates: Option[BitVector[_]], queryValueSet: ValuesInTimeWindow) = {
@@ -177,11 +178,6 @@ class BloomfilterIndex(input: IndexedSeq[EnrichedColumnHistory],
     resNew
   }
 
-  def query(q:EnrichedColumnHistory) = {
-    val res = queryWithBitVectorResult(q)
-    val candidates = bitVectorToColumns(res._1)
-    candidates
-  }
 
 //  TimeUtil.logRuntime(timeWorker,"ms","Single Worker Execution For Value Set containment")
 //  val results = worker.getColumnToResultBitVector.asScala

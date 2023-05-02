@@ -1,6 +1,7 @@
 package de.hpi.temporal_ind.discovery
 
 import de.hpi.temporal_ind.data.column.data.ColumnHistoryID
+import de.hpi.temporal_ind.data.ind.ConstantWeightFunction
 import de.hpi.temporal_ind.data.ind.variant4.TimeUtil
 import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
 import de.hpi.temporal_ind.discovery.indexing.TimeSliceChoiceMethod
@@ -9,40 +10,38 @@ import de.hpi.temporal_ind.discovery.statistics_and_results.StandardResultSerial
 
 import java.io.File
 
-object DiscoveryMain extends App {
+object TINDSearchMain extends App {
   println(s"Called with ${args.toIndexedSeq}")
   GLOBAL_CONFIG.setSettingsForDataSource("wikipedia")
   println(GLOBAL_CONFIG.totalTimeInDays)
   val queryFile = args(0)
+  val targetDir = new File(args(1) + s"/$version/")
   val sourceFileBinary = args(2)
-  val epsilon = args(3).toDouble
-  val deltaInDays = args(4).toLong
+  val relativeEpsilon = args(3).toDouble
+  val maxDelta = args(4).toLong
   val timeSliceChoiceMethod = TimeSliceChoiceMethod.withName(args(5))
   val bloomFilterSize = args(6).toInt
-  val enableEarlyAbort = args(7).toBoolean
-  val sampleSize = args(8).toInt
-  val seed = args(9).toLong
-  val numTimeSliceIndicesToTest = args(10).split(",").map(_.toInt)
-  val version = "0.93" //TODO: update this if discovery algorithm changes!
-  val targetDir = new File(args(1) + s"/$version/")
+  val seed = args(7).toLong
+  val numTimeSliceIndicesToTest = args(8).split(",").map(_.toInt)
+  val expectedEpsilon = relativeEpsilon * GLOBAL_CONFIG.totalTimeInNanos
+  val expectedOmega = new ConstantWeightFunction()
+  val expectedParametersWhileIndexing = TINDParameters(expectedEpsilon, TimeUtil.nanosPerDay * maxDelta, expectedOmega)
+  val queryParameters = TINDParameters(expectedEpsilon, maxDelta, expectedOmega)
+  val version = "0.94" //TODO: update this if discovery algorithm changes!
   targetDir.mkdir()
   val subsetValidation = true
-  val interactiveIndexBuilding = false
   val dataLoader = new InputDataManager(sourceFileBinary,None)
   val queryIDs = ColumnHistoryID
     .fromJsonObjectPerLineFile(queryFile)
     .toSet
-  val relaxedShiftedTemporalINDDiscovery = new RelaxedShiftedTemporalINDDiscovery(dataLoader,
-    new StandardResultSerializer(targetDir,bloomFilterSize,enableEarlyAbort,sampleSize,timeSliceChoiceMethod,seed),
-    epsilon,
-    TimeUtil.nanosPerDay*deltaInDays,
+  val relaxedShiftedTemporalINDDiscovery = new TINDSearcher(dataLoader,
+    new StandardResultSerializer(targetDir,bloomFilterSize,timeSliceChoiceMethod,seed),
+    expectedParametersWhileIndexing,
     version,
     subsetValidation,
     bloomFilterSize,
-    interactiveIndexBuilding,
     timeSliceChoiceMethod,
-    enableEarlyAbort,
     seed)
-  relaxedShiftedTemporalINDDiscovery.discoverForSample(queryIDs,numTimeSliceIndicesToTest)
+  relaxedShiftedTemporalINDDiscovery.discoverForSample(queryIDs,numTimeSliceIndicesToTest,queryParameters)
   //relaxedShiftedTemporalINDDiscovery.discoverAll(20,1)
 }
