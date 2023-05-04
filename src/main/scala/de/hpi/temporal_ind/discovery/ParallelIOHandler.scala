@@ -15,11 +15,12 @@ class ParallelIOHandler(rootDir:File,
   def getOrCreateNEwResultSerializer() = {
     availableResultSerializers.synchronized {
       if(availableResultSerializers.isEmpty){
-        val newDir = new File(rootDir.getAbsolutePath + s"/$outputDirCounter/")
+        val newDir = new File(rootDir.getAbsolutePath)
         println(s"Creating $newDir")
         newDir.mkdirs()
+        val serializer = new StandardResultSerializer(newDir,bloomFilterSize,timeSliceChoiceMethod, seed,Some(outputDirCounter))
         outputDirCounter += 1
-        new StandardResultSerializer(newDir,bloomFilterSize,timeSliceChoiceMethod, seed)
+        serializer
       } else {
         availableResultSerializers.remove(0)
       }

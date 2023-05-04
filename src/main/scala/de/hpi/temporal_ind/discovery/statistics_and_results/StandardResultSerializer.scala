@@ -10,8 +10,9 @@ import scala.collection.mutable.ArrayBuffer
 class StandardResultSerializer(targetDir:File,
                                bloomFilterSize:Int,
                                timeSliceChoiceMethod:TimeSliceChoiceMethod.Value,
-                               seed:Long) extends ResultSerializer{
-  def addTrueTemporalINDs(trueTemporalINDs: ArrayBuffer[ShifteddRelaxedCustomFunctionTemporalIND[String]]) =
+                               seed:Long,
+                               subDirectoryNum:Option[Int]=None) extends ResultSerializer{
+  def addTrueTemporalINDs(trueTemporalINDs: Iterable[ShifteddRelaxedCustomFunctionTemporalIND[String]]) =
     trueTemporalINDs.foreach(c => c.toCandidateIDs.appendToWriter(resultPR))
 
   def addIndividualResultStats(individualStatLine: IndividualResultStats) = individualStats.println(individualStatLine.toCSVLine)
@@ -31,10 +32,13 @@ class StandardResultSerializer(targetDir:File,
   }
 
   val filePrefix = s"${bloomFilterSize}_${timeSliceChoiceMethod}_${seed}_"
-  val resultPR = new PrintWriter(targetDir + s"/${filePrefix}_discoveredINDs.jsonl")
-  val basicQueryInfoRow = new PrintWriter(targetDir + s"/${filePrefix}_basicQueryInfo.csv")
-  val totalResultsStats = new PrintWriter(targetDir + s"/${filePrefix}_totalStats.csv")
-  val individualStats = new PrintWriter(targetDir + s"/${filePrefix}_improvedIndividualStats.csv")
+  val subDir = if(subDirectoryNum.isDefined) s"/${subDirectoryNum.get}/" else ""
+  val dir = new File(targetDir + s"/${filePrefix}/$subDir")
+  dir.mkdirs()
+  val resultPR = new PrintWriter(dir.getAbsolutePath + s"/discoveredINDs.jsonl")
+  val basicQueryInfoRow = new PrintWriter(dir.getAbsolutePath + s"/basicQueryInfo.csv")
+  val totalResultsStats = new PrintWriter(dir.getAbsolutePath + s"/totalStats.csv")
+  val individualStats = new PrintWriter(dir.getAbsolutePath + s"/improvedIndividualStats.csv")
   totalResultsStats.println(TotalResultStats.schema)
   individualStats.println(IndividualResultStats.schema)
   basicQueryInfoRow.println(BasicQueryInfoRow.schema)

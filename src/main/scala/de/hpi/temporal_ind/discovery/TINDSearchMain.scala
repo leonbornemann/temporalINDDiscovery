@@ -15,7 +15,7 @@ object TINDSearchMain extends App {
   GLOBAL_CONFIG.setSettingsForDataSource("wikipedia")
   println(GLOBAL_CONFIG.totalTimeInDays)
   val queryFile = args(0)
-  val targetDir = new File(args(1) + s"/$version/")
+  val targetRootDir = args(1)
   val sourceFileBinary = args(2)
   val relativeEpsilon = args(3).toDouble
   val maxDelta = args(4).toLong
@@ -23,25 +23,30 @@ object TINDSearchMain extends App {
   val bloomFilterSize = args(6).toInt
   val seed = args(7).toLong
   val numTimeSliceIndicesToTest = args(8).split(",").map(_.toInt)
+  val numThreads = args(9).toInt
   val expectedEpsilon = relativeEpsilon * GLOBAL_CONFIG.totalTimeInNanos
   val expectedOmega = new ConstantWeightFunction()
   val expectedParametersWhileIndexing = TINDParameters(expectedEpsilon, TimeUtil.nanosPerDay * maxDelta, expectedOmega)
   val queryParameters = TINDParameters(expectedEpsilon, maxDelta, expectedOmega)
-  val version = "0.94" //TODO: update this if discovery algorithm changes!
+  val version = "0.95" //TODO: update this if discovery algorithm changes!
+  val targetDir = new File(targetRootDir + s"/$version/")
   targetDir.mkdir()
+  ParallelQuerySearchHandler.initContext(numThreads)
   val subsetValidation = true
   val dataLoader = new InputDataManager(sourceFileBinary,None)
   val queryIDs = ColumnHistoryID
     .fromJsonObjectPerLineFile(queryFile)
     .toSet
   val relaxedShiftedTemporalINDDiscovery = new TINDSearcher(dataLoader,
-    new StandardResultSerializer(targetDir,bloomFilterSize,timeSliceChoiceMethod,seed),
+    targetDir,
     expectedParametersWhileIndexing,
     version,
     subsetValidation,
     bloomFilterSize,
     timeSliceChoiceMethod,
-    seed)
+    seed,
+    numThreads)
   relaxedShiftedTemporalINDDiscovery.discoverForSample(queryIDs,numTimeSliceIndicesToTest,queryParameters)
+  ParallelQuerySearchHandler.service.shutdown()
   //relaxedShiftedTemporalINDDiscovery.discoverAll(20,1)
 }

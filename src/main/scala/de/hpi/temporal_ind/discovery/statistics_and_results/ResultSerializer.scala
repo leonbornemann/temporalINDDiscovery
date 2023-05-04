@@ -5,7 +5,7 @@ import de.hpi.temporal_ind.data.ind.ShifteddRelaxedCustomFunctionTemporalIND
 import scala.collection.mutable.ArrayBuffer
 
 trait ResultSerializer {
-  def addTrueTemporalINDs(trueTemporalINDs: ArrayBuffer[ShifteddRelaxedCustomFunctionTemporalIND[String]])
+  def addTrueTemporalINDs(trueTemporalINDs: Iterable[ShifteddRelaxedCustomFunctionTemporalIND[String]])
 
 
   def addIndividualResultStats(individualStatLine: IndividualResultStats)
@@ -15,5 +15,6 @@ trait ResultSerializer {
   def closeAll()
 
   def addTotalResultStats(totalResultSTatsLine: TotalResultStats)
+
 
 }

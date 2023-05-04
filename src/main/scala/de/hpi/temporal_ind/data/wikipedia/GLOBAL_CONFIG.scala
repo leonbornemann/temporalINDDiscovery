@@ -7,8 +7,7 @@ import java.time.Instant
 import java.time.temporal.ChronoUnit
 
 object GLOBAL_CONFIG {
-  var totalTimeNew = 0.0
-  var totalTimeOld = 0.0
+  val PARALLEL_TIND_VALIDATION_BATCH_SIZE = 2
 
   def partitionTimePeriodIntoSlices(expectedQueryParameters: TINDParameters) = {
     //assert(false) //needs rework

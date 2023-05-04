@@ -8,7 +8,7 @@ import scala.collection.mutable.ArrayBuffer
 class TimeSliceImpactResultSerializer(targetDir: File) extends ResultSerializer {
 
 
-  override def addTrueTemporalINDs(trueTemporalINDs: ArrayBuffer[ShifteddRelaxedCustomFunctionTemporalIND[String]]): Unit = ???
+  override def addTrueTemporalINDs(trueTemporalINDs: Iterable[ShifteddRelaxedCustomFunctionTemporalIND[String]]): Unit = ???
 
   override def addIndividualResultStats(individualStatLine: IndividualResultStats): Unit = ???
 

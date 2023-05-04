@@ -1,36 +1,43 @@
 package de.hpi.temporal_ind.discovery
 
-import java.util.concurrent.{Executors, Semaphore}
+import java.util.concurrent.{ExecutorService, Executors, Semaphore}
 import java.util.concurrent.atomic.AtomicInteger
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
-class ParallelQuerySearchHandler(nthreads:Int,totalNFutures:Int) {
+class ParallelQuerySearchHandler(totalNFutures:Int) {
 
-  private val service = Executors.newFixedThreadPool(nthreads)
-  val context = ExecutionContext.fromExecutor(service)
   //val futures = new java.util.concurrent.ConcurrentHashMap[String, Future[Any]]()
   var remainingFutureTerminations = new AtomicInteger(totalNFutures)
   var currentlyCreatedFutures = 0
   val allTerminated = new Semaphore(0)
 
-  def addAsFuture[R](block: => R){
+  def addAsFuture[R](block: => R):Future[R] = {
     if(currentlyCreatedFutures==totalNFutures){
       throw new AssertionError(s"Cannot create new future, total number of futures $totalNFutures already reached")
     }
-    val f = Future(block)(context)
+    val f = Future(block)(ParallelQuerySearchHandler.context)
     f.onComplete(_ => {
       val res = remainingFutureTerminations.decrementAndGet()
       //println("State of res",res)
       if(res==0){
-        println("Releasing")
         allTerminated.release()
       }
-    })(context)
+    })(ParallelQuerySearchHandler.context)
     currentlyCreatedFutures += 1
+    f
   }
 
-  def awaitTermination = {
+  def awaitTermination() = {
     allTerminated.acquire(1)
-    service.shutdown()
+  }
+}
+
+object ParallelQuerySearchHandler{
+
+  var service: ExecutorService = null
+  var context: ExecutionContextExecutor = null
+  def initContext(nThreads:Int): Unit = {
+    service = Executors.newFixedThreadPool(nThreads)
+    context = ExecutionContext.fromExecutor(service)
   }
 }
