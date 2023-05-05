@@ -4,6 +4,8 @@ import java.time.Instant
 import java.time.temporal.ChronoUnit
 
 abstract class TimestampWeightFunction() {
+  def getIntervalOfWeight(start: Instant, weight: Double):(Instant, Instant)
+
 
   def weight(t:Instant):Double
 

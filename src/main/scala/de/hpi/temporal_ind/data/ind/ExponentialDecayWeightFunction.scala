@@ -19,4 +19,8 @@ class ExponentialDecayWeightFunction(a:Double,timeUnit:ChronoUnit) extends Times
   }
 
   override def weight(startInclusive: Instant, endExclusive: Instant) = ChronoUnit.NANOS.between(startInclusive,endExclusive)*weightOfInterval(startInclusive,endExclusive)
+
+  override def getIntervalOfWeight(start: Instant, weight: Double) = {
+    ???
+  }
 }

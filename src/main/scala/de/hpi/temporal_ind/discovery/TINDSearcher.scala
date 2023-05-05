@@ -94,49 +94,40 @@ class TINDSearcher(val dataManager:InputDataManager,
 
   }
 
-  def getIterableForTimeSliceIndices(historiesEnriched: ColumnHistoryStorage) = {
-    val slices = getTimeSlices(historiesEnriched)
-      .iterator
-      .map { case (begin, end) =>
-        ((begin,end),getIndexForTimeSlice(historiesEnriched,begin,end))
-      }
-    slices
-  }
+//  def getIterableForTimeSliceIndices(historiesEnriched: ColumnHistoryStorage) = {
+//    val slices = getTimeSlices(historiesEnriched)
+//      .iterator
+//      .map { case (begin, end) =>
+//        ((begin,end),getIndexForTimeSlice(historiesEnriched,begin,end))
+//      }
+//    slices
+//  }
 
   def buildTimeSliceIndices(historiesEnriched: ColumnHistoryStorage,indicesToBuild:Int) = {
-    val slices = getTimeSlices(historiesEnriched)
-      .take(indicesToBuild)
+    val timeSliceChooser = TimeSliceChooser.getChooser(timeSliceChoiceMethod,historiesEnriched,expectedQueryParameters,random)
+    val slices = collection.mutable.ArrayBuffer[(Instant,Instant)]()
+    (0 until indicesToBuild).foreach(_ => {
+      val timeSlice = timeSliceChooser.getNextTimeSlice()
+      slices += timeSlice
+    })
     logger.debug(s"Running Index Build with time slices: $slices")
     var buildTimes = collection.mutable.ArrayBuffer[Double]()
-    val indexMap = collection.mutable.TreeMap[(Instant,Instant),BloomfilterIndex]() ++ slices.map{case (begin,end) => {
-      val (timeSliceIndex, timeSliceIndexBuild) = TimeUtil.executionTimeInMS(getIndexForTimeSlice(historiesEnriched,begin,end))
-      buildTimes+=timeSliceIndexBuild
-      ((begin,end),timeSliceIndex)
+    //concurrent index building to speed up index construction:
+    val handler = new ParallelQuerySearchHandler(slices.size)
+    val futures = slices.map{case (begin,end) => {
+      handler.addAsFuture({
+        val (timeSliceIndex, timeSliceIndexBuild) = TimeUtil.executionTimeInMS(getIndexForTimeSlice(historiesEnriched, begin, end))
+        buildTimes += timeSliceIndexBuild
+        ((begin, end), timeSliceIndex)
+      })
     }}
+    handler.awaitTermination()
+    val results = futures.map(f => Await.result(f,scala.concurrent.duration.Duration.MinusInf))
+    val indexMap = collection.mutable.TreeMap[(Instant,Instant),BloomfilterIndex]() ++ results
     (indexMap,buildTimes)
   }
 
-  def getTimeSlices(historiesEnriched:ColumnHistoryStorage):IndexedSeq[(Instant,Instant)] = {
-    val allSlices = GLOBAL_CONFIG.partitionTimePeriodIntoSlices(expectedQueryParameters)
-    if(timeSliceChoiceMethod==TimeSliceChoiceMethod.RANDOM){
-      random.shuffle(allSlices)
-    } else {
-      val timeSliceToOccurrences = collection.mutable.TreeMap[Instant, (Instant, SimpleCounter)]() ++ allSlices.map(s => (s._1, (s._2, SimpleCounter())))
-      historiesEnriched
-        .histories
-        .foreach(e => e.och.addPresenceForTimeRanges(timeSliceToOccurrences))
-      if (timeSliceChoiceMethod == TimeSliceChoiceMethod.BESTX) {
-        //using simple mutable counter is more efficient than immutable int since we don't haven to reassign in the map
-        timeSliceToOccurrences
-          .toIndexedSeq
-          .sortBy(_._2._2.count)
-          .map(t => (t._1,t._2._1))
-      } else {
-        //do weighted random selection
-        new WeightedRandomShuffler(random).shuffle(timeSliceToOccurrences.map(t => ((t._1,t._2._1),t._2._2.count)))
-      }
-    }
-  }
+
 
 
   def buildMultiIndexStructure(historiesEnriched: ColumnHistoryStorage,numTimeSliceIndices:Int) = {

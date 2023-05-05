@@ -9,6 +9,8 @@ import java.time.temporal.ChronoUnit
 object GLOBAL_CONFIG {
   val PARALLEL_TIND_VALIDATION_BATCH_SIZE = 2
 
+  def ALL_DAYS = (0L until ChronoUnit.DAYS.between(earliestInstant,lastInstant)).map(l => earliestInstant.plus(l,ChronoUnit.DAYS))
+
   def partitionTimePeriodIntoSlices(expectedQueryParameters: TINDParameters) = {
     //assert(false) //needs rework
     println("WARNING- using old version of partitionTimePeriodIntoSlices - this still needs a rework ")
@@ -20,10 +22,6 @@ object GLOBAL_CONFIG {
         val end = Seq(GLOBAL_CONFIG.earliestInstant.plusNanos(i * (sliceSizeNanos + 1)),GLOBAL_CONFIG.lastInstant).min
         (begin, end)
       })
-  }
-
-  def getAllTimeSlices() = {
-
   }
 
   def totalTimeInNanos = ChronoUnit.NANOS.between(earliestInstant,lastInstant)
