@@ -12,7 +12,7 @@ object ParallelExecutionTest extends App with StrictLogging{
   ParallelQuerySearchHandler.initContext(2)
   println(List(1,2,3).grouped(2))
   val parallelExecutor = new ParallelQuerySearchHandler(totalNFutures)
-  val handler = new ParallelIOHandler(new File("/home/leon/test/"),1024,TimeSliceChoiceMethod.WEIGHTED_RANDOM,13)
+  val handler = new ParallelIOHandler(new File("/home/leon/test/"),new File("test"),1024,TimeSliceChoiceMethod.WEIGHTED_RANDOM,13)
   for(i <- 0 until totalNFutures){
     parallelExecutor.addAsFuture({
       println(s"Beginning $i")

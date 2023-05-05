@@ -8,6 +8,7 @@ import java.io.{File, PrintWriter}
 import scala.collection.mutable.ArrayBuffer
 
 class StandardResultSerializer(targetDir:File,
+                               queryFile:File,
                                bloomFilterSize:Int,
                                timeSliceChoiceMethod:TimeSliceChoiceMethod.Value,
                                seed:Long,
@@ -31,7 +32,7 @@ class StandardResultSerializer(targetDir:File,
     totalResultsStats.flush()
   }
 
-  val filePrefix = s"${bloomFilterSize}_${timeSliceChoiceMethod}_${seed}_"
+  val filePrefix = s"${seed}_${queryFile.getName}_${bloomFilterSize}_${timeSliceChoiceMethod}"
   val subDir = if(subDirectoryNum.isDefined) s"/${subDirectoryNum.get}/" else ""
   val dir = new File(targetDir + s"/${filePrefix}/$subDir")
   dir.mkdirs()

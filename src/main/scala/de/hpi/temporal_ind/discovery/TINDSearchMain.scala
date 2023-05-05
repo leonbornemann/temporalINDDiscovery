@@ -38,6 +38,7 @@ object TINDSearchMain extends App {
     .fromJsonObjectPerLineFile(queryFile)
     .toSet
   val relaxedShiftedTemporalINDDiscovery = new TINDSearcher(dataLoader,
+    new File(queryFile),
     targetDir,
     expectedParametersWhileIndexing,
     version,

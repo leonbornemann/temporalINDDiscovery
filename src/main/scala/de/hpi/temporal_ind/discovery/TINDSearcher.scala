@@ -29,6 +29,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 
 class TINDSearcher(val dataManager:InputDataManager,
+                   val queryFile:File,
                    val resultRootDir:File,
                    val expectedQueryParameters:TINDParameters,
                    val version:String,
@@ -38,8 +39,8 @@ class TINDSearcher(val dataManager:InputDataManager,
                    val seed:Long,
                    val nThreads:Int) extends StrictLogging{
 
-  val singleResultSerializer = new StandardResultSerializer(resultRootDir,bloomfilterSize, timeSliceChoiceMethod, seed)
-  val parallelIOHandler = new ParallelIOHandler(resultRootDir, bloomfilterSize, timeSliceChoiceMethod, seed)
+  val singleResultSerializer = new StandardResultSerializer(resultRootDir,queryFile,bloomfilterSize, timeSliceChoiceMethod, seed)
+  val parallelIOHandler = new ParallelIOHandler(resultRootDir,queryFile, bloomfilterSize, timeSliceChoiceMethod, seed)
 
   val random:Random = new Random(seed)
 

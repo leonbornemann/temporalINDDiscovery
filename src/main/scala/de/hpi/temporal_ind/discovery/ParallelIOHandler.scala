@@ -6,6 +6,7 @@ import de.hpi.temporal_ind.discovery.statistics_and_results.{ResultSerializer, S
 import java.io.{File, PrintWriter}
 
 class ParallelIOHandler(rootDir:File,
+                        queryFile:File,
                         bloomFilterSize: Int,
                         timeSliceChoiceMethod: TimeSliceChoiceMethod.Value,
                         seed: Long) {
@@ -18,7 +19,7 @@ class ParallelIOHandler(rootDir:File,
         val newDir = new File(rootDir.getAbsolutePath)
         println(s"Creating $newDir")
         newDir.mkdirs()
-        val serializer = new StandardResultSerializer(newDir,bloomFilterSize,timeSliceChoiceMethod, seed,Some(outputDirCounter))
+        val serializer = new StandardResultSerializer(newDir,queryFile,bloomFilterSize,timeSliceChoiceMethod, seed,Some(outputDirCounter))
         outputDirCounter += 1
         serializer
       } else {
