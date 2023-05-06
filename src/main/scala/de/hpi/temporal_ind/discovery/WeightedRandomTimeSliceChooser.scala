@@ -1,11 +1,22 @@
 package de.hpi.temporal_ind.discovery
 
+import com.google.zetasketch.HyperLogLogPlusPlus
+import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
 import de.hpi.temporal_ind.discovery.input_data.ColumnHistoryStorage
 
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 import scala.util.Random
 
-class WeightedRandomTimeSliceChooser(historiesEnriched: ColumnHistoryStorage, expectedQueryParamters: TINDParameters, random: Random) extends TimeSliceChooser {
+class WeightedRandomTimeSliceChooser(historiesEnriched: ColumnHistoryStorage,
+                                     expectedQueryParamters: TINDParameters,
+                                     random: Random) extends WeightBasedTimeSliceChooser(historiesEnriched,expectedQueryParamters) {
+
+
+  val shuffler = new WeightedRandomShuffler(random)
+  val shuffled = shuffler.shuffle[Instant](weights.toIndexedSeq)
+
+  def timestamps = shuffled.iterator
 
 //  def getTimeSlices(historiesEnriched: ColumnHistoryStorage): IndexedSeq[(Instant, Instant)] = {
 //    val allSlices = GLOBAL_CONFIG.partitionTimePeriodIntoSlices(expectedQueryParameters)
@@ -29,5 +40,4 @@ class WeightedRandomTimeSliceChooser(historiesEnriched: ColumnHistoryStorage, ex
 //    }
 //  }
 
-  override def getNextTimeSlice(): (Instant, Instant) = ???
 }

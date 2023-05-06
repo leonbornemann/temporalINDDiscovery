@@ -6,6 +6,10 @@ import scala.collection.mutable.ArrayBuffer
 
 object Util {
 
+  def log(base:Double, n:Double) = {
+    Math.log(n) / Math.log(base)
+  }
+
   def Jaccard_Similarity(set1: Set[String], set2: Set[String]) = {
     set1.intersect(set2).size / set1.union(set2).size.toDouble
   }
