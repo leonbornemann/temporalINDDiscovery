@@ -9,7 +9,7 @@ import java.time.temporal.ChronoUnit
 object GLOBAL_CONFIG {
   val PARALLEL_TIND_VALIDATION_BATCH_SIZE = 2
 
-  def ALL_DAYS = (0L until ChronoUnit.DAYS.between(earliestInstant,lastInstant)).map(l => earliestInstant.plus(l,ChronoUnit.DAYS))
+  def ALL_DAYS = (0L to ChronoUnit.DAYS.between(earliestInstant,lastInstant)).map(l => earliestInstant.plus(l,ChronoUnit.DAYS))
 
   def partitionTimePeriodIntoSlices(expectedQueryParameters: TINDParameters) = {
     //assert(false) //needs rework

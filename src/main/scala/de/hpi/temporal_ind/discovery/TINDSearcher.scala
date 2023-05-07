@@ -57,6 +57,7 @@ class TINDSearcher(val dataManager:InputDataManager,
   }
 
   def getIndexForTimeSlice(historiesEnriched:ColumnHistoryStorage,lower:Instant, upper:Instant,size:Int=bloomfilterSize) = {
+    logger.debug(s"Building Index for [$lower,$upper)")
     val (beginDelta,endDelta) = (lower.minusNanos(expectedQueryParameters.absDeltaInNanos),upper.plusNanos(expectedQueryParameters.absDeltaInNanos))
     new BloomfilterIndex(historiesEnriched.histories,
       size,

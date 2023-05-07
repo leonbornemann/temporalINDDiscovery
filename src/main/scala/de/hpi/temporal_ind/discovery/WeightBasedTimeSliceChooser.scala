@@ -13,7 +13,10 @@ abstract class WeightBasedTimeSliceChooser(historiesEnriched:ColumnHistoryStorag
   val hllBuilder = new HyperLogLogPlusPlus.Builder();
 
   def initTimestampToWeights() = {
-    collection.mutable.TreeMap[Instant, HyperLogLogPlusPlus[String]]() ++ GLOBAL_CONFIG.ALL_DAYS.map(i => (i, hllBuilder.buildForStrings()))
+    collection.mutable.TreeMap[Instant, HyperLogLogPlusPlus[String]]() ++ GLOBAL_CONFIG
+      .ALL_DAYS
+      .map(i => (i.truncatedTo(ChronoUnit.DAYS), hllBuilder.buildForStrings()))
+      .filter(t => t._1.isAfter(GLOBAL_CONFIG.earliestInstant) && t._1.isBefore(GLOBAL_CONFIG.lastInstant))
   }
 
   val timestampToWeight = initTimestampToWeights()
@@ -25,10 +28,15 @@ abstract class WeightBasedTimeSliceChooser(historiesEnriched:ColumnHistoryStorag
     val withIndex = h.och.history.versions.toIndexedSeq
       .zipWithIndex
     withIndex.map { case (t, i) => {
-      val begin = t._1
-      val end = if (i == withIndex.size) GLOBAL_CONFIG.lastInstant else withIndex(i + 1)._1._1
+      val begin = t._1.truncatedTo(ChronoUnit.DAYS)
+      val end = if (i == withIndex.size-1) GLOBAL_CONFIG.lastInstant else withIndex(i + 1)._1._1
       (0 until granularity.between(begin, end).toInt)
-        .foreach(l => addAllToSketch(timestampToWeight(begin.plus(l, granularity)), t._2.values))
+        .foreach(l => {
+          val date = begin.plus(l, granularity)
+          if(!timestampToWeight.contains(date))
+            println()
+          addAllToSketch(timestampToWeight(begin.plus(l, granularity)), t._2.values)
+        })
     }
     }
   })

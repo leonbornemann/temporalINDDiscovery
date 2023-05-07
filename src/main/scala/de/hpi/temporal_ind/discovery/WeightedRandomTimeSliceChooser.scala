@@ -15,7 +15,11 @@ class WeightedRandomTimeSliceChooser(historiesEnriched: ColumnHistoryStorage,
 
   val shuffler = new WeightedRandomShuffler(random)
   val shuffled = shuffler.shuffle[Instant](weights.toIndexedSeq)
-
+//  weights
+//    .toIndexedSeq
+//    .sortBy(_._1)
+//    .foreach(println(_))
+//  println()
   def timestamps = shuffled.iterator
 
 //  def getTimeSlices(historiesEnriched: ColumnHistoryStorage): IndexedSeq[(Instant, Instant)] = {
