@@ -1,7 +1,6 @@
 import TestUtilMethods.{toHistory, toInstant}
-import de.hpi.temporal_ind.data.column.data.original.ValidationVariant
-import de.hpi.temporal_ind.data.ind.{ConstantWeightFunction, ExponentialDecayWeightFunction, ShifteddRelaxedCustomFunctionTemporalIND, SimpleTimeWindowTemporalIND}
-import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
+import de.hpi.temporal_ind.data.GLOBAL_CONFIG
+import de.hpi.temporal_ind.data.ind.{ConstantWeightFunction, ExponentialDecayWeightFunction, ShifteddRelaxedCustomFunctionTemporalIND, SimpleTimeWindowTemporalIND, ValidationVariant}
 import de.hpi.temporal_ind.discovery.TINDParameters
 import org.scalatest.flatspec.AnyFlatSpec
 

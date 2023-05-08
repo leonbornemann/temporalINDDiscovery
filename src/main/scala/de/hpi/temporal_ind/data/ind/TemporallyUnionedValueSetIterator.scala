@@ -1,8 +1,9 @@
 package de.hpi.temporal_ind.data.ind
 
-import de.hpi.temporal_ind.data.column.data.{AbstractColumnVersion, AbstractOrderedColumnHistory}
-import de.hpi.temporal_ind.data.column.data.original.{ColumnVersion, PeekableIterator}
-import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
+import de.hpi.temporal_ind.data.GLOBAL_CONFIG
+import de.hpi.temporal_ind.data.attribute_history.data.{AbstractColumnVersion, AbstractOrderedColumnHistory}
+import de.hpi.temporal_ind.data.attribute_history.data.original.ColumnVersion
+import de.hpi.temporal_ind.data.attribute_history.data.traversal.PeekableIterator
 
 import java.time.Instant
 import scala.collection.mutable.MultiSet

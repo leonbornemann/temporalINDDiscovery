@@ -1,6 +1,7 @@
 package de.hpi.temporal_ind.data.wikipedia
 
-import de.hpi.temporal_ind.data.column.data.original.ColumnHistory
+import de.hpi.temporal_ind.data.GLOBAL_CONFIG
+import de.hpi.temporal_ind.data.attribute_history.data.original.ColumnHistory
 import de.hpi.temporal_ind.util.Util
 import org.jsoup.Jsoup
 

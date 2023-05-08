@@ -1,8 +1,8 @@
 package de.hpi.temporal_ind.oneshot
 
+import de.hpi.temporal_ind.data.GLOBAL_CONFIG
 import de.hpi.temporal_ind.data.ind.ExponentialDecayWeightFunction
 import de.hpi.temporal_ind.data.ind.variant4.TimeUtil
-import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
 
 import java.time.Instant
 import java.time.temporal.ChronoUnit

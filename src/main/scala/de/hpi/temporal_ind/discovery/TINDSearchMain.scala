@@ -1,9 +1,9 @@
 package de.hpi.temporal_ind.discovery
 
-import de.hpi.temporal_ind.data.column.data.ColumnHistoryID
+import de.hpi.temporal_ind.data.GLOBAL_CONFIG
+import de.hpi.temporal_ind.data.attribute_history.data.ColumnHistoryID
 import de.hpi.temporal_ind.data.ind.ConstantWeightFunction
 import de.hpi.temporal_ind.data.ind.variant4.TimeUtil
-import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
 import de.hpi.temporal_ind.discovery.indexing.TimeSliceChoiceMethod
 import de.hpi.temporal_ind.discovery.input_data.InputDataManager
 import de.hpi.temporal_ind.discovery.statistics_and_results.StandardResultSerializer
@@ -31,7 +31,7 @@ object TINDSearchMain extends App {
   val version = "0.96" //TODO: update this if discovery algorithm changes!
   val targetDir = new File(targetRootDir + s"/$version/")
   targetDir.mkdir()
-  ParallelQuerySearchHandler.initContext(numThreads)
+  ParallelExecutionHandler.initContext(numThreads)
   val subsetValidation = true
   val dataLoader = new InputDataManager(sourceFileBinary,None)
   val queryIDs = ColumnHistoryID
@@ -48,6 +48,6 @@ object TINDSearchMain extends App {
     seed,
     numThreads)
   relaxedShiftedTemporalINDDiscovery.discoverForSample(queryIDs,numTimeSliceIndicesToTest,queryParameters)
-  ParallelQuerySearchHandler.service.shutdown()
+  ParallelExecutionHandler.service.shutdown()
   //relaxedShiftedTemporalINDDiscovery.discoverAll(20,1)
 }

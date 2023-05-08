@@ -1,8 +1,7 @@
 package de.hpi.temporal_ind.data.ind.variant4
 
-import de.hpi.temporal_ind.data.column.data.AbstractOrderedColumnHistory
-import de.hpi.temporal_ind.data.column.data.original.ValidationVariant
-import de.hpi.temporal_ind.data.ind.TemporalIND
+import de.hpi.temporal_ind.data.attribute_history.data.AbstractOrderedColumnHistory
+import de.hpi.temporal_ind.data.ind.{TemporalIND, ValidationVariant}
 
 class TimeShiftedRelaxedTemporalIND[T <% Ordered[T]](lhs: AbstractOrderedColumnHistory[T],
                                                      rhs: AbstractOrderedColumnHistory[T],

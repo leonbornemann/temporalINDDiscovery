@@ -1,8 +1,7 @@
 import TestUtilMethods.{toHistory, toInstant}
-import de.hpi.temporal_ind.data.column.data.original.ValidationVariant
-import de.hpi.temporal_ind.data.ind.SimpleRelaxedTemporalIND
+import de.hpi.temporal_ind.data.GLOBAL_CONFIG
+import de.hpi.temporal_ind.data.ind.{SimpleRelaxedTemporalIND, ValidationVariant}
 import de.hpi.temporal_ind.data.ind.variant4.{TimeShiftedRelaxedINDDynamicProgrammingSolver, VersionRange}
-import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
 import org.scalatest.flatspec.AnyFlatSpec
 
 class SimpleRelaxedTemporalINDTest extends AnyFlatSpec{
@@ -19,6 +18,7 @@ class SimpleRelaxedTemporalINDTest extends AnyFlatSpec{
       (3,Set("a","b")),
       (4,Set("e","f"))
     ))
+    GLOBAL_CONFIG.earliestInstant = toInstant(0)
     GLOBAL_CONFIG.lastInstant = toInstant(40)
     var simpleRelaxedTemporalIND = new SimpleRelaxedTemporalIND(history1,history2,7,false,ValidationVariant.FULL_TIME_PERIOD)
     assert(simpleRelaxedTemporalIND.absoluteViolationScore==5)

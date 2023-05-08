@@ -1,6 +1,6 @@
 package de.hpi.temporal_ind.oneshot
 
-import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
+import de.hpi.temporal_ind.data.GLOBAL_CONFIG
 
 object TimePrintMain extends App {
   GLOBAL_CONFIG.setSettingsForDataSource("wikipedia")

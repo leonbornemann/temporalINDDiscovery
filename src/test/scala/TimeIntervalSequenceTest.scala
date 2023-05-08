@@ -1,5 +1,5 @@
-import de.hpi.temporal_ind.data.column.data.TimeIntervalSequence
-import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
+import de.hpi.temporal_ind.data.GLOBAL_CONFIG
+import de.hpi.temporal_ind.data.attribute_history.data.TimeIntervalSequence
 import org.scalatest.flatspec.AnyFlatSpec
 
 class TimeIntervalSequenceTest extends AnyFlatSpec{

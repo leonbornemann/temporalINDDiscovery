@@ -1,10 +1,9 @@
 package de.hpi.temporal_ind.data.ind
 
-import de.hpi.temporal_ind.data.column.data.{AbstractOrderedColumnHistory, TimeIntervalSequence}
-import de.hpi.temporal_ind.data.column.data.original.ValidationVariant
-import de.hpi.temporal_ind.data.column.data.original.ValidationVariant.{FULL_TIME_PERIOD, LHS_INTERSECT_RHS, LHS_ONLY, LHS_UNION_RHS, NormalizationVariant, RHS_ONLY}
+import de.hpi.temporal_ind.data.GLOBAL_CONFIG
+import de.hpi.temporal_ind.data.attribute_history.data.{AbstractOrderedColumnHistory, TimeIntervalSequence}
+import ValidationVariant.{FULL_TIME_PERIOD, LHS_INTERSECT_RHS, LHS_ONLY, LHS_UNION_RHS, NormalizationVariant, RHS_ONLY}
 import de.hpi.temporal_ind.data.ind.variant4.TimeUtil
-import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
 import de.hpi.temporal_ind.util.TableFormatter
 
 import java.time.Duration

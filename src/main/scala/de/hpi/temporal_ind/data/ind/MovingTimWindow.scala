@@ -1,9 +1,9 @@
 package de.hpi.temporal_ind.data.ind
 
-import de.hpi.temporal_ind.data.column.data.{AbstractColumnVersion, AbstractOrderedColumnHistory}
-import de.hpi.temporal_ind.data.column.data.original.PeekableIterator
+import de.hpi.temporal_ind.data.GLOBAL_CONFIG
+import de.hpi.temporal_ind.data.attribute_history.data.traversal.PeekableIterator
+import de.hpi.temporal_ind.data.attribute_history.data.{AbstractColumnVersion, AbstractOrderedColumnHistory}
 import de.hpi.temporal_ind.data.ind.variant4.TimeUtil
-import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
 
 import java.time.{Duration, Instant}
 
@@ -25,7 +25,7 @@ class MovingTimWindow[T](validationIntervals: Iterable[(Instant, Instant)],
     val (curBegin,curEnd) = it.next()
     val deltaExtendedBegin = curBegin.minusNanos(deltaInNanos)
     val deltaExtendedEnd = curBegin.plusNanos(deltaInNanos+1)
-    if (curBegin == Instant.parse("1970-01-01T00:00:00.000000022Z")) {
+    if (curEnd == Instant.parse("1970-01-01T00:00:00.000000015Z")) {
       println()
     }
     val setLHS:collection.Set[T] = lhsIterator.advanceToInterval(curBegin,curEnd)

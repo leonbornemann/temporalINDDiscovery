@@ -1,11 +1,12 @@
 package de.hpi.temporal_ind.oneshot
 
-import de.hpi.temporal_ind.data.column.data.IndexedColumnHistories
-import de.hpi.temporal_ind.data.column.data.many.InclusionDependencyFromMany
-import de.hpi.temporal_ind.data.column.data.original.{INDCandidate, LabelledINDCandidateStatistics}
-import de.hpi.temporal_ind.data.column.labelling.TINDCandidateMetricDisagreementExport.deltas
+import de.hpi.temporal_ind.data.GLOBAL_CONFIG
+import de.hpi.temporal_ind.data.attribute_history.data.file_search.IndexedColumnHistories
+import de.hpi.temporal_ind.data.attribute_history.data.many.InclusionDependencyFromMany
+import de.hpi.temporal_ind.data.attribute_history.data.metadata.LabelledINDCandidateStatistics
+import de.hpi.temporal_ind.data.attribute_history.labelling.TINDCandidateMetricDisagreementExport.deltas
+import de.hpi.temporal_ind.data.ind.INDCandidate
 import de.hpi.temporal_ind.data.ind.variant4.TimeUtil
-import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
 
 import java.io.{File, PrintWriter}
 

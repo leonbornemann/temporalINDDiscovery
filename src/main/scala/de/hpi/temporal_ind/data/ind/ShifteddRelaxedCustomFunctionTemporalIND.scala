@@ -1,9 +1,8 @@
 package de.hpi.temporal_ind.data.ind
 
-import de.hpi.temporal_ind.data.column.data.AbstractOrderedColumnHistory
-import de.hpi.temporal_ind.data.column.data.original.ValidationVariant
+import de.hpi.temporal_ind.data.GLOBAL_CONFIG
+import de.hpi.temporal_ind.data.attribute_history.data.AbstractOrderedColumnHistory
 import de.hpi.temporal_ind.data.ind.variant4.TimeUtil
-import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
 import de.hpi.temporal_ind.discovery.TINDParameters
 
 import java.time.{Duration, Instant}
@@ -72,6 +71,7 @@ class ShifteddRelaxedCustomFunctionTemporalIND[T <% Ordered[T]](lhs: AbstractOrd
   def absoluteViolationScore = {
     val intervals = intervalsForValidationNew
     val movingTimeWindow = new MovingTimWindow(intervals, lhs, rhs, weightFunction, deltaInNanos)
+    val windowToCost = new MovingTimWindow(intervals, lhs, rhs, weightFunction, deltaInNanos).toIndexedSeq
     val totalViolationTime = movingTimeWindow
       .map(_.cost)
       .sum
@@ -86,8 +86,8 @@ class ShifteddRelaxedCustomFunctionTemporalIND[T <% Ordered[T]](lhs: AbstractOrd
       if (v._1.minusNanos(deltaInNanos).isAfter(GLOBAL_CONFIG.earliestInstant)) {
         timestamps += v._1.minusNanos(deltaInNanos)
       }
-      if (v._1.plusNanos(deltaInNanos+1).isBefore(GLOBAL_CONFIG.lastInstant)) {
-        timestamps += v._1.plusNanos(deltaInNanos+1)
+      if (v._1.plusNanos(deltaInNanos).isBefore(GLOBAL_CONFIG.lastInstant)) {
+        timestamps += v._1.plusNanos(deltaInNanos)
       }
     })
     timestamps += GLOBAL_CONFIG.lastInstant

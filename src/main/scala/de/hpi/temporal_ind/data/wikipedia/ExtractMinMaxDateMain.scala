@@ -1,5 +1,7 @@
 package de.hpi.temporal_ind.data.wikipedia
 
+import de.hpi.temporal_ind.data.GLOBAL_CONFIG
+
 import java.io.File
 import java.time.Instant
 

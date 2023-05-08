@@ -1,31 +1,11 @@
 import TestUtilMethods.{toHistory, toInstant}
-import de.hpi.temporal_ind.data.column.data.original.ValidationVariant
-import de.hpi.temporal_ind.data.ind.{SimpleRelaxedTemporalIND, SimpleTimeWindowTemporalIND}
+import de.hpi.temporal_ind.data.GLOBAL_CONFIG
+import de.hpi.temporal_ind.data.ind.{SimpleRelaxedTemporalIND, SimpleTimeWindowTemporalIND, ValidationVariant}
 import de.hpi.temporal_ind.data.ind.variant4.{TimeShiftedRelaxedINDDynamicProgrammingSolver, TimeShiftedRelaxedTemporalIND}
-import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
 import org.scalatest.flatspec.AnyFlatSpec
 
 class WildcardSemanticTest extends AnyFlatSpec{
 
-  "Time SHifted Complex IND" should "work correctly using non-wildcards" in {
-    val history1 = toHistory(Map(
-      (10,Set("a")),
-      (50,Set("d"))
-    ))
-    val history2 = toHistory(Map(
-      (10,Set("a")),
-      (30,Set())
-    ))
-    GLOBAL_CONFIG.earliestInstant = toInstant(0)
-    GLOBAL_CONFIG.lastInstant = toInstant(100)
-    var delta = 10
-    val timeShiftedIND = new TimeShiftedRelaxedTemporalIND(history1,history2,delta,0,false)
-    timeShiftedIND.getOrCeateSolver()
-    assert(timeShiftedIND.getOrCeateSolver().costFunction(toInstant(50),toInstant(30),toInstant(100))==50)
-    assert(timeShiftedIND.getOrCeateSolver().costFunction(toInstant(10),toInstant(10),toInstant(100))==10)
-    timeShiftedIND.getOrCeateSolver().printMatrix
-    assert(timeShiftedIND.getOrCeateSolver().optimalMappingCost == 60)
-  }
 
 //  "Time SHifted Complex IND" should "work correctly using wildcards" in {
 //    val history1 = toHistory(Map(

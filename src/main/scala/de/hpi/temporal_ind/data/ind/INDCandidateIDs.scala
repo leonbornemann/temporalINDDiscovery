@@ -1,6 +1,6 @@
 package de.hpi.temporal_ind.data.ind
 
-import de.hpi.temporal_ind.data.column.data.ColumnHistoryID
+import de.hpi.temporal_ind.data.attribute_history.data.ColumnHistoryID
 import de.hpi.temporal_ind.data.{JsonReadable, JsonWritable}
 
 case class INDCandidateIDs(lhsPageID:String,

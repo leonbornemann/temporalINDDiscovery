@@ -1,7 +1,7 @@
 package de.hpi.temporal_ind.data.ind.variant4
 
 import com.typesafe.scalalogging.StrictLogging
-import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
+import de.hpi.temporal_ind.data.GLOBAL_CONFIG
 
 import java.time.Instant
 import java.time.temporal.ChronoUnit

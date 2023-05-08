@@ -1,6 +1,6 @@
 package de.hpi.temporal_ind.data.ind
-import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
 
+import de.hpi.temporal_ind.data.GLOBAL_CONFIG
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 

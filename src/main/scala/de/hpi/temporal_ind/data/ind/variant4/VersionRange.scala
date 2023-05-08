@@ -1,6 +1,6 @@
 package de.hpi.temporal_ind.data.ind.variant4
 
-import de.hpi.temporal_ind.data.column.data.AbstractColumnVersion
+import de.hpi.temporal_ind.data.attribute_history.data.AbstractColumnVersion
 
 import java.time.Instant
 

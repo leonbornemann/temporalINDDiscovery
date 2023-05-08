@@ -1,5 +1,5 @@
-import de.hpi.temporal_ind.data.column.data.original.{ColumnVersion, OrderedColumnHistory, OrderedColumnVersionList}
-import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
+import de.hpi.temporal_ind.data.GLOBAL_CONFIG
+import de.hpi.temporal_ind.data.attribute_history.data.original.{ColumnVersion, OrderedColumnHistory, OrderedColumnVersionList}
 
 import java.io.File
 import java.time.{Duration, Instant}
@@ -36,7 +36,7 @@ object TemporalINDTestCase {
   def getTestCaseFromLines(filterDuplicateVersions: Boolean, name: String, lines: IndexedSeq[String]) = {
     val header = lines.head.split("\t")
     val lastDataIndex = header.indexOf("Strict Valid") - 1
-    val (dataLines: _root_.scala.collection.immutable.IndexedSeq[Array[_root_.java.lang.String]], histories: _root_.scala.collection.immutable.IndexedSeq[_root_.de.hpi.temporal_ind.data.column.data.original.OrderedColumnHistory]) = extractHistoriesFromLines(filterDuplicateVersions, lines, lastDataIndex)
+    val (dataLines: _root_.scala.collection.immutable.IndexedSeq[Array[_root_.java.lang.String]], histories: _root_.scala.collection.immutable.IndexedSeq[_root_.de.hpi.temporal_ind.data.attribute_history.data.original.OrderedColumnHistory]) = extractHistoriesFromLines(filterDuplicateVersions, lines, lastDataIndex)
     assert(histories.size == 2)
     val shouldRemainValid = dataLines.head.slice(lastDataIndex + 1, lines.head.size)
       .map(_.toBoolean)

@@ -1,7 +1,7 @@
 package de.hpi.temporal_ind.data.ind.variant4
 
-import de.hpi.temporal_ind.data.column.data.{AbstractColumnVersion, AbstractOrderedColumnHistory}
-import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
+import de.hpi.temporal_ind.data.GLOBAL_CONFIG
+import de.hpi.temporal_ind.data.attribute_history.data.{AbstractColumnVersion, AbstractOrderedColumnHistory}
 import de.hpi.temporal_ind.util.TableFormatter
 
 import java.time.temporal.ChronoUnit

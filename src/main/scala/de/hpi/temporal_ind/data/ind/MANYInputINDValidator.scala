@@ -1,10 +1,9 @@
 package de.hpi.temporal_ind.data.ind
 
 import com.typesafe.scalalogging.StrictLogging
-import de.hpi.temporal_ind.data.column.data.encoded.ColumnHistoryEncoded
-import de.hpi.temporal_ind.data.column.data.many.InclusionDependencyFromMany
-import de.hpi.temporal_ind.data.column.data.original.ValidationVariant
-import de.hpi.temporal_ind.data.column.statistics.TemporalINDStatRow
+import de.hpi.temporal_ind.data.attribute_history.data.encoded.ColumnHistoryEncoded
+import de.hpi.temporal_ind.data.attribute_history.data.many.InclusionDependencyFromMany
+import de.hpi.temporal_ind.data.attribute_history.statistics.TemporalINDStatRow
 
 import java.io.{File, PrintWriter}
 

@@ -1,7 +1,8 @@
 package de.hpi.temporal_ind.oneshot
 
-import de.hpi.temporal_ind.data.column.data.original.ColumnHistory
-import de.hpi.temporal_ind.data.wikipedia.{GLOBAL_CONFIG, WikipediaDataPreparer}
+import de.hpi.temporal_ind.data.GLOBAL_CONFIG
+import de.hpi.temporal_ind.data.attribute_history.data.original.ColumnHistory
+import de.hpi.temporal_ind.data.wikipedia.WikipediaDataPreparer
 import de.hpi.temporal_ind.discovery.input_data.InputDataManager
 
 import java.io.File

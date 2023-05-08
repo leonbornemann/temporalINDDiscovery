@@ -1,4 +1,4 @@
-import de.hpi.temporal_ind.data.column.data.original.{ColumnVersion, OrderedColumnHistory, OrderedColumnVersionList}
+import de.hpi.temporal_ind.data.attribute_history.data.original.{ColumnVersion, OrderedColumnHistory, OrderedColumnVersionList}
 import de.hpi.temporal_ind.util.Util
 
 import java.time.{Instant, ZoneId}

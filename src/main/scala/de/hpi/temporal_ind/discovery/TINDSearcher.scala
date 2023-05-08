@@ -3,11 +3,13 @@ package de.hpi.temporal_ind.discovery
 import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.io.{Input, Output}
 import com.typesafe.scalalogging.StrictLogging
-import de.hpi.temporal_ind.data.column.data.{AbstractColumnVersion, ColumnHistoryID}
-import de.hpi.temporal_ind.data.column.data.original.{ColumnHistory, KryoSerializableColumnHistory, OrderedColumnHistory, OrderedColumnVersionList, SimpleCounter, ValidationVariant}
-import de.hpi.temporal_ind.data.ind.{ConstantWeightFunction, ShifteddRelaxedCustomFunctionTemporalIND, SimpleTimeWindowTemporalIND}
+import de.hpi.temporal_ind.data.GLOBAL_CONFIG
+import de.hpi.temporal_ind.data.attribute_history.data.binary.KryoSerializableColumnHistory
+import de.hpi.temporal_ind.data.attribute_history.data.{AbstractColumnVersion, ColumnHistoryID}
+import de.hpi.temporal_ind.data.attribute_history.data.original.{ColumnHistory, OrderedColumnHistory}
+import de.hpi.temporal_ind.data.ind.{ConstantWeightFunction, ShifteddRelaxedCustomFunctionTemporalIND, SimpleTimeWindowTemporalIND, ValidationVariant}
 import de.hpi.temporal_ind.data.ind.variant4.TimeUtil
-import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
+import de.hpi.temporal_ind.discovery.indexing.time_slice_choice.TimeSliceChooser
 import de.hpi.temporal_ind.discovery.indexing.{BloomfilterIndex, MultiLevelIndexStructure, MultiTimeSliceIndexStructure, TimeSliceChoiceMethod}
 import de.hpi.temporal_ind.discovery.input_data.{ColumnHistoryStorage, EnrichedColumnHistory, InputDataManager, ValuesInTimeWindow}
 import de.hpi.temporal_ind.discovery.statistics_and_results.{BasicQueryInfoRow, IndividualResultStats, ResultSerializer, StandardResultSerializer, TotalResultStats}
@@ -79,7 +81,7 @@ class TINDSearcher(val dataManager:InputDataManager,
     } else {
       //do it in parallel
       val batches = candidatesRequiredValues.grouped(5).toIndexedSeq
-      val handler = new ParallelQuerySearchHandler(batches.size)
+      val handler = new ParallelExecutionHandler(batches.size)
       val futures = batches.map {batch =>
         val f = handler.addAsFuture(batch.map(refCandidate => {
           new ShifteddRelaxedCustomFunctionTemporalIND[String](query.och, refCandidate.och, queryParameters, ValidationVariant.FULL_TIME_PERIOD)
@@ -115,7 +117,7 @@ class TINDSearcher(val dataManager:InputDataManager,
     logger.debug(s"Running Index Build with time slices: $slices")
     var buildTimes = collection.mutable.ArrayBuffer[Double]()
     //concurrent index building to speed up index construction:
-    val handler = new ParallelQuerySearchHandler(slices.size)
+    val handler = new ParallelExecutionHandler(slices.size)
     val futures = slices.map{case (begin,end) => {
       handler.addAsFuture({
         val (timeSliceIndex, timeSliceIndexBuild) = TimeUtil.executionTimeInMS(getIndexForTimeSlice(historiesEnriched, begin, end))

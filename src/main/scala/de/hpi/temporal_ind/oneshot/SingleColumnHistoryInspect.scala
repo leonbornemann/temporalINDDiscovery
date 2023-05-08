@@ -1,7 +1,7 @@
 package de.hpi.temporal_ind.oneshot
 
-import de.hpi.temporal_ind.data.column.data.IndexedColumnHistories
-import de.hpi.temporal_ind.data.wikipedia.GLOBAL_CONFIG
+import de.hpi.temporal_ind.data.GLOBAL_CONFIG
+import de.hpi.temporal_ind.data.attribute_history.data.file_search.IndexedColumnHistories
 
 import java.io.{File, PrintWriter}
 
