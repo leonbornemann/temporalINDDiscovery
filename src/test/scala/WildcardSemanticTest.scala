@@ -1,7 +1,6 @@
 import TestUtilMethods.{toHistory, toInstant}
 import de.hpi.temporal_ind.data.GLOBAL_CONFIG
-import de.hpi.temporal_ind.data.ind.{SimpleRelaxedTemporalIND, SimpleTimeWindowTemporalIND, ValidationVariant}
-import de.hpi.temporal_ind.data.ind.variant4.{TimeShiftedRelaxedINDDynamicProgrammingSolver, TimeShiftedRelaxedTemporalIND}
+import de.hpi.temporal_ind.data.ind.{EpsilonRelaxedTemporalIND, EpsilonDeltaRelaxedTemporalIND, ValidationVariant}
 import org.scalatest.flatspec.AnyFlatSpec
 
 class WildcardSemanticTest extends AnyFlatSpec{
@@ -56,9 +55,9 @@ class WildcardSemanticTest extends AnyFlatSpec{
     GLOBAL_CONFIG.earliestInstant = toInstant(0)
     GLOBAL_CONFIG.lastInstant = toInstant(100)
     var delta = 10
-    val timeShiftedIND = new SimpleTimeWindowTemporalIND(history1,history2,delta,0,true,ValidationVariant.FULL_TIME_PERIOD)
+    val timeShiftedIND = new EpsilonDeltaRelaxedTemporalIND(history1,history2,delta,0,true,ValidationVariant.FULL_TIME_PERIOD)
     assert(timeShiftedIND.absoluteViolationScore == 0)
-    val timeShiftedIND2 = new SimpleTimeWindowTemporalIND(history1,history3,delta,0,true,ValidationVariant.FULL_TIME_PERIOD)
+    val timeShiftedIND2 = new EpsilonDeltaRelaxedTemporalIND(history1,history3,delta,0,true,ValidationVariant.FULL_TIME_PERIOD)
     assert(timeShiftedIND2.absoluteViolationScore==5)
   }
 
@@ -80,9 +79,9 @@ class WildcardSemanticTest extends AnyFlatSpec{
     ))
     GLOBAL_CONFIG.earliestInstant = toInstant(0)
     GLOBAL_CONFIG.lastInstant = toInstant(100)
-    val relaxedIND = new SimpleRelaxedTemporalIND(history1,history2,0,true,ValidationVariant.FULL_TIME_PERIOD)
+    val relaxedIND = new EpsilonRelaxedTemporalIND(history1,history2,0,true,ValidationVariant.FULL_TIME_PERIOD)
     assert(relaxedIND.absoluteViolationScore == 0)
-    val relaxedIND2 = new SimpleRelaxedTemporalIND(history1,history3,0,true,ValidationVariant.FULL_TIME_PERIOD)
+    val relaxedIND2 = new EpsilonRelaxedTemporalIND(history1,history3,0,true,ValidationVariant.FULL_TIME_PERIOD)
     assert(relaxedIND2.absoluteViolationScore==20)
   }
 

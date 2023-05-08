@@ -1,7 +1,7 @@
 package de.hpi.temporal_ind
 
 import de.hpi.temporal_ind.data.GLOBAL_CONFIG
-import de.hpi.temporal_ind.data.ind.ExponentialDecayWeightFunction
+import de.hpi.temporal_ind.data.ind.weight_functions.ExponentialDecayWeightFunction
 
 import java.time.temporal.ChronoUnit
 

@@ -1,7 +1,7 @@
 package de.hpi.temporal_ind.data
 
-import de.hpi.temporal_ind.data.ind.variant4.TimeUtil
 import de.hpi.temporal_ind.discovery.TINDParameters
+import de.hpi.temporal_ind.util.TimeUtil
 
 import java.time.Instant
 import java.time.temporal.ChronoUnit

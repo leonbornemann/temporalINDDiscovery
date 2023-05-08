@@ -1,7 +1,6 @@
-package de.hpi.temporal_ind.data.ind
+package de.hpi.temporal_ind.data.ind.weight_functions
 
 import java.time.Instant
-import java.time.temporal.ChronoUnit
 
 abstract class TimestampWeightFunction() {
   def getIntervalOfWeight(start: Instant, weight: Double):(Instant, Instant)

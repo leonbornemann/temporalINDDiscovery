@@ -1,6 +1,7 @@
 import TestUtilMethods.{toHistory, toInstant}
 import de.hpi.temporal_ind.data.GLOBAL_CONFIG
-import de.hpi.temporal_ind.data.ind.{ConstantWeightFunction, ShifteddRelaxedCustomFunctionTemporalIND, SimpleRelaxedTemporalIND, SimpleTimeWindowTemporalIND, ValidationVariant}
+import de.hpi.temporal_ind.data.ind.weight_functions.ConstantWeightFunction
+import de.hpi.temporal_ind.data.ind.{EpsilonOmegaDeltaRelaxedTemporalIND, EpsilonRelaxedTemporalIND, EpsilonDeltaRelaxedTemporalIND, ValidationVariant}
 import de.hpi.temporal_ind.discovery.TINDParameters
 import org.scalatest.flatspec.AnyFlatSpec
 
@@ -30,12 +31,12 @@ class SimpleShiftedTemporalINDTest extends AnyFlatSpec{
       (47, Set()),
     ))
     TINDParameters(0,2,new ConstantWeightFunction())
-    var simpleRelaxedTemporalIND = new SimpleTimeWindowTemporalIND(history1, history2, 2, 0,false, ValidationVariant.FULL_TIME_PERIOD)
-    var shiftedTemporalINDCustomFunction = new ShifteddRelaxedCustomFunctionTemporalIND(history1, history2, TINDParameters(0,2,new ConstantWeightFunction()),ValidationVariant.FULL_TIME_PERIOD)
+    var simpleRelaxedTemporalIND = new EpsilonDeltaRelaxedTemporalIND(history1, history2, 2, 0,false, ValidationVariant.FULL_TIME_PERIOD)
+    var shiftedTemporalINDCustomFunction = new EpsilonOmegaDeltaRelaxedTemporalIND(history1, history2, TINDParameters(0,2,new ConstantWeightFunction()),ValidationVariant.FULL_TIME_PERIOD)
     assert(simpleRelaxedTemporalIND.absoluteViolationScore == 3+2+2)
     assert(simpleRelaxedTemporalIND.denominator == 47)
     assert(simpleRelaxedTemporalIND.absoluteViolationScore==shiftedTemporalINDCustomFunction.absoluteViolationScore)
-    simpleRelaxedTemporalIND = new SimpleTimeWindowTemporalIND(history1, history2, 2, 0,false, ValidationVariant.LHS_ONLY)
+    simpleRelaxedTemporalIND = new EpsilonDeltaRelaxedTemporalIND(history1, history2, 2, 0,false, ValidationVariant.LHS_ONLY)
 //    shiftedTemporalINDCustomFunction = new ShifteddRelaxedCustomFunctionTemporalIND(history1, history2, TINDParameters(0,2,new ConstantWeightFunction()),ValidationVariant.LHS_ONLY)
 //    assert(simpleRelaxedTemporalIND.absoluteViolationScore == 3 + 2 + 2)
 //    assert(simpleRelaxedTemporalIND.denominator == 10 + 8 + 6)

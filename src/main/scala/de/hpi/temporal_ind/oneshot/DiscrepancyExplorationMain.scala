@@ -1,10 +1,11 @@
 package de.hpi.temporal_ind.oneshot
 
 import de.hpi.temporal_ind.data.GLOBAL_CONFIG
-import de.hpi.temporal_ind.data.ind.variant4.TimeUtil
-import de.hpi.temporal_ind.data.ind.{ConstantWeightFunction, INDCandidateIDs, ShifteddRelaxedCustomFunctionTemporalIND, ValidationVariant}
+import de.hpi.temporal_ind.data.ind.weight_functions.ConstantWeightFunction
+import de.hpi.temporal_ind.data.ind.{INDCandidateIDs, EpsilonOmegaDeltaRelaxedTemporalIND, ValidationVariant}
 import de.hpi.temporal_ind.discovery.TINDParameters
 import de.hpi.temporal_ind.discovery.input_data.InputDataManager
+import de.hpi.temporal_ind.util.TimeUtil
 
 object DiscrepancyExplorationMain extends App {
   GLOBAL_CONFIG.setSettingsForDataSource("wikipedia")
@@ -25,7 +26,7 @@ object DiscrepancyExplorationMain extends App {
     .toMap
   val params = TINDParameters(0.001485149*GLOBAL_CONFIG.totalTimeInNanos,90*TimeUtil.nanosPerDay,new ConstantWeightFunction)
   candidatesOld.diff(candidatesNew).foreach(c => {
-    val tind = new ShifteddRelaxedCustomFunctionTemporalIND(idToHistories(c.lhsColumnID),idToHistories(c.rhsColumnID),params,ValidationVariant.FULL_TIME_PERIOD)
+    val tind = new EpsilonOmegaDeltaRelaxedTemporalIND(idToHistories(c.lhsColumnID),idToHistories(c.rhsColumnID),params,ValidationVariant.FULL_TIME_PERIOD)
     if(!tind.isValid){
       println("whaat?")
     } else {

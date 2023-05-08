@@ -2,9 +2,10 @@ package de.hpi.temporal_ind.oneshot
 
 import de.hpi.temporal_ind.data.GLOBAL_CONFIG
 import de.hpi.temporal_ind.data.attribute_history.data.file_search.IndexedColumnHistories
-import de.hpi.temporal_ind.data.ind.variant4.TimeUtil
-import de.hpi.temporal_ind.data.ind.{ConstantWeightFunction, INDCandidateIDs, ShifteddRelaxedCustomFunctionTemporalIND, ValidationVariant}
+import de.hpi.temporal_ind.data.ind.weight_functions.ConstantWeightFunction
+import de.hpi.temporal_ind.data.ind.{INDCandidateIDs, EpsilonOmegaDeltaRelaxedTemporalIND, ValidationVariant}
 import de.hpi.temporal_ind.discovery.TINDParameters
+import de.hpi.temporal_ind.util.TimeUtil
 
 import java.time.temporal.ChronoUnit
 
@@ -30,7 +31,7 @@ object ValidateTemporalINDDiscoveryMain extends App {
       println("Finished ",i," out of ",candidates.size)
     val lhs = index.multiLevelIndex(c.lhsPageID)(c.lhsColumnID).asOrderedHistory
     val rhs = index.multiLevelIndex(c.rhsPageID)(c.rhsColumnID).asOrderedHistory
-    val ind = new ShifteddRelaxedCustomFunctionTemporalIND[String](lhs,rhs,TINDParameters(absoluteEpsilonInNanos,deltaInNanos,new ConstantWeightFunction()),ValidationVariant.FULL_TIME_PERIOD)
+    val ind = new EpsilonOmegaDeltaRelaxedTemporalIND[String](lhs,rhs,TINDParameters(absoluteEpsilonInNanos,deltaInNanos,new ConstantWeightFunction()),ValidationVariant.FULL_TIME_PERIOD)
     //use a very simple variant to validate:
     val violationSum = allDays.map{ case (d,l,r) => {
       val left = lhs.versionAt(d).values

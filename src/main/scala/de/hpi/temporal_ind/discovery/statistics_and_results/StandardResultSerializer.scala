@@ -1,6 +1,6 @@
 package de.hpi.temporal_ind.discovery.statistics_and_results
 
-import de.hpi.temporal_ind.data.ind.ShifteddRelaxedCustomFunctionTemporalIND
+import de.hpi.temporal_ind.data.ind.EpsilonOmegaDeltaRelaxedTemporalIND
 import de.hpi.temporal_ind.discovery.indexing.TimeSliceChoiceMethod
 import de.hpi.temporal_ind.discovery.indexing.TimeSliceChoiceMethod.TimeSliceChoiceMethod
 
@@ -13,7 +13,7 @@ class StandardResultSerializer(targetDir:File,
                                timeSliceChoiceMethod:TimeSliceChoiceMethod.Value,
                                seed:Long,
                                subDirectoryNum:Option[Int]=None) extends ResultSerializer{
-  def addTrueTemporalINDs(trueTemporalINDs: Iterable[ShifteddRelaxedCustomFunctionTemporalIND[String]]) =
+  def addTrueTemporalINDs(trueTemporalINDs: Iterable[EpsilonOmegaDeltaRelaxedTemporalIND[String]]) =
     trueTemporalINDs.foreach(c => c.toCandidateIDs.appendToWriter(resultPR))
 
   def addIndividualResultStats(individualStatLine: IndividualResultStats) = individualStats.println(individualStatLine.toCSVLine)

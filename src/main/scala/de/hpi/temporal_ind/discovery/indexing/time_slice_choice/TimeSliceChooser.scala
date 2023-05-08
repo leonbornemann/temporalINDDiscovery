@@ -1,7 +1,7 @@
 package de.hpi.temporal_ind.discovery.indexing.time_slice_choice
 
 import de.hpi.temporal_ind.data.GLOBAL_CONFIG
-import de.hpi.temporal_ind.data.ind.TimestampWeightFunction
+import de.hpi.temporal_ind.data.ind.weight_functions.TimestampWeightFunction
 import de.hpi.temporal_ind.discovery.TINDParameters
 import de.hpi.temporal_ind.discovery.indexing.TimeSliceChoiceMethod
 import de.hpi.temporal_ind.discovery.input_data.ColumnHistoryStorage

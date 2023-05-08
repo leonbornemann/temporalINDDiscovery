@@ -2,11 +2,11 @@ package de.hpi.temporal_ind.discovery
 
 import de.hpi.temporal_ind.data.GLOBAL_CONFIG
 import de.hpi.temporal_ind.data.attribute_history.data.ColumnHistoryID
-import de.hpi.temporal_ind.data.ind.ConstantWeightFunction
-import de.hpi.temporal_ind.data.ind.variant4.TimeUtil
+import de.hpi.temporal_ind.data.ind.weight_functions.ConstantWeightFunction
 import de.hpi.temporal_ind.discovery.indexing.TimeSliceChoiceMethod
 import de.hpi.temporal_ind.discovery.input_data.InputDataManager
 import de.hpi.temporal_ind.discovery.statistics_and_results.StandardResultSerializer
+import de.hpi.temporal_ind.util.TimeUtil
 
 import java.io.File
 

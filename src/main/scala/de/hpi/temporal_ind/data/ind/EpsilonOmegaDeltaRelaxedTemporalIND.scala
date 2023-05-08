@@ -2,15 +2,16 @@ package de.hpi.temporal_ind.data.ind
 
 import de.hpi.temporal_ind.data.GLOBAL_CONFIG
 import de.hpi.temporal_ind.data.attribute_history.data.AbstractOrderedColumnHistory
-import de.hpi.temporal_ind.data.ind.variant4.TimeUtil
+import de.hpi.temporal_ind.data.ind.traversal.MovingTimeWindow
 import de.hpi.temporal_ind.discovery.TINDParameters
+import de.hpi.temporal_ind.util.TimeUtil
 
 import java.time.{Duration, Instant}
 
-class ShifteddRelaxedCustomFunctionTemporalIND[T <% Ordered[T]](lhs: AbstractOrderedColumnHistory[T],
-                                                                rhs: AbstractOrderedColumnHistory[T],
-                                                                queryParameters:TINDParameters,
-                                                                validationVariant:ValidationVariant.Value) extends TemporalIND(lhs,rhs,validationVariant){
+class EpsilonOmegaDeltaRelaxedTemporalIND[T <% Ordered[T]](lhs: AbstractOrderedColumnHistory[T],
+                                                           rhs: AbstractOrderedColumnHistory[T],
+                                                           queryParameters:TINDParameters,
+                                                           validationVariant:ValidationVariant.Value) extends TemporalIND(lhs,rhs,validationVariant){
 
   assert(validationVariant==ValidationVariant.FULL_TIME_PERIOD)
   val weightFunction = queryParameters.omega
@@ -70,8 +71,8 @@ class ShifteddRelaxedCustomFunctionTemporalIND[T <% Ordered[T]](lhs: AbstractOrd
 
   def absoluteViolationScore = {
     val intervals = intervalsForValidationNew
-    val movingTimeWindow = new MovingTimWindow(intervals, lhs, rhs, weightFunction, deltaInNanos)
-    val windowToCost = new MovingTimWindow(intervals, lhs, rhs, weightFunction, deltaInNanos).toIndexedSeq
+    val movingTimeWindow = new MovingTimeWindow(intervals, lhs, rhs, weightFunction, deltaInNanos)
+    val windowToCost = new MovingTimeWindow(intervals, lhs, rhs, weightFunction, deltaInNanos).toIndexedSeq
     val totalViolationTime = movingTimeWindow
       .map(_.cost)
       .sum
@@ -146,7 +147,7 @@ class ShifteddRelaxedCustomFunctionTemporalIND[T <% Ordered[T]](lhs: AbstractOrd
   def isValidNew:Boolean = {
     val intervals = intervalsForValidationNew
     var totalCost = 0.0
-    val movingTimeWindow = new MovingTimWindow(intervals, lhs, rhs, weightFunction, deltaInNanos)
+    val movingTimeWindow = new MovingTimeWindow(intervals, lhs, rhs, weightFunction, deltaInNanos)
     while(movingTimeWindow.hasNext && totalCost<=absoluteEpsilon){
       totalCost += movingTimeWindow.next().cost
     }

@@ -3,8 +3,8 @@ package de.hpi.temporal_ind.data.attribute_history.data.original
 import de.hpi.temporal_ind.data.GLOBAL_CONFIG
 import de.hpi.temporal_ind.data.attribute_history.data.traversal.PeekableIterator
 import de.hpi.temporal_ind.data.attribute_history.data.{AbstractColumnVersion, AbstractOrderdColumnVersionList}
-import de.hpi.temporal_ind.data.ind.variant4.TimeUtil
 import de.hpi.temporal_ind.discovery.TINDParameters
+import de.hpi.temporal_ind.util.TimeUtil
 
 import java.time.Instant
 import scala.collection.mutable

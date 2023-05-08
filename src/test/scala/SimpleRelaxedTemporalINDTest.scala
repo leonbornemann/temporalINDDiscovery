@@ -1,7 +1,6 @@
 import TestUtilMethods.{toHistory, toInstant}
 import de.hpi.temporal_ind.data.GLOBAL_CONFIG
-import de.hpi.temporal_ind.data.ind.{SimpleRelaxedTemporalIND, ValidationVariant}
-import de.hpi.temporal_ind.data.ind.variant4.{TimeShiftedRelaxedINDDynamicProgrammingSolver, VersionRange}
+import de.hpi.temporal_ind.data.ind.{EpsilonRelaxedTemporalIND, ValidationVariant}
 import org.scalatest.flatspec.AnyFlatSpec
 
 class SimpleRelaxedTemporalINDTest extends AnyFlatSpec{
@@ -20,7 +19,7 @@ class SimpleRelaxedTemporalINDTest extends AnyFlatSpec{
     ))
     GLOBAL_CONFIG.earliestInstant = toInstant(0)
     GLOBAL_CONFIG.lastInstant = toInstant(40)
-    var simpleRelaxedTemporalIND = new SimpleRelaxedTemporalIND(history1,history2,7,false,ValidationVariant.FULL_TIME_PERIOD)
+    var simpleRelaxedTemporalIND = new EpsilonRelaxedTemporalIND(history1,history2,7,false,ValidationVariant.FULL_TIME_PERIOD)
     assert(simpleRelaxedTemporalIND.absoluteViolationScore==5)
     assert(simpleRelaxedTemporalIND.isValid)
     val history3 = toHistory(Map(
@@ -29,7 +28,7 @@ class SimpleRelaxedTemporalINDTest extends AnyFlatSpec{
       (20,Set("a","f")),
       (30,Set("e","f"))
     ))
-    simpleRelaxedTemporalIND = new SimpleRelaxedTemporalIND(history1,history3,7,false,ValidationVariant.FULL_TIME_PERIOD)
+    simpleRelaxedTemporalIND = new EpsilonRelaxedTemporalIND(history1,history3,7,false,ValidationVariant.FULL_TIME_PERIOD)
     assert(!simpleRelaxedTemporalIND.isValid)
     assert(simpleRelaxedTemporalIND.absoluteViolationScore==17)
   }
@@ -53,19 +52,19 @@ class SimpleRelaxedTemporalINDTest extends AnyFlatSpec{
       (39, Set("c")),
       (47, Set()),
     ))
-    var simpleRelaxedTemporalIND = new SimpleRelaxedTemporalIND(history1,history2,7,false,ValidationVariant.FULL_TIME_PERIOD)
+    var simpleRelaxedTemporalIND = new EpsilonRelaxedTemporalIND(history1,history2,7,false,ValidationVariant.FULL_TIME_PERIOD)
     assert(simpleRelaxedTemporalIND.absoluteViolationScore==1+5+4)
     assert(simpleRelaxedTemporalIND.denominator==47)
-    simpleRelaxedTemporalIND = new SimpleRelaxedTemporalIND(history1,history2,7,false,ValidationVariant.LHS_ONLY)
+    simpleRelaxedTemporalIND = new EpsilonRelaxedTemporalIND(history1,history2,7,false,ValidationVariant.LHS_ONLY)
     assert(simpleRelaxedTemporalIND.absoluteViolationScore==1+5+4)
     assert(simpleRelaxedTemporalIND.denominator==10+8+6)
-    simpleRelaxedTemporalIND = new SimpleRelaxedTemporalIND(history1, history2, 7, false, ValidationVariant.RHS_ONLY)
+    simpleRelaxedTemporalIND = new EpsilonRelaxedTemporalIND(history1, history2, 7, false, ValidationVariant.RHS_ONLY)
     assert(simpleRelaxedTemporalIND.absoluteViolationScore == 0)
     assert(simpleRelaxedTemporalIND.denominator==4+8+8)
-    simpleRelaxedTemporalIND = new SimpleRelaxedTemporalIND(history1, history2, 7, false, ValidationVariant.LHS_UNION_RHS)
+    simpleRelaxedTemporalIND = new EpsilonRelaxedTemporalIND(history1, history2, 7, false, ValidationVariant.LHS_UNION_RHS)
     assert(simpleRelaxedTemporalIND.absoluteViolationScore == 1 + 5 + 4)
     assert(simpleRelaxedTemporalIND.denominator==10+12+8)
-    simpleRelaxedTemporalIND = new SimpleRelaxedTemporalIND(history1, history2, 7, false, ValidationVariant.LHS_INTERSECT_RHS)
+    simpleRelaxedTemporalIND = new EpsilonRelaxedTemporalIND(history1, history2, 7, false, ValidationVariant.LHS_INTERSECT_RHS)
     assert(simpleRelaxedTemporalIND.absoluteViolationScore == 0)
     assert(simpleRelaxedTemporalIND.denominator==4+4+6)
   }

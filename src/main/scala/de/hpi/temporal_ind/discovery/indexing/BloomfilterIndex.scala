@@ -1,9 +1,9 @@
 package de.hpi.temporal_ind.discovery.indexing
 
 import com.typesafe.scalalogging.StrictLogging
-import de.hpi.temporal_ind.data.ind.variant4.TimeUtil
 import de.hpi.temporal_ind.discovery.input_data.{EnrichedColumnHistory, ValuesInTimeWindow}
 import de.hpi.temporal_ind.discovery.TINDParameters
+import de.hpi.temporal_ind.util.TimeUtil
 import de.metanome.algorithms.many.bitvectors.BitVector
 import de.metanome.algorithms.many.{Column, INDDetectionWorkerQuery, MANY}
 

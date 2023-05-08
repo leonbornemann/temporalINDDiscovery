@@ -3,7 +3,7 @@ package de.hpi.temporal_ind.data.ind
 import de.hpi.temporal_ind.data.GLOBAL_CONFIG
 import de.hpi.temporal_ind.data.attribute_history.data.AbstractOrderedColumnHistory
 import de.hpi.temporal_ind.data.attribute_history.data.original.{ColumnHistory, OrderedColumnHistory}
-import de.hpi.temporal_ind.data.ind.variant4.TimeUtil
+import de.hpi.temporal_ind.util.TimeUtil
 
 import java.time.Duration
 import java.time.temporal.{ChronoUnit, TemporalUnit}

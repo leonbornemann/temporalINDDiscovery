@@ -2,8 +2,9 @@ package de.hpi.temporal_ind.data.attribute_history.data.metadata
 
 import de.hpi.temporal_ind.data.attribute_history.data.file_search.{IncrementalIndexedColumnHistories, IndexedColumnHistories}
 import de.hpi.temporal_ind.data.ind._
-import de.hpi.temporal_ind.data.ind.variant4.{TimeShiftedRelaxedTemporalIND, TimeUtil}
+import de.hpi.temporal_ind.data.ind.weight_functions.{ConstantWeightFunction, ExponentialDecayWeightFunction}
 import de.hpi.temporal_ind.discovery.TINDParameters
+import de.hpi.temporal_ind.util.TimeUtil
 
 import java.io.PrintWriter
 import java.time.temporal.ChronoUnit
@@ -14,36 +15,20 @@ case class LabelledINDCandidateStatistics[T <% Ordered[T]](label:String, candida
   def rhs = candidate.rhs
   def idCSVString = s"${lhs.pageID},${lhs.tableId},${lhs.id},${rhs.pageID},${rhs.tableId},${rhs.id}"
 
-  def simpleAndComplexAreDifferentForDelta(delta:Long) = {
-    val violationTimeSimple = new TimeShiftedRelaxedTemporalIND[T](lhs,rhs,delta,1,false)
-      .absoluteViolationScore
-    val violationTimeComplex = new TimeShiftedRelaxedTemporalIND[T](lhs,rhs,delta,1,false)
-      .absoluteViolationScore
-    violationTimeSimple!=violationTimeComplex
-  }
-
   def serializeSimpleRelaxedIND(pr: PrintWriter, validationTypes: IndexedSeq[ValidationVariant.Value]) = {
     for(validationType <- validationTypes) {
-      val simpleRelaxedTemporalINDWildcardLogic = new SimpleRelaxedTemporalIND[T](lhs, rhs, 1L, true,validationType)
+      val simpleRelaxedTemporalINDWildcardLogic = new EpsilonRelaxedTemporalIND[T](lhs, rhs, 1L, true,validationType)
       val simpleVariantViolationTimeWildcardLogic = simpleRelaxedTemporalINDWildcardLogic.relativeViolationTime()
-      val simpleRelaxedTemporalIND = new SimpleRelaxedTemporalIND[T](lhs, rhs, 1L, false,validationType)
+      val simpleRelaxedTemporalIND = new EpsilonRelaxedTemporalIND[T](lhs, rhs, 1L, false,validationType)
       val simpleVariantViolationTime = simpleRelaxedTemporalIND.relativeViolationTime()
       pr.println(s"$idCSVString,$label,relaxedNoShift,true,$validationType,0,1,$simpleVariantViolationTimeWildcardLogic")
       pr.println(s"$idCSVString,$label,relaxedNoShift,false,$validationType,0,1,$simpleVariantViolationTime")
     }
   }
 
-  def serializeTimeShiftedComplexRelaxedIND(pr: PrintWriter, deltas: Seq[Long]) = {
-    deltas.foreach(d => {
-      val violationTime = new TimeShiftedRelaxedTemporalIND[T](lhs,rhs,d,1,false)
-        .relativeViolationTime()
-      pr.println(s"$idCSVString,$label,timeShiftedComplex,false,${ValidationVariant.FULL_TIME_PERIOD},$d,1,$violationTime")
-    })
-  }
-
   def serializeTimeShiftedSimpleRelaxedIND(pr: PrintWriter, d: Long, validationTypes: IndexedSeq[ValidationVariant.Value]) = {
     for(validationType <- validationTypes) {
-      val violationTimeNoWildcard = new ShifteddRelaxedCustomFunctionTemporalIND(lhs,rhs,TINDParameters(0,d,new ConstantWeightFunction()),ValidationVariant.FULL_TIME_PERIOD)
+      val violationTimeNoWildcard = new EpsilonOmegaDeltaRelaxedTemporalIND(lhs,rhs,TINDParameters(0,d,new ConstantWeightFunction()),ValidationVariant.FULL_TIME_PERIOD)
         .relativeViolationTime()
       pr.println(s"$idCSVString,$label,timeShiftedSimple,false,$validationType,$d,1,$violationTimeNoWildcard")
     }
@@ -53,13 +38,13 @@ case class LabelledINDCandidateStatistics[T <% Ordered[T]](label:String, candida
     for (validationType <- validationTypes) {
       alphas.foreach(a => {
         val decayFunction = new ExponentialDecayWeightFunction(a,ChronoUnit.DAYS)
-        val violationTimeNoWildcard = new ShifteddRelaxedCustomFunctionTemporalIND[T](lhs, rhs, TINDParameters(0,d,decayFunction), validationType)
+        val violationTimeNoWildcard = new EpsilonOmegaDeltaRelaxedTemporalIND[T](lhs, rhs, TINDParameters(0,d,decayFunction), validationType)
           .relativeViolationTime()
         pr.println(s"$idCSVString,$label,timeShiftedExponentialDecay,false,$validationType,$d,$a,$violationTimeNoWildcard")
       })
       //add alpha 1:
       val decayFunction = new ConstantWeightFunction()
-      val violationTimeNoWildcard = new ShifteddRelaxedCustomFunctionTemporalIND[T](lhs, rhs, TINDParameters(0,d,decayFunction), validationType)
+      val violationTimeNoWildcard = new EpsilonOmegaDeltaRelaxedTemporalIND[T](lhs, rhs, TINDParameters(0,d,decayFunction), validationType)
         .relativeViolationTime()
       pr.println(s"$idCSVString,$label,timeShiftedExponentialDecay,false,$validationType,$d,1,$violationTimeNoWildcard")
     }
@@ -102,8 +87,8 @@ case class LabelledINDCandidateStatistics[T <% Ordered[T]](label:String, candida
     )
     //serializeTimeShiftedComplexRelaxedIND(pr,deltas)
     deltas.foreach(d => {
-      val (simpleRelaxed,timeSimple) = TimeUtil.executionTimeInMS(new SimpleTimeWindowTemporalIND(lhs,rhs,d,0,false,ValidationVariant.FULL_TIME_PERIOD))
-      val (shifteNew,timeNew) = TimeUtil.executionTimeInMS(new ShifteddRelaxedCustomFunctionTemporalIND(lhs,rhs,TINDParameters(0,d,new ConstantWeightFunction()),ValidationVariant.FULL_TIME_PERIOD))
+      val (simpleRelaxed,timeSimple) = TimeUtil.executionTimeInMS(new EpsilonDeltaRelaxedTemporalIND(lhs,rhs,d,0,false,ValidationVariant.FULL_TIME_PERIOD))
+      val (shifteNew,timeNew) = TimeUtil.executionTimeInMS(new EpsilonOmegaDeltaRelaxedTemporalIND(lhs,rhs,TINDParameters(0,d,new ConstantWeightFunction()),ValidationVariant.FULL_TIME_PERIOD))
       if(!(shifteNew.absoluteViolationScore == simpleRelaxed.absoluteViolationScore)){
         println("Difference between simpleRelaxed",simpleRelaxed.absoluteViolationScore)
         println("and new Variant",shifteNew.absoluteViolationScore)

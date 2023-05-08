@@ -2,16 +2,16 @@ package de.hpi.temporal_ind.data.ind
 
 import de.hpi.temporal_ind.data.GLOBAL_CONFIG
 import de.hpi.temporal_ind.data.attribute_history.data.AbstractOrderedColumnHistory
-import de.hpi.temporal_ind.data.ind.variant4.TimeUtil
+import de.hpi.temporal_ind.util.TimeUtil
 
 import java.time.Instant
 import java.time.temporal.{ChronoUnit, Temporal}
 
-class SimpleRelaxedTemporalIND[T <% Ordered[T]](lhs: AbstractOrderedColumnHistory[T],
-                                                rhs: AbstractOrderedColumnHistory[T],
-                                                maxEpsilonInNanos:Long,
-                                                useWildcardLogic:Boolean,
-                                                validationVariant:ValidationVariant.Value) extends TemporalIND[T](lhs,rhs,validationVariant){
+class EpsilonRelaxedTemporalIND[T <% Ordered[T]](lhs: AbstractOrderedColumnHistory[T],
+                                                 rhs: AbstractOrderedColumnHistory[T],
+                                                 maxEpsilonInNanos:Long,
+                                                 useWildcardLogic:Boolean,
+                                                 validationVariant:ValidationVariant.Value) extends TemporalIND[T](lhs,rhs,validationVariant){
 
   override def toString: String = s"SimpleRelaxedTemporalIND(${lhs.id},${rhs.id})"
 

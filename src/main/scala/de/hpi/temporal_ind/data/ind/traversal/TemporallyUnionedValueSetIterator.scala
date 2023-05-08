@@ -1,12 +1,9 @@
-package de.hpi.temporal_ind.data.ind
+package de.hpi.temporal_ind.data.ind.traversal
 
 import de.hpi.temporal_ind.data.GLOBAL_CONFIG
 import de.hpi.temporal_ind.data.attribute_history.data.{AbstractColumnVersion, AbstractOrderedColumnHistory}
-import de.hpi.temporal_ind.data.attribute_history.data.original.ColumnVersion
-import de.hpi.temporal_ind.data.attribute_history.data.traversal.PeekableIterator
 
 import java.time.Instant
-import scala.collection.mutable.MultiSet
 class TemporallyUnionedValueSetIterator[T](history: AbstractOrderedColumnHistory[T],
                                            deltaInNanos:Long){
 

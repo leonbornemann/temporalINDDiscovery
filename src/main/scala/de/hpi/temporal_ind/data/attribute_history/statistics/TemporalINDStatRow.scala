@@ -1,14 +1,14 @@
 package de.hpi.temporal_ind.data.attribute_history.statistics
 
 import de.hpi.temporal_ind.data.attribute_history.data.encoded.OrderedEncodedColumnHistory
-import de.hpi.temporal_ind.data.ind.{StrictTemporalIND, SimpleTimeWindowTemporalIND}
+import de.hpi.temporal_ind.data.ind.{StrictTemporalIND, EpsilonDeltaRelaxedTemporalIND}
 
 import java.io.PrintWriter
 
 class TemporalINDStatRow(lhs: OrderedEncodedColumnHistory,
                          rhs: OrderedEncodedColumnHistory,
                          strictTemporalIND: StrictTemporalIND[Long],
-                         variant1TemporalIND: SimpleTimeWindowTemporalIND[Long],
+                         variant1TemporalIND: EpsilonDeltaRelaxedTemporalIND[Long],
                          deltaInDays:Int) {
 
   def appendToCSVFile(pr:PrintWriter) = {

@@ -7,12 +7,13 @@ import de.hpi.temporal_ind.data.GLOBAL_CONFIG
 import de.hpi.temporal_ind.data.attribute_history.data.binary.KryoSerializableColumnHistory
 import de.hpi.temporal_ind.data.attribute_history.data.{AbstractColumnVersion, ColumnHistoryID}
 import de.hpi.temporal_ind.data.attribute_history.data.original.{ColumnHistory, OrderedColumnHistory}
-import de.hpi.temporal_ind.data.ind.{ConstantWeightFunction, ShifteddRelaxedCustomFunctionTemporalIND, SimpleTimeWindowTemporalIND, ValidationVariant}
-import de.hpi.temporal_ind.data.ind.variant4.TimeUtil
+import de.hpi.temporal_ind.data.ind.weight_functions.ConstantWeightFunction
+import de.hpi.temporal_ind.data.ind.{EpsilonOmegaDeltaRelaxedTemporalIND, EpsilonDeltaRelaxedTemporalIND, ValidationVariant}
 import de.hpi.temporal_ind.discovery.indexing.time_slice_choice.TimeSliceChooser
 import de.hpi.temporal_ind.discovery.indexing.{BloomfilterIndex, MultiLevelIndexStructure, MultiTimeSliceIndexStructure, TimeSliceChoiceMethod}
 import de.hpi.temporal_ind.discovery.input_data.{ColumnHistoryStorage, EnrichedColumnHistory, InputDataManager, ValuesInTimeWindow}
 import de.hpi.temporal_ind.discovery.statistics_and_results.{BasicQueryInfoRow, IndividualResultStats, ResultSerializer, StandardResultSerializer, TotalResultStats}
+import de.hpi.temporal_ind.util.TimeUtil
 import de.metanome.algorithms.many.bitvectors.BitVector
 import org.json4s.scalap.scalasig.ClassFileParser.byte
 
@@ -70,12 +71,12 @@ class TINDSearcher(val dataManager:InputDataManager,
 
   def validateCandidates(query:EnrichedColumnHistory,
                          queryParameters:TINDParameters,
-                         candidatesRequiredValues: ArrayBuffer[EnrichedColumnHistory]):collection.IndexedSeq[ShifteddRelaxedCustomFunctionTemporalIND[String]] = {
+                         candidatesRequiredValues: ArrayBuffer[EnrichedColumnHistory]):collection.IndexedSeq[EpsilonOmegaDeltaRelaxedTemporalIND[String]] = {
     val batchSize = GLOBAL_CONFIG.PARALLEL_TIND_VALIDATION_BATCH_SIZE
     if(candidatesRequiredValues.size<batchSize || nThreads==1){
       val res = candidatesRequiredValues.map(refCandidate => {
         //new TemporalShifted
-        new ShifteddRelaxedCustomFunctionTemporalIND[String](query.och, refCandidate.och, queryParameters, ValidationVariant.FULL_TIME_PERIOD)
+        new EpsilonOmegaDeltaRelaxedTemporalIND[String](query.och, refCandidate.och, queryParameters, ValidationVariant.FULL_TIME_PERIOD)
       }).filter(_.isValid)
       res
     } else {
@@ -84,7 +85,7 @@ class TINDSearcher(val dataManager:InputDataManager,
       val handler = new ParallelExecutionHandler(batches.size)
       val futures = batches.map {batch =>
         val f = handler.addAsFuture(batch.map(refCandidate => {
-          new ShifteddRelaxedCustomFunctionTemporalIND[String](query.och, refCandidate.och, queryParameters, ValidationVariant.FULL_TIME_PERIOD)
+          new EpsilonOmegaDeltaRelaxedTemporalIND[String](query.och, refCandidate.och, queryParameters, ValidationVariant.FULL_TIME_PERIOD)
         }).filter(_.isValid))
         f
       }

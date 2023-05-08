@@ -3,17 +3,17 @@ package de.hpi.temporal_ind.data.ind
 import de.hpi.temporal_ind.data.GLOBAL_CONFIG
 import de.hpi.temporal_ind.data.attribute_history.data.AbstractOrderedColumnHistory
 import de.hpi.temporal_ind.data.attribute_history.data.original.OrderedColumnHistory
-import de.hpi.temporal_ind.data.ind.variant4.TimeUtil
+import de.hpi.temporal_ind.util.TimeUtil
 
 import java.time.{Duration, Instant}
 import scala.collection.mutable
 
-class SimpleTimeWindowTemporalIND[T <% Ordered[T]](lhs: AbstractOrderedColumnHistory[T],
-                                                   rhs: AbstractOrderedColumnHistory[T],
-                                                   deltaInNanos: Long,
-                                                   absoluteEpsilonInNanos:Long,
-                                                   useWildcardLogic:Boolean,
-                                                   validationVariant:ValidationVariant.Value) extends TemporalIND(lhs,rhs,validationVariant){
+class EpsilonDeltaRelaxedTemporalIND[T <% Ordered[T]](lhs: AbstractOrderedColumnHistory[T],
+                                                      rhs: AbstractOrderedColumnHistory[T],
+                                                      deltaInNanos: Long,
+                                                      absoluteEpsilonInNanos:Long,
+                                                      useWildcardLogic:Boolean,
+                                                      validationVariant:ValidationVariant.Value) extends TemporalIND(lhs,rhs,validationVariant){
 
   def rhsIsWildcardOnlyInRange(lower: Instant, upper: Instant): Boolean = {
     val rhsVersions = rhs.versionsInWindow(lower,upper)

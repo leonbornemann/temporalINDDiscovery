@@ -1,6 +1,5 @@
-package de.hpi.temporal_ind.data.ind
+package de.hpi.temporal_ind.data.ind.weight_functions
 
-import de.hpi.temporal_ind.data.GLOBAL_CONFIG
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 

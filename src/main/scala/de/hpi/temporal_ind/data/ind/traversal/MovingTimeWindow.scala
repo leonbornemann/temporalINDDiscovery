@@ -1,17 +1,15 @@
-package de.hpi.temporal_ind.data.ind
+package de.hpi.temporal_ind.data.ind.traversal
 
-import de.hpi.temporal_ind.data.GLOBAL_CONFIG
-import de.hpi.temporal_ind.data.attribute_history.data.traversal.PeekableIterator
-import de.hpi.temporal_ind.data.attribute_history.data.{AbstractColumnVersion, AbstractOrderedColumnHistory}
-import de.hpi.temporal_ind.data.ind.variant4.TimeUtil
+import de.hpi.temporal_ind.data.attribute_history.data.AbstractOrderedColumnHistory
+import de.hpi.temporal_ind.data.ind.weight_functions.TimestampWeightFunction
 
-import java.time.{Duration, Instant}
+import java.time.Instant
 
-class MovingTimWindow[T](validationIntervals: Iterable[(Instant, Instant)],
-                         lhs: AbstractOrderedColumnHistory[T],
-                         rhs: AbstractOrderedColumnHistory[T],
-                         costFunction:TimestampWeightFunction,
-                         deltaInNanos: Long) extends Iterator[TimeWindowWithCost]{
+class MovingTimeWindow[T](validationIntervals: Iterable[(Instant, Instant)],
+                          lhs: AbstractOrderedColumnHistory[T],
+                          rhs: AbstractOrderedColumnHistory[T],
+                          costFunction:TimestampWeightFunction,
+                          deltaInNanos: Long) extends Iterator[TimeWindowWithCost]{
 
   val it = validationIntervals.iterator
   val lhsIterator = new TemporallyUnionedValueSetIterator(lhs,deltaInNanos)

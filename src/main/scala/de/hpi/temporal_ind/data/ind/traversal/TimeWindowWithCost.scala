@@ -1,4 +1,4 @@
-package de.hpi.temporal_ind.data.ind
+package de.hpi.temporal_ind.data.ind.traversal
 
 import java.time.Instant
 

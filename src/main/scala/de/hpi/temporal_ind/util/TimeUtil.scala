@@ -1,4 +1,4 @@
-package de.hpi.temporal_ind.data.ind.variant4
+package de.hpi.temporal_ind.util
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.temporal_ind.data.GLOBAL_CONFIG

@@ -1,11 +1,11 @@
 package de.hpi.temporal_ind.discovery.indexing
 
 import de.hpi.temporal_ind.data.GLOBAL_CONFIG
-import de.hpi.temporal_ind.data.ind.variant4.TimeUtil
 import de.hpi.temporal_ind.discovery.TINDParameters
 import de.hpi.temporal_ind.discovery.input_data.EnrichedColumnHistory
 import de.metanome.algorithms.many.bitvectors.BitVector
 import de.hpi.temporal_ind.discovery.input_data.ValuesInTimeWindow
+import de.hpi.temporal_ind.util.TimeUtil
 
 class MultiLevelIndexStructure(val indexEntireValueset: BloomfilterIndex,
                                val timeSliceIndices: MultiTimeSliceIndexStructure,
