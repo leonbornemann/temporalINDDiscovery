@@ -3,8 +3,8 @@ package de.hpi.temporal_ind.discovery.input_data
 import com.esotericsoftware.kryo.io.{Input, Output}
 import com.esotericsoftware.kryo.{Kryo, KryoException}
 import de.hpi.temporal_ind.data.attribute_history.data.AbstractColumnVersion
-import de.hpi.temporal_ind.data.attribute_history.data.binary.KryoSerializableColumnHistory
 import de.hpi.temporal_ind.data.attribute_history.data.original.OrderedColumnHistory
+import de.hpi.temporal_ind.data.column.data.original.KryoSerializableColumnHistory
 import de.hpi.temporal_ind.util.TimeUtil
 
 import java.io.{File, FileInputStream, FileOutputStream}

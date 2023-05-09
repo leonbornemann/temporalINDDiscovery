@@ -4,12 +4,12 @@ import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.io.{Input, Output}
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.temporal_ind.data.GLOBAL_CONFIG
-import de.hpi.temporal_ind.data.attribute_history.data.binary.KryoSerializableColumnHistory
 import de.hpi.temporal_ind.data.attribute_history.data.{AbstractColumnVersion, ColumnHistoryID}
 import de.hpi.temporal_ind.data.attribute_history.data.original.{ColumnHistory, OrderedColumnHistory}
+import de.hpi.temporal_ind.data.column.data.original.KryoSerializableColumnHistory
 import de.hpi.temporal_ind.data.ind.weight_functions.ConstantWeightFunction
-import de.hpi.temporal_ind.data.ind.{EpsilonOmegaDeltaRelaxedTemporalIND, EpsilonDeltaRelaxedTemporalIND, ValidationVariant}
-import de.hpi.temporal_ind.discovery.indexing.time_slice_choice.TimeSliceChooser
+import de.hpi.temporal_ind.data.ind.{EpsilonDeltaRelaxedTemporalIND, EpsilonOmegaDeltaRelaxedTemporalIND, ValidationVariant}
+import de.hpi.temporal_ind.discovery.indexing.time_slice_choice.{TimeSliceChooser, WeightedRandomTimeSliceChooser}
 import de.hpi.temporal_ind.discovery.indexing.{BloomfilterIndex, MultiLevelIndexStructure, MultiTimeSliceIndexStructure, TimeSliceChoiceMethod}
 import de.hpi.temporal_ind.discovery.input_data.{ColumnHistoryStorage, EnrichedColumnHistory, InputDataManager, ValuesInTimeWindow}
 import de.hpi.temporal_ind.discovery.statistics_and_results.{BasicQueryInfoRow, IndividualResultStats, ResultSerializer, StandardResultSerializer, TotalResultStats}
@@ -40,7 +40,8 @@ class TINDSearcher(val dataManager:InputDataManager,
                    val bloomfilterSize:Int,
                    val timeSliceChoiceMethod:TimeSliceChoiceMethod.Value,
                    val seed:Long,
-                   val nThreads:Int) extends StrictLogging{
+                   val nThreads:Int,
+                   val metaDir:File) extends StrictLogging{
 
   val singleResultSerializer = new StandardResultSerializer(resultRootDir,queryFile,bloomfilterSize, timeSliceChoiceMethod, seed)
   val parallelIOHandler = new ParallelIOHandler(resultRootDir,queryFile, bloomfilterSize, timeSliceChoiceMethod, seed)
@@ -109,7 +110,11 @@ class TINDSearcher(val dataManager:InputDataManager,
 //  }
 
   def buildTimeSliceIndices(historiesEnriched: ColumnHistoryStorage,indicesToBuild:Int) = {
-    val timeSliceChooser = TimeSliceChooser.getChooser(timeSliceChoiceMethod,historiesEnriched,expectedQueryParameters,random)
+    val weightedShuffleFile = new File(metaDir.getAbsolutePath + s"/$seed.json")
+    val timeSliceChooser = TimeSliceChooser.getChooser(timeSliceChoiceMethod,historiesEnriched,expectedQueryParameters,random,weightedShuffleFile)
+    if(!weightedShuffleFile.exists() && timeSliceChoiceMethod == TimeSliceChoiceMethod.WEIGHTED_RANDOM){
+      timeSliceChooser.asInstanceOf[WeightedRandomTimeSliceChooser].exportAsFile(weightedShuffleFile)
+    }
     val slices = collection.mutable.ArrayBuffer[(Instant,Instant)]()
     (0 until indicesToBuild).foreach(_ => {
       val timeSlice = timeSliceChooser.getNextTimeSlice()

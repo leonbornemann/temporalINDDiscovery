@@ -1,8 +1,8 @@
 package de.hpi.temporal_ind.data.attribute_history.data.original
 
 import de.hpi.temporal_ind.data.attribute_history.data.AbstractColumnVersion
-import de.hpi.temporal_ind.data.attribute_history.data.binary.KryoSerializableColumnVersion
 import de.hpi.temporal_ind.data.attribute_history.data.encoded.{ColumnVersionEncoded, Dictionary}
+import de.hpi.temporal_ind.data.column.data.original.KryoSerializableColumnVersion
 import de.hpi.temporal_ind.util.Util
 
 import java.io.{File, PrintWriter}

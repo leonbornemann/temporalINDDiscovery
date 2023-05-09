@@ -24,6 +24,8 @@ object TINDSearchMain extends App {
   val seed = args(7).toLong
   val numTimeSliceIndicesToTest = args(8).split(",").map(_.toInt)
   val numThreads = args(9).toInt
+  val metaDataDir = new File(args(10))
+  metaDataDir.mkdirs()
   val expectedEpsilon = relativeEpsilon * GLOBAL_CONFIG.totalTimeInNanos
   val expectedOmega = new ConstantWeightFunction()
   val expectedParametersWhileIndexing = TINDParameters(expectedEpsilon, TimeUtil.nanosPerDay * maxDelta, expectedOmega)
@@ -46,7 +48,8 @@ object TINDSearchMain extends App {
     bloomFilterSize,
     timeSliceChoiceMethod,
     seed,
-    numThreads)
+    numThreads,
+    metaDataDir)
   relaxedShiftedTemporalINDDiscovery.discoverForSample(queryIDs,numTimeSliceIndicesToTest,queryParameters)
   ParallelExecutionHandler.service.shutdown()
   //relaxedShiftedTemporalINDDiscovery.discoverAll(20,1)

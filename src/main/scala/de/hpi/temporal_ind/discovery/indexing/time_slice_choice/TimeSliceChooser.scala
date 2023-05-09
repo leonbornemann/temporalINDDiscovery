@@ -6,6 +6,7 @@ import de.hpi.temporal_ind.discovery.TINDParameters
 import de.hpi.temporal_ind.discovery.indexing.TimeSliceChoiceMethod
 import de.hpi.temporal_ind.discovery.input_data.ColumnHistoryStorage
 
+import java.io.File
 import java.time.Instant
 import scala.util.Random
 
@@ -54,11 +55,12 @@ object TimeSliceChooser {
   def getChooser(timeSliceChoiceMethod: TimeSliceChoiceMethod.Value,
                  historiesEnriched: ColumnHistoryStorage,
                  expectedQueryParamters:TINDParameters,
-                 random:Random) = {
+                 random:Random,
+                 shuffledFile:File) = {
     timeSliceChoiceMethod match {
       case TimeSliceChoiceMethod.RANDOM => new RandomTimeSliceChooser(historiesEnriched,expectedQueryParamters,random)
-      case TimeSliceChoiceMethod.WEIGHTED_RANDOM => new WeightedRandomTimeSliceChooser(historiesEnriched,expectedQueryParamters,random)
-      case TimeSliceChoiceMethod.BESTX => new BestXTimeSliceChooser(historiesEnriched,expectedQueryParamters,random)
+      case TimeSliceChoiceMethod.WEIGHTED_RANDOM => new WeightedRandomTimeSliceChooser(historiesEnriched,expectedQueryParamters,random,shuffledFile)
+      case TimeSliceChoiceMethod.BESTX => new BestXTimeSliceChooser(historiesEnriched,expectedQueryParamters,random,shuffledFile)
     }
   }
 

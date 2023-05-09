@@ -1,8 +1,8 @@
 package de.hpi.temporal_ind.data.attribute_history.data.original
 
 import de.hpi.temporal_ind.data.GLOBAL_CONFIG
-import de.hpi.temporal_ind.data.attribute_history.data.binary.{KryoSerializableColumnHistory, KryoSerializableColumnVersion}
 import de.hpi.temporal_ind.data.attribute_history.data.{AbstractColumnVersion, AbstractOrderedColumnHistory, ColumnHistoryID}
+import de.hpi.temporal_ind.data.column.data.original.{KryoSerializableColumnHistory, KryoSerializableColumnVersion}
 import de.hpi.temporal_ind.discovery.statistics_and_results.TimeSliceStats
 
 import java.io.File

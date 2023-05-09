@@ -1,4 +1,6 @@
-package de.hpi.temporal_ind.data.attribute_history.data.binary
+package de.hpi.temporal_ind.data.column.data.original
+
+//de.hpi.temporal_ind.data.column.data.original.KryoSerializableColumnHistory
 
 import java.util
 
