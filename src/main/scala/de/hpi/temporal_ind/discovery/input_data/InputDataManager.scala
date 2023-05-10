@@ -11,17 +11,28 @@ import java.io.{File, FileInputStream, FileOutputStream}
 import java.time.Instant
 
 class InputDataManager(binaryFile: String,jsonSourceDirs:Option[IndexedSeq[File]]=None) {
+  def setFilter(function: OrderedColumnHistory => Boolean) = {
+    filterFunction = Some(function)
+  }
+
+  var filterFunction:Option[OrderedColumnHistory => Boolean] = None
 
   def loadData() = {
     if (jsonSourceDirs.isDefined) {
       val (histories, timeLoadingJson) = TimeUtil.executionTimeInMS(loadDataFromJson())
       println(s"Data Loading Json,$timeLoadingJson")
-      histories
+      if(filterFunction.isEmpty)
+        histories
+      else
+        histories.filter(filterFunction.get)
     } else {
       val (histories, timeLoadingBinary) = TimeUtil.executionTimeInMS(loadAsBinary(binaryFile))
       val res = histories.toIndexedSeq
       println(s"Data Loading Binary,$timeLoadingBinary")
-      res
+      if (filterFunction.isEmpty)
+        res
+      else
+        res.filter(filterFunction.get)
     }
   }
 

@@ -10,6 +10,7 @@ case class INDCandidateIDs(lhsPageID:String,
                            rhsTableID:String,
                            rhsColumnID:String) extends JsonWritable[INDCandidateIDs]{
   def lhs = ColumnHistoryID(lhsPageID,lhsTableID,lhsColumnID)
+  def rhs = ColumnHistoryID(rhsPageID,rhsTableID,rhsColumnID)
 
 
 }

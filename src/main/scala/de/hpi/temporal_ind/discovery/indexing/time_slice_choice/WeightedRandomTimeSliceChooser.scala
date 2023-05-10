@@ -13,17 +13,27 @@ class WeightedRandomTimeSliceChooser(historiesEnriched: ColumnHistoryStorage,
                                      importFile:File) extends WeightBasedTimeSliceChooser(historiesEnriched,expectedQueryParamters) {
 
   val shuffled = if(importFile.exists()){
-    logger.debug(s"Reading pre-computed weights from file $importFile")
+    logger.debug(s"Reading pre-computed shuffled weights from file $importFile")
     WeightedShuffledTimestamps.fromJsonFile(importFile.getAbsolutePath)
       .shuffled
       .map(_._1)
-  } else {
+  } else if (importFile.getParentFile.exists() && !importFile.getParentFile.listFiles().isEmpty) {
+    val importFileOther = importFile.getParentFile.listFiles().head
+    logger.debug(s"Reading pre-computed weights from file $importFileOther and re-shuffling them")
+    val weightsWronglyShuffled = collection.mutable.TreeMap[Instant,Int]() ++ WeightedShuffledTimestamps.fromJsonFile(importFileOther.getAbsolutePath)
+      .shuffled
     val shuffler = new WeightedRandomShuffler(random)
     logger.debug("Begin shuffling ")
-    val shuffled = shuffler.shuffle[Instant](weights.toIndexedSeq)
+    val shuffled = shuffler.shuffle[Instant](weightsWronglyShuffled.toIndexedSeq)
     logger.debug("Finished shuffling ")
     shuffled
-  }
+  } else {
+      val shuffler = new WeightedRandomShuffler(random)
+      logger.debug("Begin shuffling ")
+      val shuffled = shuffler.shuffle[Instant](weights.toIndexedSeq)
+      logger.debug("Finished shuffling ")
+      shuffled
+    }
 
 //  weights
 //    .toIndexedSeq

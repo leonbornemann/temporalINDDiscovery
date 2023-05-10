@@ -59,7 +59,7 @@ class BloomfilterIndex(input: IndexedSeq[EnrichedColumnHistory],
   TimeUtil.logRuntime(time,"ms","Bit Matrix Creation For Value Sets")
 
   def bitVectorToColumns(res: BitVector[_]) = {
-    var curColumnIndex=res.next(0)
+    var curColumnIndex=res.next(-1)
     val columns = collection.mutable.ArrayBuffer[EnrichedColumnHistory]()
     while(curColumnIndex!= -1){
       columns += input(curColumnIndex)

@@ -11,8 +11,12 @@ class BestXTimeSliceChooser(historiesEnriched: ColumnHistoryStorage, expectedQue
   extends WeightBasedTimeSliceChooser(historiesEnriched, expectedQueryParamters) {
 
   val weightsFromFile = if(importFile.exists()) {
-    logger.debug(s"Reading pre-computed weights from file $importFile")
+    logger.debug(s"Reading pre-computed weights from file $importFile and re-sorting")
     Some(WeightedShuffledTimestamps.fromJsonFile(importFile.getAbsolutePath).shuffled)
+  } else if (importFile.getParentFile.exists() && !importFile.getParentFile.listFiles().isEmpty) {
+    val importFileOther = importFile.getParentFile.listFiles().head
+    logger.debug(s"Reading pre-computed weights from file $importFileOther and re-sorting")
+    Some(WeightedShuffledTimestamps.fromJsonFile(importFileOther.getAbsolutePath).shuffled)
   } else {
     None
   }
