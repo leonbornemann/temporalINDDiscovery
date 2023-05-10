@@ -71,7 +71,7 @@ class BloomfilterIndex(input: IndexedSeq[EnrichedColumnHistory],
   def iterateThroughSetBitsOfBitVector(bv:BitVector[_]):Iterator[Int] = {
     new Iterator[Int]() {
 
-      var cur = bv.next(0)
+      var cur = bv.next(-1)
 
       override def hasNext: Boolean = cur!= -1
 

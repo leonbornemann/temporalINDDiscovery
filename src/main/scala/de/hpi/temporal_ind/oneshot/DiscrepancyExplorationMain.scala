@@ -32,7 +32,8 @@ object DiscrepancyExplorationMain extends App {
   //TODO: check of they hold
   //0.001485149
   //90
-  val toTest = candidatesNew.diff(candidatesOld).take(1)
+  val toTest = candidatesNew.diff(candidatesOld).take(2) ++ candidatesOld.diff(candidatesNew).take(2)
+  toTest.foreach(println(_))
   val ids = toTest.flatMap(c => Seq(c.lhs,c.rhs))
   val dm = new InputDataManager("",Some(IndexedSeq(new File("/home/leon/data/temporalINDDiscovery/wikipedia/newHistoriesFromServerForDebug/"))))
   dm.setFilter(och => ids.contains(och.columnHistoryID))

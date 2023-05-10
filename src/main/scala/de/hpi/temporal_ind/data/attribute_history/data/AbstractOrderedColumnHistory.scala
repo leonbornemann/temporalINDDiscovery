@@ -61,11 +61,10 @@ abstract class AbstractOrderedColumnHistory[T] {
     }
   }
 
-  def versionsInWindowNew(lowerInclusive: Instant, upperExclusive: Instant):collection.Map[Instant, _ <: AbstractColumnVersion[T]] = {
+  def versionsInWindowNew(lowerInclusive: Instant, upperExclusive: Instant):collection.SortedMap[Instant, _ <: AbstractColumnVersion[T]] = {
     var res = history
       .versions
       .rangeImpl(Some(lowerInclusive), Some(upperExclusive))
-      .toMap
     if (!history.versions.contains(lowerInclusive)) {
       //add previous version because it lasted until lowerInclusive
       val versionBefore = history.versions.maxBefore(lowerInclusive)
@@ -74,7 +73,7 @@ abstract class AbstractOrderedColumnHistory[T] {
       }
     }
     if(res.isEmpty){
-      Map((GLOBAL_CONFIG.earliestInstant,AbstractColumnVersion.getEmpty[T]()))
+      collection.SortedMap((GLOBAL_CONFIG.earliestInstant,AbstractColumnVersion.getEmpty[T]()))
     } else {
       res
     }

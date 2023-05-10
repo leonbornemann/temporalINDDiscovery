@@ -30,7 +30,7 @@ object TINDSearchMain extends App {
   val expectedOmega = new ConstantWeightFunction()
   val expectedParametersWhileIndexing = TINDParameters(expectedEpsilon, TimeUtil.nanosPerDay * maxDelta, expectedOmega)
   val queryParameters = TINDParameters(expectedEpsilon, maxDelta, expectedOmega)
-  val version = "0.97" //TODO: update this if discovery algorithm changes!
+  val version = "0.98" //TODO: update this if discovery algorithm changes!
   val targetDir = new File(targetRootDir + s"/$version/")
   targetDir.mkdir()
   ParallelExecutionHandler.initContext(numThreads)
