@@ -113,7 +113,7 @@ class TINDSearcher(val dataManager:InputDataManager,
     val weightedShuffleFile = new File(metaDir.getAbsolutePath + s"/$seed.json")
     val timeSliceChooser = TimeSliceChooser.getChooser(timeSliceChoiceMethod,historiesEnriched,expectedQueryParameters,random,weightedShuffleFile)
     if(!weightedShuffleFile.exists() && timeSliceChoiceMethod == TimeSliceChoiceMethod.WEIGHTED_RANDOM){
-      timeSliceChooser.asInstanceOf[WeightedRandomTimeSliceChooser].exportAsFile(weightedShuffleFile)
+      //timeSliceChooser.asInstanceOf[WeightedRandomTimeSliceChooser].exportAsFile(weightedShuffleFile)
     }
     val slices = collection.mutable.ArrayBuffer[(Instant,Instant)]()
     (0 until indicesToBuild).foreach(_ => {
