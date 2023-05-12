@@ -9,9 +9,8 @@ import scala.collection.mutable.ArrayBuffer
 
 class StandardResultSerializer(targetDir:File,
                                queryFile:File,
-                               bloomFilterSize:Int,
                                timeSliceChoiceMethod:TimeSliceChoiceMethod.Value,
-                               seed:Long,
+                               prefix:Option[String]=None,
                                subDirectoryNum:Option[Int]=None) extends ResultSerializer{
   def addTrueTemporalINDs(trueTemporalINDs: Iterable[EpsilonOmegaDeltaRelaxedTemporalIND[String]]) =
     trueTemporalINDs.foreach(c => c.toCandidateIDs.appendToWriter(resultPR))
@@ -32,7 +31,7 @@ class StandardResultSerializer(targetDir:File,
     totalResultsStats.flush()
   }
 
-  val filePrefix = s"${seed}_${queryFile.getName}_${bloomFilterSize}_${timeSliceChoiceMethod}"
+  val filePrefix = s"${prefix.getOrElse("")}_${queryFile.getName}_${timeSliceChoiceMethod}"
   val subDir = if(subDirectoryNum.isDefined) s"/${subDirectoryNum.get}/" else ""
   val dir = new File(targetDir + s"/${filePrefix}/$subDir")
   dir.mkdirs()

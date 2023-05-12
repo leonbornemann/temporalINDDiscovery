@@ -1,8 +1,13 @@
 package de.hpi.temporal_ind.discovery.statistics_and_results
 
+import de.hpi.temporal_ind.discovery.TINDParameters
 import de.hpi.temporal_ind.discovery.indexing.TimeSliceChoiceMethod
 
 case class IndividualResultStats(queryNumber: Int,
+                                 queryFileName:String,
+                                 indexParameters: TINDParameters,
+                                 queryParameters: TINDParameters,
+                                 seed:Long,
                                  numTimeSliceIndices: Int,
                                  totalIndexQueryTime: Double,
                                  totalSubsetValidationTime: Double,
@@ -17,6 +22,8 @@ case class IndividualResultStats(queryNumber: Int,
                                  timeSliceChoiceMethod:TimeSliceChoiceMethod.Value) {
 
   def toCSVLine = s"$queryNumber," +
+    s"$queryFileName," +
+    s"$seed," +
     s"$numTimeSliceIndices," +
     s"$totalIndexQueryTime," +
     s"$totalSubsetValidationTime," +
@@ -28,11 +35,19 @@ case class IndividualResultStats(queryNumber: Int,
     s"$version," +
     s"$sampleSize," +
     s"$bloomFilterSize," +
-    s"$timeSliceChoiceMethod"
+    s"$timeSliceChoiceMethod," +
+    s"${indexParameters.absoluteEpsilon}," +
+    s"${indexParameters.absDeltaInNanos}," +
+    s"${indexParameters.omega}," +
+    s"${queryParameters.absoluteEpsilon}," +
+    s"${queryParameters.absDeltaInNanos}," +
+    s"${queryParameters.omega}"
 }
 
 object IndividualResultStats {
   def schema = "queryNumber," +
+    "queryFileName," +
+    "seed," +
     "numTimeSliceIndices," +
     "totalIndexQueryTime," +
     "totalSubsetValidationTime," +
@@ -44,5 +59,11 @@ object IndividualResultStats {
     "version," +
     "sampleSize," +
     "bloomFilterSize," +
-    "timeSliceChoiceMethod"
+    "timeSliceChoiceMethod," +
+    "indexEpsilon," +
+    "indexDelta," +
+    "indexOmega," +
+    "queryEpsilon," +
+    "queryDelta," +
+    "queryOmega"
 }
