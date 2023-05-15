@@ -15,20 +15,21 @@ object TINDCandidateExportForLabelling extends App with StrictLogging{
   val inputDir = args(1)
   val columnHistoryDir = args(2)
   val outputDirToLabel = args(3)
-  val filterByUnion = args(4).toBoolean
   //val outputFileStatistics = args(4)
   val version = GLOBAL_CONFIG.lastInstant
-  val sampleSize = 300
+  val sampleSize = 120
   val index = new IncrementalIndexedColumnHistories(new File(columnHistoryDir))
   new File(inputDir).listFiles().foreach(inputFile => {
     logger.debug(s"processing $inputFile")
     val outputFileToLabel = outputDirToLabel + s"/${inputFile.getName}.json"
     val pr = new PrintWriter(outputFileToLabel)
     pr.println(INDCandidate.csvSchema)
-    InclusionDependencyFromMany.readFromMANYOutputFile(inputFile)
-      .withFilter(tind => !filterByUnion || (tind.rhsColumnID.contains("union") && !tind.lhsColumnID.contains("union") && tind.rhsColumnID.replace("_union", "") != tind.lhsColumnID))
+    val allINds =InclusionDependencyFromMany.readFromMANYOutputFile(inputFile)
+    for(i <- 0 until 9*300)
+      allINds.next()
+    allINds
       .take(sampleSize)
-      .map(ind => ind.toCandidateWithIncrementalIndex(index, filterByUnion))
+      .map(ind => ind.toCandidateWithIncrementalIndex(index, false))
       .foreach(candidate => {
         pr.println(candidate.toLabelCSVString(version))
         pr.flush()
