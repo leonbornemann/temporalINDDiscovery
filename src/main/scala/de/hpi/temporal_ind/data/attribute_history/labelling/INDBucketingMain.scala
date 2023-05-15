@@ -15,7 +15,7 @@ import scala.io.Source
 
 object INDBucketingMain extends App with StrictLogging{
   println(s"Called with ${args.toIndexedSeq}")
-  val indFile = args(0)
+  val indDir = args(0)
   val metadataFile = args(1)
   val outputDir = args(2)
   GLOBAL_CONFIG.setSettingsForDataSource("wikipedia")
@@ -33,19 +33,21 @@ object INDBucketingMain extends App with StrictLogging{
   }.toMap
   var counter = 0
   val metadata = ColumnHistoryMetadata.readAsMap(metadataFile)
-  Source
-    .fromFile(indFile)
-    .getLines()
-    .foreach(l => {
-      counter+=1
-      val ind = InclusionDependencyFromMany.fromManyOutputString(l)
-      val left = ind.lhsColumnID
-      val right = ind.rhsColumnID
-      val (leftBucket,rightBucket) = getBuckets(metadata(left).nChangeVersions,metadata(right).nChangeVersions,buckets)
-      bucketFiles((leftBucket,rightBucket)).println(l)
-      if(counter%1000000==0)
-        logger.debug(s"Finished $counter")
-    })
+  new File(indDir).listFiles().foreach(indFile => {
+    Source
+      .fromFile(indFile)
+      .getLines()
+      .foreach(l => {
+        counter += 1
+        val ind = InclusionDependencyFromMany.fromManyOutputString(l)
+        val left = ind.lhsColumnID
+        val right = ind.rhsColumnID
+        val (leftBucket, rightBucket) = getBuckets(metadata(left).nChangeVersions, metadata(right).nChangeVersions, buckets)
+        bucketFiles((leftBucket, rightBucket)).println(l)
+        if (counter % 1000000 == 0)
+          logger.debug(s"Finished $counter")
+      })
+  })
   bucketFiles.foreach(_._2.close())
 
   def getBuckets(nVersionsWithChangesLeft: Int,nVersionsWithChangesRight: Int, buckets: Seq[(Int, Int)]) = {
