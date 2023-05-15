@@ -19,7 +19,7 @@ object INDBucketingMain extends App with StrictLogging{
   val metadataFile = args(1)
   val outputDir = args(2)
   GLOBAL_CONFIG.setSettingsForDataSource("wikipedia")
-  val buckets = Seq((1,4),(4,16),(16,20000))
+  val buckets = Seq((4,8),(8,16),(16,20000))
 
   implicit class Crossable[X](xs: Iterable[X]) {
     def cross[Y](ys: Iterable[Y]) = for {x <- xs; y <- ys} yield (x, y)

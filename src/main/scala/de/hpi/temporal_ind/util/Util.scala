@@ -6,6 +6,7 @@ import scala.collection.mutable.ArrayBuffer
 
 object Util {
 
+
   def log(base:Double, n:Double) = {
     Math.log(n) / Math.log(base)
   }
