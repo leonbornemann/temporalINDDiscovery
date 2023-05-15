@@ -1,11 +1,13 @@
 package de.hpi.temporal_ind.discovery.statistics_and_results
 
+import de.hpi.temporal_ind.data.GLOBAL_CONFIG
 import de.hpi.temporal_ind.discovery.input_data.InputDataManager
 import de.hpi.temporal_ind.util.Util
 
 import java.time.temporal.ChronoUnit
 
 object BasicStatisticsPrint extends App {
+  GLOBAL_CONFIG.setSettingsForDataSource("wikipedia")
   val dataSourceFile = args(0)
   val dm = new InputDataManager(dataSourceFile)
   val data = dm.loadData()
