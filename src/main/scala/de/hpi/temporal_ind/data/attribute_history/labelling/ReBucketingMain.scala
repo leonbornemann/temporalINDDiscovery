@@ -16,17 +16,21 @@ object ReBucketingMain extends App {
   }
 
   val indBuckets = buckets.cross(buckets)
+  val header = "versionURLFK,versionURLPK,pageTitleFK,colHeaderFK,colPositionFK,pageTitlePK,colHeaderPK,colPositionPK,isGenuine,fkTableID,pkTableID,fkValues,pkValues,fkID,pkID,fkPageID,pkPageID,fkTitle,pkTitle"
   val bucketFiles = indBuckets.map { case b =>
     val ((lmin, lmax), (rmin, rmax)) = b
     val filename = s"$lmin-${lmax}__$rmin-$rmax.txt"
     (b, new PrintWriter(s"$outputDir/$filename"))
   }.toMap
+  bucketFiles.foreach(_._2.println(header))
   val metadata = ColumnHistoryMetadata.readAsMap(args(2))
   labelledDir.listFiles().foreach(f => {
-    val linesWithContent = Source.fromFile(f)
+    val lines = Source.fromFile(f)
       .getLines()
       .toIndexedSeq
+    val linesWithContent = lines
       .tail
+    val header = lines.head
     linesWithContent.foreach(l => {
       val leftID = l.split(",")(13)
       val rightID = l.split(",")(14)
