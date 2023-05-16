@@ -54,6 +54,8 @@ class TINDSearcher(val dataManager:InputDataManager,
     this.seed = seed
     this.random = new Random(seed)
     this.bloomfilterSize=bloomFilterSize
+    fullMultiIndexStructure = null
+    System.gc()
     fullMultiIndexStructure = buildMultiIndexStructure(historiesEnriched, maxNumTimeSlicIndices)
   }
 
