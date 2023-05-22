@@ -29,10 +29,10 @@ object TINDSearchMain extends App with StrictLogging{
   val indexEpsilonFactors = args(11).split(",").map(_.toInt).toIndexedSeq
   val indexDeltaFactors = args(12).split(",").map(_.toInt).toIndexedSeq
   metaDataDir.mkdirs()
-  val expectedEpsilon = relativeEpsilon * GLOBAL_CONFIG.totalTimeInNanos
+  val absoluteExpectedEpsilon = relativeEpsilon * GLOBAL_CONFIG.totalTimeInNanos
   val expectedOmega = new ConstantWeightFunction()
   val maxDeltaInNanos = TimeUtil.nanosPerDay*maxDeltaWhileIndexing
-  val queryParameters = TINDParameters(expectedEpsilon, maxDeltaInNanos, expectedOmega)
+  val queryParameters = TINDParameters(absoluteExpectedEpsilon, maxDeltaInNanos, expectedOmega)
   val version = "0.99"
   val targetDir = new File(targetRootDir + s"/$version/")
   targetDir.mkdir()
@@ -57,7 +57,7 @@ object TINDSearchMain extends App with StrictLogging{
           logger.debug(s"Processing deltaFactor $deltaFactor")
           val indexEpsilon = relativeEpsilon * epsilonFactor
           val indexDelta = maxDeltaInNanos * deltaFactor
-          val indexParameter = TINDParameters(indexEpsilon, indexDelta, expectedOmega)
+          val indexParameter = TINDParameters(absoluteExpectedEpsilon, indexDelta, expectedOmega)
           relaxedShiftedTemporalINDDiscovery.buildIndicesWithSeed(numTimeSliceIndicesToTest.max, seed,bloomFilterSize,indexParameter)
           val resultDirPrefix = s"${bloomFilterSize}_${seed}_${epsilonFactor}_${deltaFactor}"
           queryFiles.foreach(queryFile => {
