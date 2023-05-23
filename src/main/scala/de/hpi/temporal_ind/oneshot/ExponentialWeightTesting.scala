@@ -11,7 +11,7 @@ object ExponentialWeightTesting extends App {
 
 
   GLOBAL_CONFIG.setSettingsForDataSource("wikipedia")
-
+  val a = GLOBAL_CONFIG.ALL_DAYS.size
   val units = Seq(ChronoUnit.NANOS,ChronoUnit.DAYS)
   for(unit <- units){
     GLOBAL_CONFIG.earliestInstant = Instant.parse("2001-01-01T00:00:00Z")

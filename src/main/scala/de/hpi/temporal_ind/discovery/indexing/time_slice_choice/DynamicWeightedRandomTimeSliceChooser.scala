@@ -22,12 +22,8 @@ class DynamicWeightedRandomTimeSliceChooser(historiesEnriched: ColumnHistoryStor
   }
 
 
-  val granularity = ChronoUnit.DAYS
-  private var timestampToCoveredVersions:Option[ collection.mutable.TreeMap[Instant, collection.mutable.HashSet[Long]]] = None
-
   def initIterator() = {
-    createTimestampsToInitialWeights()
-    val shuffler = new DynamicWeightedRandomShuffler(timestampToCoveredVersions.get, random)
+    val shuffler = new WeightedRandomChooser(historiesEnriched, random,t => createIntervalOfWeightedLength(t,expectedQueryParamters.omega,expectedQueryParamters.absoluteEpsilon))
     shuffler.map(t => (t._2,t._1))
   }
 
@@ -40,26 +36,6 @@ class DynamicWeightedRandomTimeSliceChooser(historiesEnriched: ColumnHistoryStor
   }
 
 
-
-  def createTimestampsToInitialWeights() = {
-    timestampToCoveredVersions = Some(collection.mutable.TreeMap[Instant, collection.mutable.HashSet[Long]]() ++ GLOBAL_CONFIG
-      .ALL_DAYS
-      .map(i => (i.truncatedTo(ChronoUnit.DAYS), collection.mutable.HashSet[Long]()))
-      .filter(t => t._1.isAfter(GLOBAL_CONFIG.earliestInstant) && t._1.isBefore(GLOBAL_CONFIG.lastInstant)))
-    historiesEnriched.histories.foreach(h => {
-      val withIndex = h.och.history.versions.toIndexedSeq
-        .zipWithIndex
-      withIndex.map { case (t, i) => {
-        val begin = t._1.truncatedTo(ChronoUnit.DAYS)
-        val end = if (i == withIndex.size - 1) GLOBAL_CONFIG.lastInstant else withIndex(i + 1)._1._1
-        (0 until granularity.between(begin, end).toInt)
-          .foreach(l => {
-            timestampToCoveredVersions.get(begin.plus(l, granularity)).add(t._2.hashCode()) // use hashcode for faster comparisons
-          })
-      }
-      }
-    })
-  }
 
   override def timestampsWithWeights:Iterator[(Instant,Long)] = iterator
 }

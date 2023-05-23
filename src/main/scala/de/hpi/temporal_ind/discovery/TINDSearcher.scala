@@ -131,14 +131,15 @@ class TINDSearcher(val dataManager:InputDataManager,
   def buildTimeSliceIndices(historiesEnriched: ColumnHistoryStorage,indicesToBuild:Int) = {
     val weightedShuffleFile = WeightedShuffledTimestamps.getImportFile(metaDir,seed,timeSliceChoiceMethod)
     val timeSliceChooser = TimeSliceChooser.getChooser(timeSliceChoiceMethod,historiesEnriched,expectedQueryParameters,random,weightedShuffleFile)
-    if(!weightedShuffleFile.exists() && timeSliceChoiceMethod == TimeSliceChoiceMethod.DYNAMIC_WEIGHTED_RANDOM){
-      timeSliceChooser.asInstanceOf[DynamicWeightedRandomTimeSliceChooser].exportAsFile(weightedShuffleFile)
-    }
+
     val slices = collection.mutable.ArrayBuffer[(Instant,Instant)]()
     (0 until indicesToBuild).foreach(_ => {
       val timeSlice = timeSliceChooser.getNextTimeSlice()
       slices += timeSlice
     })
+    if (!weightedShuffleFile.exists() && timeSliceChoiceMethod == TimeSliceChoiceMethod.DYNAMIC_WEIGHTED_RANDOM) {
+      timeSliceChooser.asInstanceOf[DynamicWeightedRandomTimeSliceChooser].exportAsFile(weightedShuffleFile)
+    }
     logger.debug(s"Running Index Build with time slices: $slices")
     var buildTimes = collection.mutable.ArrayBuffer[Double]()
     //concurrent index building to speed up index construction:
