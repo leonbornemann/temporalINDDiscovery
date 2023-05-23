@@ -4,7 +4,7 @@ import scala.util.Random
 
 class WeightedRandomShuffler(random:Random) {
 
-  def shuffle[T](elementToWeight: collection.Iterable[(T, Int)]) = {
+  def shuffle[T](elementToWeight: collection.Map[T, Int]) = {
     var cumSum = 0L
     val cumSumToElem = collection.mutable.TreeMap[Long,T]() ++ elementToWeight
       .map { case (k, v) =>
@@ -12,7 +12,7 @@ class WeightedRandomShuffler(random:Random) {
         cumSum += v
         res
       }
-    val sortedShuffle = collection.mutable.ArrayBuffer[T]()
+    val sortedShuffle = collection.mutable.ArrayBuffer[(T,Int)]()
     while (!cumSumToElem.isEmpty) {
       val drawn = random.nextLong(cumSum)
       val selected = if (cumSumToElem.contains(drawn))
@@ -24,7 +24,7 @@ class WeightedRandomShuffler(random:Random) {
       }
       val keyAfterSelected = cumSumToElem.minAfter(selected._1+1).map(_._1).getOrElse(cumSum)
       val weightOfSelected = keyAfterSelected - selected._1
-      sortedShuffle.addOne(selected._2)
+      sortedShuffle.addOne((selected._2,elementToWeight(selected._2)))
       cumSumToElem.remove(selected._1)
       //update the weights of all after this, currently this is quadratic in the number of ranges, but that is probably ok - can we do this better? - probably not easily
       val toChange = collection.mutable.HashSet[Long]() ++ cumSumToElem.rangeFrom(selected._1).keySet

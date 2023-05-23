@@ -9,8 +9,8 @@ import de.hpi.temporal_ind.discovery.input_data.ColumnHistoryStorage
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
-abstract class WeightBasedTimeSliceChooser(val historiesEnriched:ColumnHistoryStorage,
-                                           expectedQueryParamters: TINDParameters) extends TimeSliceChooser(expectedQueryParamters) with StrictLogging{
+abstract class DistinctValueWeightBasedTimeSliceChooser(val historiesEnriched:ColumnHistoryStorage,
+                                                        expectedQueryParamters: TINDParameters) extends TimeSliceChooser(expectedQueryParamters) with StrictLogging{
 
   val granularity = ChronoUnit.DAYS
   val hllBuilder = new HyperLogLogPlusPlus.Builder();

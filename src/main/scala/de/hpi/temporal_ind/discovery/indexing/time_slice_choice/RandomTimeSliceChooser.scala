@@ -11,7 +11,7 @@ class RandomTimeSliceChooser(historiesEnriched: ColumnHistoryStorage,
                              random:Random) extends TimeSliceChooser(expectedQueryParamters){
 
 
-  def timestamps = random.shuffle(GLOBAL_CONFIG.ALL_DAYS).iterator
+  def timestampsWithWeights = random.shuffle(GLOBAL_CONFIG.ALL_DAYS).iterator.map(t => (t,0))
 
 
 }

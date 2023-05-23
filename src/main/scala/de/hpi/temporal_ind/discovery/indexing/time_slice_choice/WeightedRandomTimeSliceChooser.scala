@@ -10,13 +10,12 @@ import scala.util.Random
 class WeightedRandomTimeSliceChooser(historiesEnriched: ColumnHistoryStorage,
                                      expectedQueryParamters: TINDParameters,
                                      random: Random,
-                                     importFile:File) extends WeightBasedTimeSliceChooser(historiesEnriched,expectedQueryParamters) {
+                                     importFile:File) extends DistinctValueWeightBasedTimeSliceChooser(historiesEnriched,expectedQueryParamters) {
 
   val shuffled = if(importFile.exists()){
     logger.debug(s"Reading pre-computed shuffled weights from file $importFile")
     WeightedShuffledTimestamps.fromJsonFile(importFile.getAbsolutePath)
       .shuffled
-      .map(_._1)
   } else if (importFile.getParentFile.exists() && !importFile.getParentFile.listFiles().isEmpty) {
     val importFileOther = importFile.getParentFile.listFiles().head
     logger.debug(s"Reading pre-computed weights from file $importFileOther and re-shuffling them")
@@ -24,13 +23,13 @@ class WeightedRandomTimeSliceChooser(historiesEnriched: ColumnHistoryStorage,
       .shuffled
     val shuffler = new WeightedRandomShuffler(random)
     logger.debug("Begin shuffling ")
-    val shuffled = shuffler.shuffle[Instant](weightsWronglyShuffled.toIndexedSeq)
+    val shuffled = shuffler.shuffle[Instant](weightsWronglyShuffled)
     logger.debug("Finished shuffling ")
     shuffled
   } else {
       val shuffler = new WeightedRandomShuffler(random)
       logger.debug("Begin shuffling ")
-      val shuffled = shuffler.shuffle[Instant](weights.toIndexedSeq)
+      val shuffled = shuffler.shuffle[Instant](weights)
       logger.debug("Finished shuffling ")
       shuffled
     }
@@ -40,12 +39,11 @@ class WeightedRandomTimeSliceChooser(historiesEnriched: ColumnHistoryStorage,
 //    .sortBy(_._1)
 //    .foreach(println(_))
 //  println()
-  def timestamps = shuffled.iterator
+  def timestampsWithWeights = shuffled.map(t => (t._1,t._2.toLong)).iterator
 
   def exportAsFile(file:File) = {
     logger.debug("Exporting File")
-    val weightMap = weights
-    WeightedShuffledTimestamps(shuffled.map(t => (t.toString,weightMap(t))))
+    WeightedShuffledTimestamps(shuffled.map(t => (t._1.toString,t._2)))
       .toJsonFile(file)
     logger.debug("Done Exporting File")
   }

@@ -14,6 +14,7 @@ abstract class TimeSliceChooser(expectedQueryParamters:TINDParameters) {
 
   val availableIntervals = collection.mutable.TreeSet[(Instant,Instant)]()
   availableIntervals.add((GLOBAL_CONFIG.earliestInstant,GLOBAL_CONFIG.lastInstant))
+  var returnedTimestampsWithWeightsInOrder = collection.mutable.ArrayBuffer[(Instant,Long)]()
 
   def isValid(interval: (Instant, Instant)): Boolean = {
     val (myBegin, myEnd) = interval
@@ -24,17 +25,22 @@ abstract class TimeSliceChooser(expectedQueryParamters:TINDParameters) {
     omega.getIntervalOfWeight(t, weight + 1)
   }
 
-  def timestamps:Iterator[Instant]
+  def timestampsWithWeights:Iterator[(Instant,Long)]
 
   def getNextTimeSlice(): (Instant, Instant) = {
-    val timestampIterator = timestamps
-    var t = timestampIterator.next()
+    val timestampIterator = timestampsWithWeights
+    val tuple = timestampIterator.next()
+    var t = tuple._1
+    var weight = tuple._2
     var interval = createIntervalOfWeightedLength(t, expectedQueryParamters.omega, expectedQueryParamters.absoluteEpsilon)
     while (!isValid(interval)) {
-      t = timestampIterator.next()
+      val tuple = timestampIterator.next()
+      t = tuple._1
+      weight = tuple._2
       interval = createIntervalOfWeightedLength(t, expectedQueryParamters.omega, expectedQueryParamters.absoluteEpsilon)
     }
     removeIntervalFromPool(interval._1, interval._2)
+    returnedTimestampsWithWeightsInOrder.addOne((t,weight))
     interval
   }
 
@@ -61,6 +67,7 @@ object TimeSliceChooser {
       case TimeSliceChoiceMethod.RANDOM => new RandomTimeSliceChooser(historiesEnriched,expectedQueryParamters,random)
       case TimeSliceChoiceMethod.WEIGHTED_RANDOM => new WeightedRandomTimeSliceChooser(historiesEnriched,expectedQueryParamters,random,shuffledFile)
       case TimeSliceChoiceMethod.BESTX => new BestXTimeSliceChooser(historiesEnriched,expectedQueryParamters,random,shuffledFile)
+      case TimeSliceChoiceMethod.DYNAMIC_WEIGHTED_RANDOM => new DynamicWeightedRandomTimeSliceChooser(historiesEnriched, expectedQueryParamters, random,shuffledFile)
     }
   }
 
