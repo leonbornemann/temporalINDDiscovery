@@ -56,7 +56,8 @@ object TINDSearchMain extends App with StrictLogging{
         indexDeltaFactors.foreach(deltaFactor => {
           logger.debug(s"Processing deltaFactor $deltaFactor")
           val indexDelta = maxDeltaInNanos * deltaFactor
-          val indexParameter = TINDParameters(absoluteExpectedEpsilon, indexDelta, expectedOmega)
+          val indexEpsilon = absoluteExpectedEpsilon * epsilonFactor
+          val indexParameter = TINDParameters(indexEpsilon, indexDelta, expectedOmega)
           relaxedShiftedTemporalINDDiscovery.buildIndicesWithSeed(numTimeSliceIndicesToTest.max, seed,bloomFilterSize,indexParameter)
           val resultDirPrefix = s"${bloomFilterSize}_${seed}_${epsilonFactor}_${deltaFactor}"
           queryFiles.foreach(queryFile => {
