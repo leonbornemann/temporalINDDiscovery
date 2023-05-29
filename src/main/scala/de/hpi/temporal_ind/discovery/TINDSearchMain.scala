@@ -46,6 +46,7 @@ object TINDSearchMain extends App with StrictLogging{
     numThreadss(0),
     metaDataDir)
   relaxedShiftedTemporalINDDiscovery.initData()
+  ParallelExecutionHandler.initContext(numThreadss.max)
   for(bloomFilterSize <- bloomFilterSizes){
     logger.debug(s"Processing bloomFilterSize $bloomFilterSize")
     for (seed <- seeds) {
