@@ -35,7 +35,7 @@ class TINDSearcher(val dataManager:InputDataManager,
                    val version:String,
                    val subsetValidation:Boolean,
                    val timeSliceChoiceMethod:TimeSliceChoiceMethod.Value,
-                   val nThreads:Int,
+                   var nThreads:Int,
                    val metaDir:File) extends StrictLogging{
 
   var fullMultiIndexStructure:MultiLevelIndexStructure = null

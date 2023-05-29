@@ -37,6 +37,9 @@ object ParallelExecutionHandler{
   var service: ExecutorService = null
   var context: ExecutionContextExecutor = null
   def initContext(nThreads:Int): Unit = {
+    if(service != null){
+      service.shutdown()
+    }
     service = Executors.newFixedThreadPool(nThreads)
     context = ExecutionContext.fromExecutor(service)
   }

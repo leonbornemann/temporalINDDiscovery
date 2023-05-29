@@ -24,7 +24,7 @@ object TINDSearchMain extends App with StrictLogging{
   val bloomFilterSizes = args(6).split(",").map(_.toInt).toIndexedSeq
   val seeds = args(7).split(",").map(_.toLong).toIndexedSeq
   val numTimeSliceIndicesToTest = args(8).split(",").map(_.toInt)
-  val numThreads = args(9).toInt
+  val numThreadss = args(9).split(",").map(_.toInt)
   val metaDataDir = new File(args(10))
   val indexEpsilonFactors = args(11).split(",").map(_.toInt).toIndexedSeq
   val indexDeltaFactors = args(12).split(",").map(_.toInt).toIndexedSeq
@@ -36,7 +36,6 @@ object TINDSearchMain extends App with StrictLogging{
   val version = "0.99"
   val targetDir = new File(targetRootDir + s"/$version/")
   targetDir.mkdir()
-  ParallelExecutionHandler.initContext(numThreads)
   val subsetValidation = true
   val dataLoader = new InputDataManager(sourceFileBinary,None)
 
@@ -44,7 +43,7 @@ object TINDSearchMain extends App with StrictLogging{
     version,
     subsetValidation,
     timeSliceChoiceMethod,
-    numThreads,
+    numThreadss(0),
     metaDataDir)
   relaxedShiftedTemporalINDDiscovery.initData()
   for(bloomFilterSize <- bloomFilterSizes){
@@ -59,12 +58,18 @@ object TINDSearchMain extends App with StrictLogging{
           val indexEpsilon = absoluteExpectedEpsilon * epsilonFactor
           val indexParameter = TINDParameters(indexEpsilon, indexDelta, expectedOmega)
           relaxedShiftedTemporalINDDiscovery.buildIndicesWithSeed(numTimeSliceIndicesToTest.max, seed,bloomFilterSize,indexParameter)
-          val resultDirPrefix = s"${bloomFilterSize}_${seed}_${epsilonFactor}_${deltaFactor}"
-          queryFiles.foreach(queryFile => {
-            logger.debug(s"Processing queryFile $queryFile")
-            val resultSerializer = new StandardResultSerializer(new File(targetRootDir), new File(queryFile), timeSliceChoiceMethod, Some(resultDirPrefix))
-            relaxedShiftedTemporalINDDiscovery.discoverForSample(new File(queryFile), numTimeSliceIndicesToTest, queryParameters, resultSerializer)
-          })
+          for(nThreads <- numThreadss){
+            logger.debug(s" Running nThreads $nThreads")
+            val resultDirPrefix = s"${bloomFilterSize}_${seed}_${epsilonFactor}_${deltaFactor}_$nThreads"
+            relaxedShiftedTemporalINDDiscovery.nThreads=nThreads
+            ParallelExecutionHandler.initContext(nThreads)
+            queryFiles.foreach(queryFile => {
+              logger.debug(s"Processing queryFile $queryFile")
+              val resultSerializer = new StandardResultSerializer(new File(targetRootDir), new File(queryFile), timeSliceChoiceMethod, Some(resultDirPrefix))
+              relaxedShiftedTemporalINDDiscovery.discoverForSample(new File(queryFile), numTimeSliceIndicesToTest, queryParameters, resultSerializer)
+            })
+          }
+
         })
       })
     }
