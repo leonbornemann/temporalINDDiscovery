@@ -37,14 +37,27 @@ class TINDSearcher(val dataManager:InputDataManager,
                    val timeSliceChoiceMethod:TimeSliceChoiceMethod.Value,
                    var nThreads:Int,
                    val metaDir:File) extends StrictLogging{
+  def useSubsetOfData(inputSizeFactor: Double) = {
+    assert(inputSizeFactor < 1.0)
+    this.historiesEnriched = new ColumnHistoryStorage(historiesEnrichedOriginal.histories.take({
+      if(inputSizeFactor!=1.0)
+        (inputSizeFactor*historiesEnrichedOriginal.histories.size).toInt
+      else
+        historiesEnrichedOriginal.histories.size
+    }))
+    // data loading time is now longer correct now, but that does not matter for the query use-case
+  }
+
 
   var fullMultiIndexStructure:MultiLevelIndexStructure = null
   var historiesEnriched:ColumnHistoryStorage = null
+  var historiesEnrichedOriginal:ColumnHistoryStorage = null
   var dataLoadingTimeMS:Double=0.0
   var expectedQueryParameters:TINDParameters = null
 
   def initData() = {
     val (historiesEnriched: ColumnHistoryStorage, dataLoadingTimeMS: Double) = loadData()
+    this.historiesEnrichedOriginal = historiesEnriched
     this.historiesEnriched = historiesEnriched
     this.dataLoadingTimeMS = dataLoadingTimeMS
   }
@@ -140,7 +153,7 @@ class TINDSearcher(val dataManager:InputDataManager,
     if (!weightedShuffleFile.exists() && timeSliceChoiceMethod == TimeSliceChoiceMethod.DYNAMIC_WEIGHTED_RANDOM) {
       timeSliceChooser.asInstanceOf[DynamicWeightedRandomTimeSliceChooser].exportAsFile(weightedShuffleFile)
     }
-    logger.debug(s"Running Index Build with time slices: $slices")
+    logger.debug(s"Running Index Build for ${historiesEnriched.histories.size} attributes with time slices: $slices")
     var buildTimes = collection.mutable.ArrayBuffer[Double]()
     //concurrent index building to speed up index construction:
     val handler = new ParallelExecutionHandler(slices.size)
@@ -192,7 +205,7 @@ class TINDSearcher(val dataManager:InputDataManager,
       logger.debug(s"Processing numTimeSliceIndices=$numTimeSliceIndices")
       val curIndex = fullMultiIndexStructure.limitTimeSliceIndices(numTimeSliceIndices)
       val (totalQueryTime, totalSubsetValidationTime, totalTemporalValidationTime) = queryAll(queries,queryIDsFile.get.getName, curIndex,queryParameters)
-      val totalResultSTatsLine = TotalResultStats(version,expectedQueryParameters,queryParameters, seed,queryIDsFile.get.getName, queries.size, bloomfilterSize, timeSliceChoiceMethod, numTimeSliceIndices, dataLoadingTimeMS, curIndex.requiredValuesIndexBuildTime, curIndex.totalTimeSliceIndexBuildTime, totalQueryTime, totalSubsetValidationTime, totalTemporalValidationTime)
+      val totalResultSTatsLine = TotalResultStats(version,expectedQueryParameters,queryParameters, seed,queryIDsFile.get.getName, queries.size, bloomfilterSize, timeSliceChoiceMethod, numTimeSliceIndices, dataLoadingTimeMS, curIndex.requiredValuesIndexBuildTime, curIndex.totalTimeSliceIndexBuildTime, totalQueryTime, totalSubsetValidationTime, totalTemporalValidationTime,historiesEnriched.histories.size)
       curResultSerializer.addTotalResultStats(totalResultSTatsLine)
     })
     curResultSerializer.closeAll()
@@ -263,7 +276,8 @@ class TINDSearcher(val dataManager:InputDataManager,
           version,
           sample.size,
           bloomfilterSize,
-          timeSliceChoiceMethod
+          timeSliceChoiceMethod,
+          historiesEnriched.histories.size
         )
         curResultSerializer.addIndividualResultStats(individualStatLine)
         (queryTimeRQValues + queryTimeIndexTimeSlice, subsetValidationTime, validationTime)

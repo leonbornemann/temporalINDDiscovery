@@ -18,7 +18,8 @@ case class TotalResultStats(version:String,
                             summedTimeSliceIndicesBuildTimes: Double,
                             totalIndexQueryTime: Double,
                             totalSubsetValidationTime: Double,
-                            totalTemporalValidationTime: Double) extends JsonWritable[TotalResultStats] {
+                            totalTemporalValidationTime: Double,
+                            indexSize:Int) extends JsonWritable[TotalResultStats] {
 
 
   def toCSV = s"$version," +
@@ -39,7 +40,8 @@ case class TotalResultStats(version:String,
     s"${indexParameters.omega}," +
     s"${queryParameters.absoluteEpsilon}," +
     s"${queryParameters.absDeltaInNanos}," +
-    s"${queryParameters.omega}"
+    s"${queryParameters.omega}," +
+    s"${indexSize}"
 }
 
 object TotalResultStats {
@@ -62,5 +64,6 @@ object TotalResultStats {
     "indexOmega," +
     "queryEpsilon," +
     "queryDelta," +
-    "queryOmega"
+    "queryOmega," +
+    "indexSize"
 }
