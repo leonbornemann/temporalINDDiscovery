@@ -18,7 +18,7 @@ case class IndividualResultStats(queryNumber: Int,
                                  avgVersionsPerTimeSliceWindow:Double,
                                  version:String,
                                  sampleSize: Int,
-                                 bloomFilterSize: Int,
+                                   bloomFilterSize: Int,
                                  timeSliceChoiceMethod:TimeSliceChoiceMethod.Value,
                                  indexSize:Int) {
 

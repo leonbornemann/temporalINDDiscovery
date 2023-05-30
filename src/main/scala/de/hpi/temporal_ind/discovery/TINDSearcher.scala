@@ -38,7 +38,7 @@ class TINDSearcher(val dataManager:InputDataManager,
                    var nThreads:Int,
                    val metaDir:File) extends StrictLogging{
   def useSubsetOfData(inputSizeFactor: Double) = {
-    assert(inputSizeFactor < 1.0)
+    assert(inputSizeFactor <= 1.0)
     this.historiesEnriched = new ColumnHistoryStorage(historiesEnrichedOriginal.histories.take({
       if(inputSizeFactor!=1.0)
         (inputSizeFactor*historiesEnrichedOriginal.histories.size).toInt
