@@ -7,30 +7,30 @@ import java.io.{File, PrintWriter}
 
 class ParallelIOHandler(rootDir:File,
                         queryFile:File,
-                        bloomFilterSize: Int,
-                        timeSliceChoiceMethod: TimeSliceChoiceMethod.Value,
-                        seed: Long) {
+                        prefix: String,
+                        timeSliceChoiceMethod: TimeSliceChoiceMethod.Value) {
 
-//  val availableResultSerializers = scala.collection.mutable.ListBuffer[StandardResultSerializer]()
-//  var outputDirCounter = 0
-//  def getOrCreateNEwResultSerializer() = {
-//    availableResultSerializers.synchronized {
-//      if(availableResultSerializers.isEmpty){
-//        val newDir = new File(rootDir.getAbsolutePath)
-//        println(s"Creating $newDir")
-//        newDir.mkdirs()
-//        val serializer = new StandardResultSerializer(newDir,queryFile,bloomFilterSize,timeSliceChoiceMethod, seed,Some(outputDirCounter))
-//        outputDirCounter += 1
-//        serializer
-//      } else {
-//        availableResultSerializers.remove(0)
-//      }
-//    }
-//  }
-//
-//  def releaseResultSerializer(resultSerializer: StandardResultSerializer) = {
-//    availableResultSerializers.synchronized{
-//      availableResultSerializers += resultSerializer
-//    }
-//  }
+  val availableResultSerializers = scala.collection.mutable.ListBuffer[StandardResultSerializer]()
+  var outputDirCounter = 0
+
+  def getOrCreateNEwResultSerializer() = {
+    availableResultSerializers.synchronized {
+      if(availableResultSerializers.isEmpty){
+        val newDir = new File(rootDir.getAbsolutePath)
+        println(s"Creating $newDir")
+        newDir.mkdirs()
+        val serializer = new StandardResultSerializer(newDir,queryFile,timeSliceChoiceMethod, Some(prefix),Some(outputDirCounter))
+        outputDirCounter += 1
+        serializer
+      } else {
+        availableResultSerializers.remove(0)
+      }
+    }
+  }
+
+  def releaseResultSerializer(resultSerializer: StandardResultSerializer) = {
+    availableResultSerializers.synchronized{
+      availableResultSerializers += resultSerializer
+    }
+  }
 }

@@ -71,7 +71,7 @@ object TINDSearchMain extends App with StrictLogging{
               queryFiles.foreach(queryFile => {
                 logger.debug(s"Processing queryFile $queryFile")
                 val resultSerializer = new StandardResultSerializer(new File(targetRootDir), new File(queryFile), timeSliceChoiceMethod, Some(resultDirPrefix))
-                relaxedShiftedTemporalINDDiscovery.discoverForSample(new File(queryFile), numTimeSliceIndicesToTest, queryParameters, resultSerializer)
+                relaxedShiftedTemporalINDDiscovery.tINDSearch(new File(queryFile), numTimeSliceIndicesToTest, queryParameters, resultSerializer)
               })
             }
           }

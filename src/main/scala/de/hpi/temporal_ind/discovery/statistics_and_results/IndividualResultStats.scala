@@ -42,7 +42,7 @@ case class IndividualResultStats(queryNumber: Int,
     s"${indexParameters.omega}," +
     s"${queryParameters.absoluteEpsilon}," +
     s"${queryParameters.absDeltaInNanos}," +
-    s"${queryParameters.omega}" +
+    s"${queryParameters.omega}," +
     s"$indexSize"
 }
 

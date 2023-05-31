@@ -7,11 +7,11 @@ import de.hpi.temporal_ind.discovery.indexing.TimeSliceChoiceMethod.TimeSliceCho
 import java.io.{File, PrintWriter}
 import scala.collection.mutable.ArrayBuffer
 
-class StandardResultSerializer(targetDir:File,
-                               queryFile:File,
-                               timeSliceChoiceMethod:TimeSliceChoiceMethod.Value,
-                               prefix:Option[String]=None,
-                               subDirectoryNum:Option[Int]=None) extends ResultSerializer{
+class StandardResultSerializer(val targetDir:File,
+                               val queryFile:File,
+                               val timeSliceChoiceMethod:TimeSliceChoiceMethod.Value,
+                               val prefix:Option[String]=None,
+                               val subDirectoryNum:Option[Int]=None) extends ResultSerializer{
   def addTrueTemporalINDs(trueTemporalINDs: Iterable[EpsilonOmegaDeltaRelaxedTemporalIND[String]]) =
     trueTemporalINDs.foreach(c => c.toCandidateIDs.appendToWriter(resultPR))
 
