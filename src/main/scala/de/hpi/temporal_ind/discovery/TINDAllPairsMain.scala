@@ -1,5 +1,6 @@
 package de.hpi.temporal_ind.discovery
 
+import com.typesafe.scalalogging.StrictLogging
 import de.hpi.temporal_ind.data.GLOBAL_CONFIG
 import de.hpi.temporal_ind.data.ind.weight_functions.ConstantWeightFunction
 import de.hpi.temporal_ind.discovery.indexing.TimeSliceChoiceMethod
@@ -10,7 +11,7 @@ import de.hpi.temporal_ind.util.TimeUtil
 import java.io.File
 
 
-object TINDAllPairsMain extends App {
+object TINDAllPairsMain extends App with StrictLogging{
   println(s"Called with ${args.toIndexedSeq}")
   GLOBAL_CONFIG.setSettingsForDataSource("wikipedia")
   println(GLOBAL_CONFIG.totalTimeInDays)
@@ -31,19 +32,22 @@ object TINDAllPairsMain extends App {
   val queryAndIndexParameters = TINDParameters(absoluteExpectedEpsilon, maxDeltaInNanos, expectedOmega)
   val version = "0.99"
   val subsetValidation = true
-  val dataLoader = new InputDataManager(sourceFileBinary, None)
-  ParallelExecutionHandler.initContext(numThreadss)
-  val relaxedShiftedTemporalINDDiscovery = new TINDSearcher(dataLoader,
-    version,
-    subsetValidation,
-    timeSliceChoiceMethod,
-    numThreadss,
-    metaDataDir)
-  relaxedShiftedTemporalINDDiscovery.initData()
-  relaxedShiftedTemporalINDDiscovery.buildIndicesWithSeed(numTimeSliceIndices, seed, bloomFilterSize, queryAndIndexParameters)
-  val resultDirPrefix = s"allPair_${bloomFilterSize}_${seed}_${numThreadss}"
-  val resultSerializer = new StandardResultSerializer(new File(targetRootDir), new File(sourceFileBinary), timeSliceChoiceMethod, Some(resultDirPrefix))
-  relaxedShiftedTemporalINDDiscovery.tINDAllPairs(numTimeSliceIndices, queryAndIndexParameters, resultSerializer)
+  val (_,time) = TimeUtil.executionTimeInMS({
+    val dataLoader = new InputDataManager(sourceFileBinary, None)
+    ParallelExecutionHandler.initContext(numThreadss)
+    val relaxedShiftedTemporalINDDiscovery = new TINDSearcher(dataLoader,
+      version,
+      subsetValidation,
+      timeSliceChoiceMethod,
+      numThreadss,
+      metaDataDir)
+    relaxedShiftedTemporalINDDiscovery.initData()
+    relaxedShiftedTemporalINDDiscovery.buildIndicesWithSeed(numTimeSliceIndices, seed, bloomFilterSize, queryAndIndexParameters)
+    val resultDirPrefix = s"allPair_${bloomFilterSize}_${seed}_${numThreadss}"
+    val resultSerializer = new StandardResultSerializer(new File(targetRootDir), new File(sourceFileBinary), timeSliceChoiceMethod, Some(resultDirPrefix))
+    relaxedShiftedTemporalINDDiscovery.tINDAllPairs(numTimeSliceIndices, queryAndIndexParameters, resultSerializer)
+  })
+  logger.debug(s"Finished entire program in $time ms")
 
   //
   //            for (nThreads <- numThreadss) {
