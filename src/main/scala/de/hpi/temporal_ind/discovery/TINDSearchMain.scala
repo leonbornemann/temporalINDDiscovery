@@ -14,10 +14,10 @@ import java.io.File
 object TINDSearchMain extends App with StrictLogging{
 
   //0.00066 0,775743
-  (0 until 20).map(Math.pow(2,_)*0.00066).foreach(println(_))
   println(s"Called with ${args.toIndexedSeq}")
   GLOBAL_CONFIG.setSettingsForDataSource("wikipedia")
   println(GLOBAL_CONFIG.totalTimeInDays)
+  println(GLOBAL_CONFIG.totalTimeInNanos)
   val queryFiles = args(0).split(",").toIndexedSeq
   val targetRootDir = args(1)
   val sourceFileBinary = args(2)

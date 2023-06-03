@@ -235,54 +235,60 @@ class TINDSearcher(val dataManager:InputDataManager,
                          queryFileName: String,
                          queryNumber: Int,
                          sampleSize:Int) = {
-    val (candidatesRequiredValues, queryTimeRQValues) = multiLevelIndexStructure.queryRequiredValuesIndex(query, queryParameters)
-    val (curCandidates, queryTimeIndexTimeSlice) = multiLevelIndexStructure.queryTimeSliceIndices(query, queryParameters, candidatesRequiredValues)
-    val numCandidatesAfterIndexQuery = curCandidates.count() - 1
-    //validate curCandidates after all candidates have already been pruned
-    val subsetValidationTime = if (subsetValidation) {
-      multiLevelIndexStructure.validateContainments(query, queryParameters, curCandidates)
+    if(query.och.lifetimeIsBelowThreshold(queryParameters)){
+      //just skip this - it is contained in all others!
+      logger.debug(s"Skipping query $queryNumber, because it is contained in all other queries")
+      (0.0, 0.0, 0.0)
     } else {
-      0.0
+      val (candidatesRequiredValues, queryTimeRQValues) = multiLevelIndexStructure.queryRequiredValuesIndex(query, queryParameters)
+      val (curCandidates, queryTimeIndexTimeSlice) = multiLevelIndexStructure.queryTimeSliceIndices(query, queryParameters, candidatesRequiredValues)
+      val numCandidatesAfterIndexQuery = curCandidates.count() - 1
+      //validate curCandidates after all candidates have already been pruned
+      val subsetValidationTime = if (subsetValidation) {
+        multiLevelIndexStructure.validateContainments(query, queryParameters, curCandidates)
+      } else {
+        0.0
+      }
+      val candidateLineages = multiLevelIndexStructure
+        .bitVectorToColumns(curCandidates) //does not matter which index transforms it back because all have them in the same order
+        .filter(_ != query)
+      val numCandidatesAfterSubsetValidation = candidateLineages.size
+      val (validationTime, truePositiveCount) = validate(query, queryParameters, candidateLineages)
+      val validationStatRow = BasicQueryInfoRow(queryNumber,
+        queryFileName,
+        query.och.activeRevisionURLAtTimestamp(GLOBAL_CONFIG.lastInstant),
+        query.och.pageID,
+        query.och.tableId,
+        query.och.id)
+      curResultSerializer.addBasicQueryInfoRow(validationStatRow)
+      val avgVersionsPerTimeSliceWindow = multiLevelIndexStructure
+        .timeSliceIndices
+        .timeSliceIndices
+        .keys
+        .map { case (s, e) => query.och.versionsInWindow(s, e).size }
+        .sum / multiLevelIndexStructure.timeSliceIndices.timeSliceIndices.size.toDouble
+      val individualStatLine = IndividualResultStats(queryNumber,
+        queryFileName,
+        expectedQueryParameters,
+        queryParameters,
+        seed,
+        multiLevelIndexStructure.timeSliceIndices.timeSliceIndices.size,
+        queryTimeRQValues + queryTimeIndexTimeSlice,
+        subsetValidationTime,
+        validationTime,
+        numCandidatesAfterIndexQuery,
+        numCandidatesAfterSubsetValidation,
+        truePositiveCount,
+        avgVersionsPerTimeSliceWindow,
+        version,
+        sampleSize,
+        bloomfilterSize,
+        timeSliceChoiceMethod,
+        historiesEnriched.histories.size
+      )
+      curResultSerializer.addIndividualResultStats(individualStatLine)
+      (queryTimeRQValues + queryTimeIndexTimeSlice, subsetValidationTime, validationTime)
     }
-    val candidateLineages = multiLevelIndexStructure
-      .bitVectorToColumns(curCandidates) //does not matter which index transforms it back because all have them in the same order
-      .filter(_ != query)
-    val numCandidatesAfterSubsetValidation = candidateLineages.size
-    val (validationTime, truePositiveCount) = validate(query, queryParameters, candidateLineages)
-    val validationStatRow = BasicQueryInfoRow(queryNumber,
-      queryFileName,
-      query.och.activeRevisionURLAtTimestamp(GLOBAL_CONFIG.lastInstant),
-      query.och.pageID,
-      query.och.tableId,
-      query.och.id)
-    curResultSerializer.addBasicQueryInfoRow(validationStatRow)
-    val avgVersionsPerTimeSliceWindow = multiLevelIndexStructure
-      .timeSliceIndices
-      .timeSliceIndices
-      .keys
-      .map { case (s, e) => query.och.versionsInWindow(s, e).size }
-      .sum / multiLevelIndexStructure.timeSliceIndices.timeSliceIndices.size.toDouble
-    val individualStatLine = IndividualResultStats(queryNumber,
-      queryFileName,
-      expectedQueryParameters,
-      queryParameters,
-      seed,
-      multiLevelIndexStructure.timeSliceIndices.timeSliceIndices.size,
-      queryTimeRQValues + queryTimeIndexTimeSlice,
-      subsetValidationTime,
-      validationTime,
-      numCandidatesAfterIndexQuery,
-      numCandidatesAfterSubsetValidation,
-      truePositiveCount,
-      avgVersionsPerTimeSliceWindow,
-      version,
-      sampleSize,
-      bloomfilterSize,
-      timeSliceChoiceMethod,
-      historiesEnriched.histories.size
-    )
-    curResultSerializer.addIndividualResultStats(individualStatLine)
-    (queryTimeRQValues + queryTimeIndexTimeSlice, subsetValidationTime, validationTime)
   }
 
   def queryAll(sample:IndexedSeq[(EnrichedColumnHistory,Int)],

@@ -3,10 +3,12 @@ package de.hpi.temporal_ind.data.attribute_history.data.original
 import de.hpi.temporal_ind.data.GLOBAL_CONFIG
 import de.hpi.temporal_ind.data.attribute_history.data.{AbstractColumnVersion, AbstractOrderedColumnHistory, ColumnHistoryID}
 import de.hpi.temporal_ind.data.column.data.original.{KryoSerializableColumnHistory, KryoSerializableColumnVersion}
+import de.hpi.temporal_ind.discovery.TINDParameters
 import de.hpi.temporal_ind.discovery.statistics_and_results.TimeSliceStats
 
 import java.io.File
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 import java.util
 import scala.collection.mutable
 import scala.jdk.CollectionConverters.{ListHasAsScala, SeqHasAsJava}
@@ -16,6 +18,25 @@ class OrderedColumnHistory(val id: String,
                            val pageID: String,
                            val pageTitle: String,
                            val history: OrderedColumnVersionList) extends AbstractOrderedColumnHistory[String] with Serializable{
+  def lifetimeIsBelowThreshold(queryParameters: TINDParameters): Boolean = {
+    val withIndex = history.versionsSorted
+      .zipWithIndex
+    val weights = withIndex.map { case (cv, i) => {
+      if (!cv.isDelete) {
+        val end = if (i != withIndex.size - 1)
+          withIndex(i + 1)._1.timestamp
+        else {
+          GLOBAL_CONFIG.lastInstant
+        }
+        queryParameters.omega.weight(cv.timestamp,end)
+      } else {
+        0
+      }
+    }
+    }
+    weights.sum < queryParameters.absoluteEpsilon
+  }
+
   def columnHistoryID: ColumnHistoryID = ColumnHistoryID(pageID, tableId, id)
 
   def toColumnHistory = {
