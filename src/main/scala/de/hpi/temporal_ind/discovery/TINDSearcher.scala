@@ -253,7 +253,7 @@ class TINDSearcher(val dataManager:InputDataManager,
         .bitVectorToColumns(curCandidates) //does not matter which index transforms it back because all have them in the same order
         .filter(_ != query)
       val numCandidatesAfterSubsetValidation = candidateLineages.size
-      val (validationTime, truePositiveCount) = validate(query, queryParameters, candidateLineages)
+      val (validationTime, truePositiveCount) = validate(query, queryParameters, candidateLineages,curResultSerializer)
       val validationStatRow = BasicQueryInfoRow(queryNumber,
         queryFileName,
         query.och.activeRevisionURLAtTimestamp(GLOBAL_CONFIG.lastInstant),
@@ -332,7 +332,7 @@ class TINDSearcher(val dataManager:InputDataManager,
   }
 
 
-  private def validate(query: EnrichedColumnHistory,queryParamters:TINDParameters, actualCandidates: ArrayBuffer[EnrichedColumnHistory]) = {
+  private def validate(query: EnrichedColumnHistory,queryParamters:TINDParameters, actualCandidates: ArrayBuffer[EnrichedColumnHistory],curResultSerializer: ResultSerializer) = {
     val (trueTemporalINDs, validationTime) = TimeUtil.executionTimeInMS(validateCandidates(query,queryParamters,actualCandidates))
     val truePositiveCount = trueTemporalINDs.size
     curResultSerializer.addTrueTemporalINDs(trueTemporalINDs)
