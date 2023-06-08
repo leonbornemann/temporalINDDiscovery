@@ -39,14 +39,9 @@ class TINDSearcher(val dataManager:InputDataManager,
                    var nThreads:Int,
                    val metaDir:File,
                    val reverseSearch:Boolean) extends StrictLogging{
-  def useSubsetOfData(inputSizeFactor: Double) = {
-    assert(inputSizeFactor <= 1.0)
-    this.historiesEnriched = new ColumnHistoryStorage(historiesEnrichedOriginal.histories.take({
-      if(inputSizeFactor!=1.0)
-        (inputSizeFactor*historiesEnrichedOriginal.histories.size).toInt
-      else
-        historiesEnrichedOriginal.histories.size
-    }))
+  def useSubsetOfData(inputSizeFactor: Int) = {
+    assert(inputSizeFactor <= historiesEnriched.histories.size)
+    this.historiesEnriched = new ColumnHistoryStorage(historiesEnrichedOriginal.histories.take(inputSizeFactor))
     // data loading time is now longer correct now, but that does not matter for the query use-case
   }
 

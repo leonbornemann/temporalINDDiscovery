@@ -31,7 +31,7 @@ object TINDSearchMain extends App with StrictLogging{
   val metaDataDir = new File(args(10))
   val indexEpsilonFactors = args(11).split(",").map(_.toInt).toIndexedSeq
   val indexDeltaFactors = args(12).split(",").map(_.toInt).toIndexedSeq
-  val inputSizeFactors = args(13).split(",").map(_.toDouble).toIndexedSeq
+  val inputSizes = args(13).split(",").map(_.toInt).toIndexedSeq
   val reverseSearch = args(14).toBoolean
   metaDataDir.mkdirs()
 
@@ -69,13 +69,13 @@ object TINDSearchMain extends App with StrictLogging{
               val indexDelta = maxDeltaInNanos * deltaFactor
               val indexEpsilon = absoluteExpectedEpsilon * epsilonFactor
               val indexParameter = TINDParameters(indexEpsilon, indexDelta, expectedOmega)
-              for (inputSizeFactor <- inputSizeFactors) {
-                logger.debug(s" Running inputSizeFactor $inputSizeFactor")
-                relaxedShiftedTemporalINDDiscovery.useSubsetOfData(inputSizeFactor)
+              for (inputSize <- inputSizes) {
+                logger.debug(s" Running inputSize $inputSize")
+                relaxedShiftedTemporalINDDiscovery.useSubsetOfData(inputSize)
                 relaxedShiftedTemporalINDDiscovery.buildIndicesWithSeed(numTimeSliceIndicesToTest.max, seed, bloomFilterSize, indexParameter)
                 for (nThreads <- numThreadss) {
                   logger.debug(s" Running nThreads $nThreads")
-                  val resultDirPrefix = s"${bloomFilterSize}_${seed}_${epsilonFactor}_${deltaFactor}_${nThreads}_${inputSizeFactor}_${relativeEpsilon}_$maxDeltaWhileIndexing"
+                  val resultDirPrefix = s"${bloomFilterSize}_${seed}_${epsilonFactor}_${deltaFactor}_${nThreads}_${inputSize}_${relativeEpsilon}_$maxDeltaWhileIndexing"
                   relaxedShiftedTemporalINDDiscovery.nThreads = nThreads
                   ParallelExecutionHandler.initContext(nThreads)
                   queryFiles.foreach(queryFile => {
