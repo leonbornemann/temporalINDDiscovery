@@ -1,11 +1,13 @@
 package de.hpi.temporal_ind.oneshot
 
+import de.hpi.temporal_ind.data.GLOBAL_CONFIG
 import de.hpi.temporal_ind.discovery.input_data.InputDataManager
 
 import java.io.PrintWriter
 
 object OneshotMain extends App {
-
+  GLOBAL_CONFIG.setSettingsForDataSource("wikipedia")
+  val a = GLOBAL_CONFIG.totalTimeInDays
   println((0 until 10).map(i => 0.00066*(i+1)).mkString(","))
   val dataManager = new InputDataManager("/home/leon/data/temporalINDDiscovery/finalExperiments/columnHistories/binaryTestSample.bin")
   val pr = new PrintWriter("/home/leon/data/temporalINDDiscovery/finalExperiments/columnHistories/queries/testQuery.jsonl")

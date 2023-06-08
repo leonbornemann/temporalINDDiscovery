@@ -7,8 +7,10 @@ import de.hpi.temporal_ind.util.TimeUtil
 import de.metanome.algorithms.many.bitvectors.BitVector
 import de.metanome.algorithms.many.{Column, INDDetectionWorkerQuery, MANY}
 
+import java.time.Instant
 import java.util
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 
 /***
  *
@@ -19,6 +21,9 @@ import scala.collection.JavaConverters._
 class BloomfilterIndex(input: IndexedSeq[EnrichedColumnHistory],
                        bloomfilterSize:Int,
                        generateValueSetToIndex:(EnrichedColumnHistory => collection.Set[String])) extends StrictLogging{
+
+
+
   val outFile = "/home/leon/data/temporalINDDiscovery/wikipedia/discovery/testOutput/test.txt"
   val many = new MANY()
 
@@ -86,8 +91,7 @@ class BloomfilterIndex(input: IndexedSeq[EnrichedColumnHistory],
   def validateContainmentOfSets(queryValueSets: Seq[ValuesInTimeWindow],
                                 queryParameters: TINDParameters,
                                 res: BitVector[_],
-                                candidateToViolationMap:Option[collection.mutable.HashMap[Int,Double]]=None
-                               ) = {
+                                candidateToViolationMap:Option[collection.mutable.HashMap[Int,Double]]=None) = {
     var curColumnIndex = res.next(0)
     val toSetTo0 = collection.mutable.ArrayBuffer[Int]()
     if(candidateToViolationMap.isEmpty){
@@ -115,10 +119,51 @@ class BloomfilterIndex(input: IndexedSeq[EnrichedColumnHistory],
     toSetTo0.foreach(i => res.clear(i))
   }
 
+  def validateContainmentOfSetsReverseQueryRequiredValues(queryValueSet: ValuesInTimeWindow,
+                                                          queryParameters: TINDParameters,
+                                                          res: BitVector[_]) = {
+    var curColumnIndex = res.next(0)
+    val toSetTo0 = collection.mutable.ArrayBuffer[Int]()
+    while (curColumnIndex != -1) {
+      val curCol = input(curColumnIndex)
+      val indexSet = curCol.requiredValues(queryParameters)
+      if(!indexSet.subsetOf(queryValueSet.values)){
+        toSetTo0 += curColumnIndex
+      }
+      curColumnIndex = res.next(curColumnIndex)
+    }
+    toSetTo0.foreach(i => res.clear(i))
+  }
+
+  def validateContainmentOfSetsReverseSearchTimeSliceIndex(queryValueSet: ValuesInTimeWindow,
+                                                           queryParameters: TINDParameters,
+                                                           res: BitVector[_],
+                                                           candidateToViolationMap: Some[mutable.HashMap[Int, Double]]) = {
+    var curColumnIndex = res.next(0)
+    val toSetTo0 = collection.mutable.ArrayBuffer[Int]()
+    while (curColumnIndex != -1) {
+      val curCol = input(curColumnIndex)
+      val indexSets = curCol.getValueSetsInWindow(queryValueSet.beginInclusive,queryValueSet.endExclusive)
+        .iterator
+      while(indexSets.hasNext && candidateToViolationMap.get.getOrElse(curColumnIndex, 0.0) <=queryParameters.absoluteEpsilon) {
+        val indexedSet = indexSets.next()
+        if(!indexedSet.values.subsetOf(queryValueSet.values)){
+          val newViolation = candidateToViolationMap.get.getOrElse(curColumnIndex, 0.0) + queryParameters.omega.weight(indexedSet.beginInclusive, indexedSet.endExclusive)
+          candidateToViolationMap.get(curColumnIndex) = newViolation
+        }
+      }
+      if(candidateToViolationMap.get.getOrElse(curColumnIndex, 0.0) > queryParameters.absoluteEpsilon){
+        toSetTo0 += curColumnIndex
+      }
+      curColumnIndex = res.next(curColumnIndex)
+    }
+    toSetTo0.foreach(i => res.clear(i))
+  }
+
   private def noEarlyAbortIndexQuery(queryValueSet: ValuesInTimeWindow,
                                      preFilteredCandidates:Option[BitVector[_]] = None,
                                      previousResult:Option[BitVector[_]]) = {
-    var resNew = executeQuery(preFilteredCandidates, queryValueSet)
+    var resNew = executeQuery(preFilteredCandidates, queryValueSet, false)
     if (previousResult.isEmpty) {
       resNew
     } else {
@@ -144,7 +189,7 @@ class BloomfilterIndex(input: IndexedSeq[EnrichedColumnHistory],
         res = Some(preFilteredCandidates.get.copy())
         queryValueSets.foreach { queryValueSet =>
           val queryWeight = queryParameters.omega.weight(queryValueSet.beginInclusive, queryValueSet.endExclusive)
-          val resNew = executeQuery(preFilteredCandidates, queryValueSet)
+          val resNew = executeQuery(preFilteredCandidates, queryValueSet,false)
           val toTrack = res.get.copy().and(resNew.copy().flip())
           val it = iterateThroughSetBitsOfBitVector(toTrack)
           it.foreach(curBit => {
@@ -167,13 +212,58 @@ class BloomfilterIndex(input: IndexedSeq[EnrichedColumnHistory],
     (res.get,queryTime,0.0)
   }
 
-  private def executeQuery(preFilteredCandidates: Option[BitVector[_]], queryValueSet: ValuesInTimeWindow) = {
+  def getReverseQueryViolationWeight(curBit: Int, beginInclusive: Instant, endExclusive: Instant, queryParameters: TINDParameters) = {
+    val column = input(curBit)
+    val versions = column.getValueSetsInWindow(beginInclusive,endExclusive)
+    versions.map(v => queryParameters.omega.weight(v.beginInclusive,v.endExclusive)).min
+  }
+
+  def queryWithBitVectorResultReverseSearch(queryValueSet: ValuesInTimeWindow,
+                                            queryParameters: TINDParameters,
+                                            preFilteredCandidates: Option[BitVector[_]] = None,
+                                            candidateToViolationMap: Option[collection.mutable.HashMap[Int, Double]] = None) = {
+    var res: Option[BitVector[_]] = None
+    val (_, queryTime) = TimeUtil.executionTimeInMS({
+      res = Some(preFilteredCandidates.get.copy())
+      val resNew = executeQuery(preFilteredCandidates, queryValueSet, true)
+      val toTrack = res.get.copy().and(resNew.copy().flip())
+      val it = iterateThroughSetBitsOfBitVector(toTrack)
+      it.foreach(curBit => {
+        val prev = candidateToViolationMap.get.getOrElse(curBit, 0.0)
+        val minViolation = getReverseQueryViolationWeight(curBit,queryValueSet.beginInclusive,queryValueSet.endExclusive,queryParameters)
+        if (prev + minViolation <= queryParameters.absoluteEpsilon) {
+          //add new violation score
+          candidateToViolationMap.get(curBit) = prev + minViolation
+        } else {
+          //we can prune,, remove the bit from the map and clear the bit in the in the original result, so it will never show up again
+          candidateToViolationMap.get.remove(curBit)
+          res.get.clear(curBit)
+        }
+      })
+    })
+    if (res.isEmpty)
+      println()
+    (res.get, queryTime, 0.0)
+  }
+
+  def queryWithBitVectorResultReverseSearchRequiredValues(queryValueSets: IndexedSeq[ValuesInTimeWindow],
+                                            queryParameters: TINDParameters) = {
+    var res: BitVector[_] = null
+    val (_, queryTime) = TimeUtil.executionTimeInMS({
+      assert(queryValueSets.size==1)
+      res = executeQuery(None, queryValueSets.head, true)
+    })
+    (res, queryTime, 0.0)
+  }
+
+  private def executeQuery(preFilteredCandidates: Option[BitVector[_]], queryValueSet: ValuesInTimeWindow, reverseSearch: Boolean): BitVector[_] = {
     val querySig = many.applyBloomfilter(queryValueSet.values.asJava)
     val worker = new INDDetectionWorkerQuery(many, querySig, 0)
     val resNew = if (preFilteredCandidates.isDefined)
-      worker.executeQuery(preFilteredCandidates.get)
+      worker.executeQuery(preFilteredCandidates.get,reverseSearch) //
     else {
-      worker.executeQuery()
+      worker.executeQuery(reverseSearch)
+      //TODO - implement in MANY
     }
     resNew
   }
@@ -190,3 +280,4 @@ class BloomfilterIndex(input: IndexedSeq[EnrichedColumnHistory],
 //  pr.close()
 //  assert(false)
 }
+

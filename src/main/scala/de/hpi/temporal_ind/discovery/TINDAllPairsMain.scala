@@ -25,6 +25,7 @@ object TINDAllPairsMain extends App with StrictLogging{
   val numTimeSliceIndices = args(7).toInt
   val numThreadss = args(8).toInt
   val metaDataDir = new File(args(9))
+  val useReverseSearch = args(10).toBoolean
   metaDataDir.mkdirs()
   val absoluteExpectedEpsilon = relativeEpsilon * GLOBAL_CONFIG.totalTimeInNanos
   val expectedOmega = new ConstantWeightFunction()
@@ -40,7 +41,8 @@ object TINDAllPairsMain extends App with StrictLogging{
       subsetValidation,
       timeSliceChoiceMethod,
       numThreadss,
-      metaDataDir)
+      metaDataDir,
+      useReverseSearch)
     relaxedShiftedTemporalINDDiscovery.initData()
     relaxedShiftedTemporalINDDiscovery.buildIndicesWithSeed(numTimeSliceIndices, seed, bloomFilterSize, queryAndIndexParameters)
     val resultDirPrefix = s"allPair_${bloomFilterSize}_${seed}_${numThreadss}"

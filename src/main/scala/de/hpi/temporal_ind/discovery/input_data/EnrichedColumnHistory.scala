@@ -24,4 +24,16 @@ class EnrichedColumnHistory(val och: OrderedColumnHistory) {
   }
   def allValues = och.allValues
 
+  def getValueSetsInWindow(begin: Instant, end: Instant) = {
+    val withIndex = och.versionsInWindowNew(begin, end)
+      .toIndexedSeq
+      .zipWithIndex
+    val queryValueSets = withIndex
+      .map { case ((begin, version), i) =>
+        val curEnd = if (i == withIndex.size - 1) end else withIndex(i + 1)._1._1
+        new ValuesInTimeWindow(begin, curEnd, version.values)
+      }
+    queryValueSets
+  }
+
 }

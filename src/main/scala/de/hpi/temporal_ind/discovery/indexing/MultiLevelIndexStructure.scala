@@ -16,11 +16,18 @@ class MultiLevelIndexStructure(val indexEntireValueset: BloomfilterIndex,
   /***
    * Validation happens in-place!
    */
-  def validateContainments(query: EnrichedColumnHistory, queryParameters: TINDParameters, candidates: BitVector[_]) = {
+  def validateContainments(query: EnrichedColumnHistory, queryParameters: TINDParameters, candidates: BitVector[_],reverseSearch:Boolean) = {
     val (_, subsetValidationTime) = TimeUtil.executionTimeInMS({
-      val requiredValues = new ValuesInTimeWindow(GLOBAL_CONFIG.earliestInstant,GLOBAL_CONFIG.lastInstant,query.requiredValues(queryParameters))
-      indexEntireValueset.validateContainmentOfSets(IndexedSeq(requiredValues),queryParameters, candidates)
-      timeSliceIndices.validateContainments(query,queryParameters, candidates)
+      if(!reverseSearch){
+        val requiredValues = new ValuesInTimeWindow(GLOBAL_CONFIG.earliestInstant, GLOBAL_CONFIG.lastInstant, query.requiredValues(queryParameters))
+        indexEntireValueset.validateContainmentOfSets(IndexedSeq(requiredValues), queryParameters, candidates)
+        timeSliceIndices.validateContainments(query, queryParameters, candidates)
+      } else {
+        val allValues = new ValuesInTimeWindow(GLOBAL_CONFIG.earliestInstant, GLOBAL_CONFIG.lastInstant, query.allValues)
+        indexEntireValueset.validateContainmentOfSetsReverseQueryRequiredValues(allValues, queryParameters, candidates)
+        timeSliceIndices.validateContainmentsReverseQuery(query, queryParameters, candidates)
+      }
+
     })
     subsetValidationTime
   }
@@ -32,16 +39,23 @@ class MultiLevelIndexStructure(val indexEntireValueset: BloomfilterIndex,
     timeSliceIndices.limitTimeSliceIndices(numTimeSliceIndices),
     requiredValuesIndexBuildTime)
 
-  def queryRequiredValuesIndex(query: EnrichedColumnHistory,queryParameters:TINDParameters) = {
-    val requiredValues = new ValuesInTimeWindow(GLOBAL_CONFIG.earliestInstant,GLOBAL_CONFIG.lastInstant,query.requiredValues(queryParameters))
-    val (candidatesRequiredValues, queryTime, _) = indexEntireValueset.queryWithBitVectorResult(IndexedSeq(requiredValues),
-      queryParameters,
-      None)
-    (candidatesRequiredValues, queryTime)
+  def queryRequiredValuesIndex(query: EnrichedColumnHistory,queryParameters:TINDParameters,reverseSearch:Boolean) = {
+    if(!reverseSearch){
+      val queryValueSet = new ValuesInTimeWindow(GLOBAL_CONFIG.earliestInstant, GLOBAL_CONFIG.lastInstant, query.requiredValues(queryParameters))
+      val (candidatesRequiredValues, queryTime, _) = indexEntireValueset.queryWithBitVectorResult(IndexedSeq(queryValueSet),
+        queryParameters,
+        None)
+      (candidatesRequiredValues, queryTime)
+    } else {
+      val queryValueSet = new ValuesInTimeWindow(GLOBAL_CONFIG.earliestInstant, GLOBAL_CONFIG.lastInstant, query.allValues)
+      val (candidatesRequiredValues, queryTime, _) = indexEntireValueset.queryWithBitVectorResultReverseSearchRequiredValues(IndexedSeq(queryValueSet),
+        queryParameters)
+      (candidatesRequiredValues, queryTime)
+    }
   }
 
-  def queryTimeSliceIndices(query: EnrichedColumnHistory,queryParamters:TINDParameters,initialCandidates: BitVector[_]) = {
-    timeSliceIndices.executeQuery(query,queryParamters,initialCandidates)
+  def queryTimeSliceIndices(query: EnrichedColumnHistory,queryParamters:TINDParameters,initialCandidates: BitVector[_],reverseSearch:Boolean) = {
+    timeSliceIndices.executeQuery(query,queryParamters,initialCandidates,reverseSearch)
 
   }
 

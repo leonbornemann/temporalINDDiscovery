@@ -37,7 +37,8 @@ class TINDSearcher(val dataManager:InputDataManager,
                    val subsetValidation:Boolean,
                    val timeSliceChoiceMethod:TimeSliceChoiceMethod.Value,
                    var nThreads:Int,
-                   val metaDir:File) extends StrictLogging{
+                   val metaDir:File,
+                   val reverseSearch:Boolean) extends StrictLogging{
   def useSubsetOfData(inputSizeFactor: Double) = {
     assert(inputSizeFactor <= 1.0)
     this.historiesEnriched = new ColumnHistoryStorage(historiesEnrichedOriginal.histories.take({
@@ -86,10 +87,10 @@ class TINDSearcher(val dataManager:InputDataManager,
   }
 
   def getRequiredValuesetIndex(historiesEnriched: ColumnHistoryStorage) = {
+    val func = if(!reverseSearch) (e:EnrichedColumnHistory) => e.allValues else (e:EnrichedColumnHistory) => e.requiredValues(expectedQueryParameters)
     new BloomfilterIndex(historiesEnriched.histories,
       bloomfilterSize,
-      (e:EnrichedColumnHistory) => e.allValues,
-      //(e:EnrichedColumnHistory) => Seq(new ValuesInTimeWindow(GLOBAL_CONFIG.earliestInstant,GLOBAL_CONFIG.lastInstant,e.requiredValues)),
+      func
       )
   }
 
@@ -98,8 +99,7 @@ class TINDSearcher(val dataManager:InputDataManager,
     val (beginDelta,endDelta) = (lower.minusNanos(expectedQueryParameters.absDeltaInNanos),upper.plusNanos(expectedQueryParameters.absDeltaInNanos))
     new BloomfilterIndex(historiesEnriched.histories,
       size,
-      (e:EnrichedColumnHistory) => e.valueSetInWindow(beginDelta,endDelta),
-      //(e:EnrichedColumnHistory) => e.och.versionsInWindowNew(lower,upper).map(t => new ValuesInTimeWindow(lower,upper,t._2.values)).toSeq,
+      (e:EnrichedColumnHistory) => e.valueSetInWindow(beginDelta,endDelta)
       )
   }
 
@@ -110,7 +110,9 @@ class TINDSearcher(val dataManager:InputDataManager,
     if(candidatesRequiredValues.size<batchSize || nThreads==1 || allPairsMode){
       val res = candidatesRequiredValues.map(refCandidate => {
         //new TemporalShifted
-        new EpsilonOmegaDeltaRelaxedTemporalIND[String](query.och, refCandidate.och, queryParameters, ValidationVariant.FULL_TIME_PERIOD)
+        val lhs = if(!reverseSearch) query.och else refCandidate.och
+        val rhs = if(!reverseSearch) refCandidate.och else query.och
+        new EpsilonOmegaDeltaRelaxedTemporalIND[String](lhs, rhs, queryParameters, ValidationVariant.FULL_TIME_PERIOD)
       }).filter(_.isValid)
       res
     } else {
@@ -119,7 +121,9 @@ class TINDSearcher(val dataManager:InputDataManager,
       val handler = new ParallelExecutionHandler(batches.size)
       val futures = batches.map {batch =>
         val f = handler.addAsFuture(batch.map(refCandidate => {
-          new EpsilonOmegaDeltaRelaxedTemporalIND[String](query.och, refCandidate.och, queryParameters, ValidationVariant.FULL_TIME_PERIOD)
+          val lhs = if (!reverseSearch) query.och else refCandidate.och
+          val rhs = if (!reverseSearch) refCandidate.och else query.och
+          new EpsilonOmegaDeltaRelaxedTemporalIND[String](lhs, rhs, queryParameters, ValidationVariant.FULL_TIME_PERIOD)
         }).filter(_.isValid))
         f
       }
@@ -207,7 +211,7 @@ class TINDSearcher(val dataManager:InputDataManager,
       logger.debug(s"Processing numTimeSliceIndices=$numTimeSliceIndices")
       val curIndex = fullMultiIndexStructure.limitTimeSliceIndices(numTimeSliceIndices)
       val (totalQueryTime, totalSubsetValidationTime, totalTemporalValidationTime) = queryAll(queries,queryIDsFile.getOrElse(new File("allPairs")).getName, curIndex,queryParameters)
-      val totalResultSTatsLine = TotalResultStats(version,expectedQueryParameters,queryParameters, seed,queryIDsFile.getOrElse(new File("allPairs")).getName, queries.size, bloomfilterSize, timeSliceChoiceMethod, numTimeSliceIndices, dataLoadingTimeMS, curIndex.requiredValuesIndexBuildTime, curIndex.totalTimeSliceIndexBuildTime, totalQueryTime, totalSubsetValidationTime, totalTemporalValidationTime,historiesEnriched.histories.size)
+      val totalResultSTatsLine = TotalResultStats(version,expectedQueryParameters,queryParameters, seed,queryIDsFile.getOrElse(new File("allPairs")).getName, queries.size, bloomfilterSize, timeSliceChoiceMethod, numTimeSliceIndices, dataLoadingTimeMS, curIndex.requiredValuesIndexBuildTime, curIndex.totalTimeSliceIndexBuildTime, totalQueryTime, totalSubsetValidationTime, totalTemporalValidationTime,historiesEnriched.histories.size,reverseSearch)
       curResultSerializer.addTotalResultStats(totalResultSTatsLine)
     })
     curResultSerializer.closeAll()
@@ -240,12 +244,12 @@ class TINDSearcher(val dataManager:InputDataManager,
       logger.debug(s"Skipping query $queryNumber, because it is contained in all other queries")
       (0.0, 0.0, 0.0)
     } else {
-      val (candidatesRequiredValues, queryTimeRQValues) = multiLevelIndexStructure.queryRequiredValuesIndex(query, queryParameters)
-      val (curCandidates, queryTimeIndexTimeSlice) = multiLevelIndexStructure.queryTimeSliceIndices(query, queryParameters, candidatesRequiredValues)
+      val (candidatesRequiredValues, queryTimeRQValues) = multiLevelIndexStructure.queryRequiredValuesIndex(query, queryParameters,reverseSearch)
+      val (curCandidates, queryTimeIndexTimeSlice) = multiLevelIndexStructure.queryTimeSliceIndices(query, queryParameters, candidatesRequiredValues,reverseSearch)
       val numCandidatesAfterIndexQuery = curCandidates.count() - 1
       //validate curCandidates after all candidates have already been pruned
       val subsetValidationTime = if (subsetValidation) {
-        multiLevelIndexStructure.validateContainments(query, queryParameters, curCandidates)
+        multiLevelIndexStructure.validateContainments(query, queryParameters, curCandidates,reverseSearch)
       } else {
         0.0
       }
@@ -284,7 +288,8 @@ class TINDSearcher(val dataManager:InputDataManager,
         sampleSize,
         bloomfilterSize,
         timeSliceChoiceMethod,
-        historiesEnriched.histories.size
+        historiesEnriched.histories.size,
+        reverseSearch
       )
       curResultSerializer.addIndividualResultStats(individualStatLine)
       (queryTimeRQValues + queryTimeIndexTimeSlice, subsetValidationTime, validationTime)

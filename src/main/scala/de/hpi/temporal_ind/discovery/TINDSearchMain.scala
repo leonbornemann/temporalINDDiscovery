@@ -32,6 +32,7 @@ object TINDSearchMain extends App with StrictLogging{
   val indexEpsilonFactors = args(11).split(",").map(_.toInt).toIndexedSeq
   val indexDeltaFactors = args(12).split(",").map(_.toInt).toIndexedSeq
   val inputSizeFactors = args(13).split(",").map(_.toDouble).toIndexedSeq
+  val reverseSearch = args(14).toBoolean
   metaDataDir.mkdirs()
 
   val version = "0.99"
@@ -45,7 +46,8 @@ object TINDSearchMain extends App with StrictLogging{
     subsetValidation,
     timeSliceChoiceMethod,
     numThreadss(0),
-    metaDataDir)
+    metaDataDir,
+    reverseSearch)
   relaxedShiftedTemporalINDDiscovery.initData()
   ParallelExecutionHandler.initContext(numThreadss.max)
   for(bloomFilterSize <- bloomFilterSizes){

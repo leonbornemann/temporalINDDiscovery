@@ -20,7 +20,8 @@ case class IndividualResultStats(queryNumber: Int,
                                  sampleSize: Int,
                                    bloomFilterSize: Int,
                                  timeSliceChoiceMethod:TimeSliceChoiceMethod.Value,
-                                 indexSize:Int) {
+                                 indexSize:Int,
+                                 reverseSearch:Boolean) {
 
   def toCSVLine = s"$queryNumber," +
     s"$queryFileName," +
@@ -43,7 +44,8 @@ case class IndividualResultStats(queryNumber: Int,
     s"${queryParameters.absoluteEpsilon}," +
     s"${queryParameters.absDeltaInNanos}," +
     s"${queryParameters.omega}," +
-    s"$indexSize"
+    s"$indexSize," +
+    s"$reverseSearch"
 }
 
 object IndividualResultStats {
@@ -68,5 +70,6 @@ object IndividualResultStats {
     "queryEpsilon," +
     "queryDelta," +
     "queryOmega," +
-    "indexSize"
+    "indexSize,+" +
+    "reverseSearch"
 }
