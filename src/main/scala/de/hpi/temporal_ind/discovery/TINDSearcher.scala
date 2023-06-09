@@ -8,7 +8,7 @@ import de.hpi.temporal_ind.data.attribute_history.data.{AbstractColumnVersion, C
 import de.hpi.temporal_ind.data.attribute_history.data.original.{ColumnHistory, OrderedColumnHistory}
 import de.hpi.temporal_ind.data.column.data.original.KryoSerializableColumnHistory
 import de.hpi.temporal_ind.data.ind.weight_functions.ConstantWeightFunction
-import de.hpi.temporal_ind.data.ind.{EpsilonDeltaRelaxedTemporalIND, EpsilonOmegaDeltaRelaxedTemporalIND, ValidationVariant}
+import de.hpi.temporal_ind.data.ind.{EpsilonDeltaRelaxedTemporalIND, EpsilonOmegaDeltaRelaxedTemporalIND, INDCandidateIDs, ValidationVariant}
 import de.hpi.temporal_ind.discovery.indexing.time_slice_choice.{DynamicWeightedRandomTimeSliceChooser, TimeSliceChooser, WeightedRandomTimeSliceChooser, WeightedShuffledTimestamps}
 import de.hpi.temporal_ind.discovery.indexing.{BloomfilterIndex, MultiLevelIndexStructure, MultiTimeSliceIndexStructure, TimeSliceChoiceMethod}
 import de.hpi.temporal_ind.discovery.input_data.{ColumnHistoryStorage, EnrichedColumnHistory, InputDataManager, ValuesInTimeWindow}

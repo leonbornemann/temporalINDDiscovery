@@ -14,18 +14,18 @@ import de.hpi.temporal_ind.util.TimeUtil
 import java.io.File
 
 object DiscrepancyExplorationMain extends App {
-//  ParallelExecutionHandler.initContext(12)
-//  GLOBAL_CONFIG.setSettingsForDataSource("wikipedia")
-//  val path1 = "/home/leon/data/temporalINDDiscovery/finalExperiments/results/search/-4984250756083210152_sampleQueries_0.jsonl_4096_RANDOM/discoveredINDs.jsonl"
-//  val path2 = "/home/leon/data/temporalINDDiscovery/finalExperiments/results/search/-4984250756083210152_sampleQueries_0.jsonl_4096_WEIGHTED_RANDOM/discoveredINDs.jsonl"
-//  val candidatesOld = INDCandidateIDs.fromJsonObjectPerLineFile(path1)
-//    .toSet
-//  val candidatesNew = INDCandidateIDs.fromJsonObjectPerLineFile(path2)
-//    .toSet
-//  println("in new but not in old",candidatesNew.diff(candidatesOld).size)
-//  candidatesNew.diff(candidatesOld).take(10).foreach(println)
-//  println("in old but not in new",candidatesOld.diff(candidatesNew).size)
-//  candidatesOld.diff(candidatesNew).take(10).foreach(println)
+  ParallelExecutionHandler.initContext(12)
+  GLOBAL_CONFIG.setSettingsForDataSource("wikipedia")
+  val path1 = "/home/leon/data/temporalINDDiscovery/finalExperiments/reverseSearchNew"
+  val path2 = "/home/leon/data/temporalINDDiscovery/finalExperiments/reverseSearcPrev"
+  val candidatesOld = INDCandidateIDs.fromJsonObjectPerLineFile(path1)
+    .toSet
+  val candidatesNew = INDCandidateIDs.fromJsonObjectPerLineFile(path2)
+    .toSet
+  println("in new but not in old",candidatesNew.diff(candidatesOld).size)
+  candidatesNew.diff(candidatesOld).take(10).foreach(println)
+  println("in old but not in new",candidatesOld.diff(candidatesNew).size)
+  candidatesOld.diff(candidatesNew).take(10).foreach(println)
 //  val f1 = IndexedColumnHistories.getFileForID(new File("/home/leon/data/temporalINDDiscovery/wikipedia/columnHistories"),49550066L)
 //  val f2 = IndexedColumnHistories.getFileForID(new File("/home/leon/data/temporalINDDiscovery/wikipedia/columnHistories"),37099048L)
 //  println(f1)
