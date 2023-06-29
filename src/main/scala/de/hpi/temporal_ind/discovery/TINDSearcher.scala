@@ -143,7 +143,7 @@ class TINDSearcher(val dataManager:InputDataManager,
 
   def buildTimeSliceIndices(historiesEnriched: ColumnHistoryStorage,indicesToBuild:Int) = {
     val weightedShuffleFile = WeightedShuffledTimestamps.getImportFile(metaDir,seed,timeSliceChoiceMethod)
-    val timeSliceChooser = TimeSliceChooser.getChooser(timeSliceChoiceMethod,historiesEnriched,expectedQueryParameters,random,weightedShuffleFile)
+    val timeSliceChooser = TimeSliceChooser.getChooser(timeSliceChoiceMethod,historiesEnriched,expectedQueryParameters,random,weightedShuffleFile,reverseSearch)
 
     val slices = collection.mutable.ArrayBuffer[(Instant,Instant)]()
     (0 until indicesToBuild).foreach(_ => {

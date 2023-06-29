@@ -16,7 +16,8 @@ import scala.util.Random
 class DynamicWeightedRandomTimeSliceChooser(historiesEnriched: ColumnHistoryStorage,
                                             expectedQueryParamters: TINDParameters,
                                             random: Random,
-                                            importFile:File) extends TimeSliceChooser(expectedQueryParamters){
+                                            importFile:File,
+                                            allowReverseSearch:Boolean) extends TimeSliceChooser(expectedQueryParamters,allowReverseSearch){
   def exportAsFile(weightedShuffleFile: File) = {
     WeightedShuffledTimestamps(returnedTimestampsWithWeightsInOrder.map(t => (t._1.toString,t._2.toInt)).toIndexedSeq).toJsonFile(weightedShuffleFile)
   }

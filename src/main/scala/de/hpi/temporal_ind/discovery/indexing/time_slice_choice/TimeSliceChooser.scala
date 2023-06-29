@@ -10,14 +10,15 @@ import java.io.File
 import java.time.Instant
 import scala.util.Random
 
-abstract class TimeSliceChooser(expectedQueryParamters:TINDParameters) {
+abstract class TimeSliceChooser(expectedQueryParamters:TINDParameters,allowReverseSearch:Boolean) {
 
   val availableIntervals = collection.mutable.TreeSet[(Instant,Instant)]()
   availableIntervals.add((GLOBAL_CONFIG.earliestInstant,GLOBAL_CONFIG.lastInstant))
   var returnedTimestampsWithWeightsInOrder = collection.mutable.ArrayBuffer[(Instant,Long)]()
 
   def isValid(interval: (Instant, Instant)): Boolean = {
-    val (myBegin, myEnd) = interval
+    val delta = expectedQueryParamters.absDeltaInNanos
+    val (myBegin, myEnd) = if(!allowReverseSearch) interval else (interval._1.minusNanos(delta),interval._2.plusNanos(delta))
     availableIntervals.exists { case (begin, end) => !myBegin.isBefore(begin) && myEnd.isBefore(end) }
   }
 
@@ -39,7 +40,10 @@ abstract class TimeSliceChooser(expectedQueryParamters:TINDParameters) {
       weight = tuple._2
       interval = createIntervalOfWeightedLength(t, expectedQueryParamters.omega, expectedQueryParamters.absoluteEpsilon)
     }
-    removeIntervalFromPool(interval._1, interval._2)
+    if(!allowReverseSearch)
+      removeIntervalFromPool(interval._1, interval._2)
+    else
+      removeIntervalFromPool(interval._1.minusNanos(expectedQueryParamters.absDeltaInNanos), interval._2.plusNanos(expectedQueryParamters.absDeltaInNanos))
     returnedTimestampsWithWeightsInOrder.addOne((t,weight))
     interval
   }
@@ -62,12 +66,13 @@ object TimeSliceChooser {
                  historiesEnriched: ColumnHistoryStorage,
                  expectedQueryParamters:TINDParameters,
                  random:Random,
-                 shuffledFile:File) = {
+                 shuffledFile:File,
+                 allowReverseSearch:Boolean) = {
     timeSliceChoiceMethod match {
-      case TimeSliceChoiceMethod.RANDOM => new RandomTimeSliceChooser(historiesEnriched,expectedQueryParamters,random)
-      case TimeSliceChoiceMethod.WEIGHTED_RANDOM => new WeightedRandomTimeSliceChooser(historiesEnriched,expectedQueryParamters,random,shuffledFile)
-      case TimeSliceChoiceMethod.BESTX => new BestXTimeSliceChooser(historiesEnriched,expectedQueryParamters,random,shuffledFile)
-      case TimeSliceChoiceMethod.DYNAMIC_WEIGHTED_RANDOM => new DynamicWeightedRandomTimeSliceChooser(historiesEnriched, expectedQueryParamters, random,shuffledFile)
+      case TimeSliceChoiceMethod.RANDOM => new RandomTimeSliceChooser(historiesEnriched,expectedQueryParamters,random,allowReverseSearch)
+      case TimeSliceChoiceMethod.WEIGHTED_RANDOM => new WeightedRandomTimeSliceChooser(historiesEnriched,expectedQueryParamters,random,shuffledFile,allowReverseSearch)
+      case TimeSliceChoiceMethod.BESTX => new BestXTimeSliceChooser(historiesEnriched,expectedQueryParamters,random,shuffledFile,allowReverseSearch)
+      case TimeSliceChoiceMethod.DYNAMIC_WEIGHTED_RANDOM => new DynamicWeightedRandomTimeSliceChooser(historiesEnriched, expectedQueryParamters, random,shuffledFile,allowReverseSearch)
     }
   }
 

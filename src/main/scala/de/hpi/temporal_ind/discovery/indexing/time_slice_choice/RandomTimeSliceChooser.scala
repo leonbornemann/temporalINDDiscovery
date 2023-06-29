@@ -8,7 +8,8 @@ import scala.util.Random
 
 class RandomTimeSliceChooser(historiesEnriched: ColumnHistoryStorage,
                              expectedQueryParamters:TINDParameters,
-                             random:Random) extends TimeSliceChooser(expectedQueryParamters){
+                             random:Random,
+                             allowReverseSearch:Boolean) extends TimeSliceChooser(expectedQueryParamters,allowReverseSearch){
 
 
   def timestampsWithWeights = random.shuffle(GLOBAL_CONFIG.ALL_DAYS).iterator.map(t => (t,0))

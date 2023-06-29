@@ -10,7 +10,8 @@ import scala.util.Random
 class WeightedRandomTimeSliceChooser(historiesEnriched: ColumnHistoryStorage,
                                      expectedQueryParamters: TINDParameters,
                                      random: Random,
-                                     importFile:File) extends DistinctValueWeightBasedTimeSliceChooser(historiesEnriched,expectedQueryParamters) {
+                                     importFile:File,
+                                     allowReverseSearch:Boolean) extends DistinctValueWeightBasedTimeSliceChooser(historiesEnriched,expectedQueryParamters,allowReverseSearch) {
 
   val shuffled = if(importFile.exists()){
     logger.debug(s"Reading pre-computed shuffled weights from file $importFile")

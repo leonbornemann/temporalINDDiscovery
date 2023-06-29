@@ -7,8 +7,8 @@ import java.io.File
 import java.time.Instant
 import scala.util.Random
 
-class BestXTimeSliceChooser(historiesEnriched: ColumnHistoryStorage, expectedQueryParamters: TINDParameters, random: Random,importFile:File)
-  extends DistinctValueWeightBasedTimeSliceChooser(historiesEnriched, expectedQueryParamters) {
+class BestXTimeSliceChooser(historiesEnriched: ColumnHistoryStorage, expectedQueryParamters: TINDParameters, random: Random,importFile:File,allowReverseSearch:Boolean)
+  extends DistinctValueWeightBasedTimeSliceChooser(historiesEnriched, expectedQueryParamters,allowReverseSearch) {
 
   val weightsFromFile = if(importFile.exists()) {
     logger.debug(s"Reading pre-computed weights from file $importFile and re-sorting")

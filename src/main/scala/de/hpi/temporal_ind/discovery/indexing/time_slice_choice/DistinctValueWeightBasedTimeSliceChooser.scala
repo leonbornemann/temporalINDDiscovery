@@ -10,7 +10,8 @@ import java.time.Instant
 import java.time.temporal.ChronoUnit
 
 abstract class DistinctValueWeightBasedTimeSliceChooser(val historiesEnriched:ColumnHistoryStorage,
-                                                        expectedQueryParamters: TINDParameters) extends TimeSliceChooser(expectedQueryParamters) with StrictLogging{
+                                                        expectedQueryParamters: TINDParameters,
+                                                        allowReverseSearch:Boolean) extends TimeSliceChooser(expectedQueryParamters,allowReverseSearch) with StrictLogging{
 
   val granularity = ChronoUnit.DAYS
   val hllBuilder = new HyperLogLogPlusPlus.Builder();
