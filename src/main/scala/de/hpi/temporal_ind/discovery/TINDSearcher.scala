@@ -194,7 +194,7 @@ class TINDSearcher(val dataManager:InputDataManager,
       val queryIDs = ColumnHistoryID
         .fromJsonObjectPerLineFile(queryIDsFile.get.getAbsolutePath)
         .toSet
-      historiesEnriched
+      historiesEnrichedOriginal
         .histories
         .filter(h => queryIDs.contains(h.och.columnHistoryID))
         .zipWithIndex
