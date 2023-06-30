@@ -11,7 +11,11 @@ object BasicStatisticsPrint extends App {
   val dataSourceFile = args(0)
   val dm = new InputDataManager(dataSourceFile)
   val data = dm.loadData()
+  var count = 0
   val stats = data.map(och => {
+    count+=1
+    if (count % 100000 == 0)
+      println("processed", count)
     val seq:IndexedSeq[Int] = och.history.versions.values.map(t => t.values.size).toIndexedSeq
     Stats(och.history.versions.size,
       och.nonEmptyIntervals.intervals.map(i => ChronoUnit.DAYS.between(i._1, i._2)).sum,
