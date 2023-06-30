@@ -14,7 +14,7 @@ object BasicStatisticsPrint extends App {
   val stats = data.map(och => {
     val seq:IndexedSeq[Int] = och.history.versions.values.map(t => t.values.size).toIndexedSeq
     Stats(och.history.versions.size,
-      och.nonEmptyIntervals.intervals.map(i => ChronoUnit.NANOS.between(i._1, i._2)).sum,
+      och.nonEmptyIntervals.intervals.map(i => ChronoUnit.DAYS.between(i._1, i._2)).sum,
       seq)
   })
   //print avg and std:
@@ -28,14 +28,16 @@ object BasicStatisticsPrint extends App {
   def printMeanAndSTDInt(value: IndexedSeq[Int]) = {
     val sum = value.sum
     val mean = sum / value.size.toDouble
-    val std = Math.sqrt(value.map(v => Math.pow(v - mean, 2)).sum)
-    println(mean, std)
+    val std = Math.sqrt(value.map(v => Math.pow(v - mean, 2)).sum / value.size)
+    val median = value.sorted.apply(value.size/2)
+    println(median,mean, std)
   }
 
   def printMeanAndSTDLong(value: IndexedSeq[Long]) = {
     val sum = value.sum
     val mean = sum / value.size.toDouble
     val std = Math.sqrt(value.map(v => Math.pow(v - mean, 2)).sum)
-    println(mean, std)
+    val median = value.sorted.apply(value.size/2)
+    println(median,mean, std)
   }
 }
