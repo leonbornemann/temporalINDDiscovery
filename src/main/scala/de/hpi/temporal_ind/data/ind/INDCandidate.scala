@@ -12,9 +12,10 @@ case class INDCandidate[T <% Ordered[T]](lhs: AbstractOrderedColumnHistory[T], r
   def toLabelledINDCandidateStatistics(label: String) = LabelledINDCandidateStatistics(label,this)
 
 
-  def toLabelCSVString(version:Instant):String = {
+  def toLabelCSVString(versionLHS:Instant,versionRHSOption:Option[Instant]=None):String = {
+    val versionRHS = if(versionRHSOption.isEmpty) versionLHS else versionRHSOption.get
     val pkVersion = rhs
-      .versionAt(version)
+      .versionAt(versionLHS)
     val firstPkValuesAsString = s"(${pkVersion.values.size}) " + pkVersion
       .values
       .take(10)
@@ -22,7 +23,7 @@ case class INDCandidate[T <% Ordered[T]](lhs: AbstractOrderedColumnHistory[T], r
       .appended('}')
       .prepended('{')
     val fkVersion = lhs
-      .versionAt(version)
+      .versionAt(versionRHS)
   val firstFKValuesAsString = s"(${fkVersion.values.size}) "+ fkVersion
       .values
       .take(10)
@@ -35,8 +36,8 @@ case class INDCandidate[T <% Ordered[T]](lhs: AbstractOrderedColumnHistory[T], r
     val pkPageID = rhs.pageID
     val fkTitle = lhs.pageTitle
     val pkTitle = rhs.pageTitle
-    val versionURLFK = lhs.activeRevisionURLAtTimestamp(version)
-    val versionURLPK = rhs.activeRevisionURLAtTimestamp(version)
+    val versionURLFK = lhs.activeRevisionURLAtTimestamp(versionLHS)
+    val versionURLPK = rhs.activeRevisionURLAtTimestamp(versionRHS)
     val pkTableID = rhs.tableId
     val fkTableID = lhs.tableId
     //what do we want additionally(?)
