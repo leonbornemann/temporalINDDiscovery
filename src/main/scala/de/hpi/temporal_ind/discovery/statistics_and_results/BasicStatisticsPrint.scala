@@ -20,10 +20,12 @@ object BasicStatisticsPrint extends App {
   //print avg and std:
   printMeanAndSTDInt(stats.map(_.nVersions))
   printMeanAndSTDInt(stats.flatMap(_.sizes))
-  printMeanAndSTDLong(stats.map(_.lifeTimeNanos))
+  printMeanAndSTDLong(stats.map(_.lifeTimeDays))
+  print("min change count",stats.map(_.nVersions).min-1)
+  print("min lifetime days",stats.map(_.lifeTimeDays).min)
 
 
-  case class Stats(nVersions: Int,lifeTimeNanos:Long,sizes:IndexedSeq[Int])
+  case class Stats(nVersions: Int, lifeTimeDays:Long, sizes:IndexedSeq[Int])
 
   def printMeanAndSTDInt(value: IndexedSeq[Int]) = {
     val sum = value.sum
