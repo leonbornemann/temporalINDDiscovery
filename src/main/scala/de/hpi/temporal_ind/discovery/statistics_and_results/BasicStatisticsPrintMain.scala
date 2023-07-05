@@ -6,7 +6,7 @@ import de.hpi.temporal_ind.util.Util
 
 import java.time.temporal.ChronoUnit
 
-object BasicStatisticsPrint extends App {
+object BasicStatisticsPrintMain extends App {
   GLOBAL_CONFIG.setSettingsForDataSource("wikipedia")
   val dataSourceFile = args(0)
   val dm = new InputDataManager(dataSourceFile)

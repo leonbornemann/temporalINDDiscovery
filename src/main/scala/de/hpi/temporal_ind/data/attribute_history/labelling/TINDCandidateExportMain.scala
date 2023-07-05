@@ -9,7 +9,7 @@ import de.hpi.temporal_ind.data.ind.INDCandidate
 
 import java.io.{File, PrintWriter}
 
-object TINDCandidateExportForLabelling extends App with StrictLogging{
+object TINDCandidateExportMain extends App with StrictLogging{
   println(s"called with ${args.toIndexedSeq}")
   GLOBAL_CONFIG.setSettingsForDataSource(args(0))
   val inputDir = args(1)

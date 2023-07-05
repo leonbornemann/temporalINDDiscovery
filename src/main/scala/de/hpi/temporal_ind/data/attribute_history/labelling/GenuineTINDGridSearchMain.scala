@@ -3,12 +3,12 @@ package de.hpi.temporal_ind.data.attribute_history.labelling
 import de.hpi.temporal_ind.data.GLOBAL_CONFIG
 import de.hpi.temporal_ind.data.attribute_history.data.file_search.{IncrementalIndexedColumnHistories, IndexedColumnHistories}
 import de.hpi.temporal_ind.data.attribute_history.data.metadata.LabelledINDCandidateStatistics
-import de.hpi.temporal_ind.data.attribute_history.labelling.TINDCandidateExportForLabelling.columnHistoryDir
+import de.hpi.temporal_ind.data.attribute_history.labelling.TINDCandidateExportMain.columnHistoryDir
 
 import java.io.{File, PrintWriter}
 import scala.io.Source
 
-object StatisticsForLabelledExampleMain extends App {
+object GenuineTINDGridSearchMain extends App {
   GLOBAL_CONFIG.setSettingsForDataSource(args(0))
   val annotatedSource = new File(args(1))
   val index = new IncrementalIndexedColumnHistories(new File(args(2)))
