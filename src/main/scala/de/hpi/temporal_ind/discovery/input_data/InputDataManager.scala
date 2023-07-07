@@ -40,42 +40,6 @@ class InputDataManager(binaryFile: String,jsonSourceDirs:Option[IndexedSeq[File]
   kryo.setRegistrationRequired(false)
   kryo.setReferences(true)
 
-  def testBinaryLoading(histories: IndexedSeq[OrderedColumnHistory]) = {
-    serializeAsBinary(histories, binaryFile)
-    val (historiesFromBinary, timeLoadingBinary) = TimeUtil.executionTimeInMS(loadAsBinary(binaryFile))
-    println(s"Data Loading Binary,$timeLoadingBinary")
-    var curElem = 0
-    println("to Read",histories.size)
-    historiesFromBinary.foreach { case (h1) => {
-      //println(curElem)
-      val h2 = histories(curElem)
-      if (!((h1.tableId == h2.tableId)
-        && (h1.pageID == h2.pageID)
-        && (h1.pageTitle == h2.pageTitle)
-        && (h1.history.versions.isInstanceOf[collection.SortedMap[Instant, AbstractColumnVersion[String]]])
-        && (h1.history.versions == h2.history.versions))) {
-        println(s"${h1.id},${h2.id}")
-        println(s"${h1.pageID},${h2.pageID}")
-        println(s"${h1.pageTitle},${h2.pageTitle}")
-        println(h1.history.versions.getClass)
-        println(h2.history.versions.getClass)
-        println(s"${h1.history.versions}")
-        println(h2.history.versions)
-        println(s"${h1.id},${h2.id}")
-        h1.history.versions.toIndexedSeq.zip(h2.history.versions.toIndexedSeq).foreach{case (t1,t2) => {
-          if(t1!=t2){
-            println()
-          }
-        }}
-        assert(false)
-      }
-      curElem+=1
-    }
-    }
-    assert(histories.size == curElem)
-    println("Check successful, binary file intact")
-  }
-
   def loadAsBinary(path: String):Iterator[OrderedColumnHistory] = {
     val is = new Input(new FileInputStream(path))
     val it = new Iterator[OrderedColumnHistory]() {

@@ -1,33 +1,22 @@
 package de.hpi.temporal_ind.discovery
 
-import com.esotericsoftware.kryo.Kryo
-import com.esotericsoftware.kryo.io.{Input, Output}
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.temporal_ind.data.GLOBAL_CONFIG
-import de.hpi.temporal_ind.data.attribute_history.data.{AbstractColumnVersion, ColumnHistoryID}
-import de.hpi.temporal_ind.data.attribute_history.data.original.{ColumnHistory, OrderedColumnHistory}
-import de.hpi.temporal_ind.data.column.data.original.KryoSerializableColumnHistory
-import de.hpi.temporal_ind.data.ind.weight_functions.ConstantWeightFunction
-import de.hpi.temporal_ind.data.ind.{EpsilonDeltaRelaxedTemporalIND, EpsilonOmegaDeltaRelaxedTemporalIND, INDCandidateIDs, ValidationVariant}
-import de.hpi.temporal_ind.discovery.indexing.time_slice_choice.{DynamicWeightedRandomTimeSliceChooser, TimeSliceChooser, WeightedRandomTimeSliceChooser, WeightedShuffledTimestamps}
+import de.hpi.temporal_ind.data.attribute_history.data.ColumnHistoryID
+import de.hpi.temporal_ind.data.attribute_history.data.original.OrderedColumnHistory
+import de.hpi.temporal_ind.data.ind.{EpsilonOmegaDeltaRelaxedTemporalIND, ValidationVariant}
+import de.hpi.temporal_ind.discovery.indexing.time_slice_choice.{DynamicWeightedRandomTimeSliceChooser, TimeSliceChooser, WeightedShuffledTimestamps}
 import de.hpi.temporal_ind.discovery.indexing.{BloomfilterIndex, MultiLevelIndexStructure, MultiTimeSliceIndexStructure, TimeSliceChoiceMethod}
-import de.hpi.temporal_ind.discovery.input_data.{ColumnHistoryStorage, EnrichedColumnHistory, InputDataManager, ValuesInTimeWindow}
-import de.hpi.temporal_ind.discovery.statistics_and_results.{BasicQueryInfoRow, IndividualResultStats, ResultSerializer, StandardResultSerializer, TotalResultStats}
+import de.hpi.temporal_ind.discovery.input_data.{ColumnHistoryStorage, EnrichedColumnHistory, InputDataManager}
+import de.hpi.temporal_ind.discovery.statistics_and_results._
 import de.hpi.temporal_ind.util.TimeUtil
-import de.metanome.algorithms.many.bitvectors.BitVector
-import org.json4s.scalap.scalasig.ClassFileParser.byte
 
-import java.time.Duration
-import java.util
-import java.util.concurrent.Semaphore
-import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
-import scala.collection.mutable
-import scala.concurrent.{Await, Future}
-import scala.jdk.CollectionConverters.{ListHasAsScala, SeqHasAsJava}
+import java.util.concurrent.atomic.AtomicInteger
+import scala.concurrent.Await
 //import org.nustaq.serialization.{FSTConfiguration, FSTObjectInput, FSTObjectOutput}
 //import org.nustaq.serialization.util.FSTOutputStream
 
-import java.io.{ByteArrayOutputStream, File, FileInputStream, FileOutputStream, ObjectInputStream, ObjectOutputStream, OutputStream, PrintWriter}
+import java.io.File
 import java.time.Instant
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
@@ -40,18 +29,22 @@ class TINDSearcher(val dataManager:InputDataManager,
                    val reverseSearch:Boolean) extends StrictLogging{
 
   val version = "0.99"
-  def useSubsetOfData(inputSizeFactor: Int) = {
-    assert(inputSizeFactor <= historiesEnriched.histories.size)
-    this.historiesEnriched = new ColumnHistoryStorage(historiesEnrichedOriginal.histories.take(inputSizeFactor))
-    // data loading time is now longer correct now, but that does not matter for the query use-case
-  }
-
   var allPairsMode = false
   var fullMultiIndexStructure:MultiLevelIndexStructure = null
   var historiesEnriched:ColumnHistoryStorage = null
   var historiesEnrichedOriginal:ColumnHistoryStorage = null
   var dataLoadingTimeMS:Double=0.0
   var expectedQueryParameters:TINDParameters = null
+  var curResultSerializer: StandardResultSerializer = null
+  var seed: Long = 0
+  var bloomfilterSize: Int = -1
+  var random: Random = null
+
+  def useSubsetOfData(inputSizeFactor: Int) = {
+    assert(inputSizeFactor <= historiesEnriched.histories.size)
+    this.historiesEnriched = new ColumnHistoryStorage(historiesEnrichedOriginal.histories.take(inputSizeFactor))
+    // data loading time is now longer correct now, but that does not matter for the query use-case
+  }
 
   def initData() = {
     val (historiesEnriched: ColumnHistoryStorage, dataLoadingTimeMS: Double) = loadData()
@@ -67,36 +60,12 @@ class TINDSearcher(val dataManager:InputDataManager,
     this.bloomfilterSize=bloomFilterSize
     fullMultiIndexStructure = null
     System.gc()
-    fullMultiIndexStructure = buildMultiIndexStructure(historiesEnriched, maxNumTimeSlicIndices)
+    val indexBuilder = new TINDIndexBuilder(metaDir, seed, timeSliceChoiceMethod, expectedQueryParameters, random, reverseSearch, bloomfilterSize)
+    fullMultiIndexStructure = indexBuilder.buildMultiIndexStructure(historiesEnriched, maxNumTimeSlicIndices)
   }
-
-
-  var curResultSerializer:StandardResultSerializer = null
-  //val parallelIOHandler = new ParallelIOHandler(resultRootDir,queryFile, bloomfilterSize, timeSliceChoiceMethod, seed)
-
-  var seed:Long = 0
-  var bloomfilterSize:Int= -1
-  var random:Random = null
 
   def enrichWithHistory(histories: IndexedSeq[OrderedColumnHistory]) = {
     new ColumnHistoryStorage(histories.map(och => new EnrichedColumnHistory(och)))
-  }
-
-  def getRequiredValuesetIndex(historiesEnriched: ColumnHistoryStorage) = {
-    val func = if(!reverseSearch) (e:EnrichedColumnHistory) => e.allValues else (e:EnrichedColumnHistory) => e.requiredValues(expectedQueryParameters)
-    new BloomfilterIndex(historiesEnriched.histories,
-      bloomfilterSize,
-      func
-      )
-  }
-
-  def getIndexForTimeSlice(historiesEnriched:ColumnHistoryStorage,lower:Instant, upper:Instant,size:Int=bloomfilterSize) = {
-    logger.debug(s"Building Index for [$lower,$upper)")
-    val (beginDelta,endDelta) = (lower.minusNanos(expectedQueryParameters.absDeltaInNanos),upper.plusNanos(expectedQueryParameters.absDeltaInNanos))
-    new BloomfilterIndex(historiesEnriched.histories,
-      size,
-      (e:EnrichedColumnHistory) => e.valueSetInWindow(beginDelta,endDelta)
-      )
   }
 
   def validateCandidates(query:EnrichedColumnHistory,
@@ -130,55 +99,6 @@ class TINDSearcher(val dataManager:InputDataManager,
       })
       results
     }
-
-  }
-
-//  def getIterableForTimeSliceIndices(historiesEnriched: ColumnHistoryStorage) = {
-//    val slices = getTimeSlices(historiesEnriched)
-//      .iterator
-//      .map { case (begin, end) =>
-//        ((begin,end),getIndexForTimeSlice(historiesEnriched,begin,end))
-//      }
-//    slices
-//  }
-
-  def buildTimeSliceIndices(historiesEnriched: ColumnHistoryStorage,indicesToBuild:Int) = {
-    val weightedShuffleFile = WeightedShuffledTimestamps.getImportFile(metaDir,seed,timeSliceChoiceMethod)
-    val timeSliceChooser = TimeSliceChooser.getChooser(timeSliceChoiceMethod,historiesEnriched,expectedQueryParameters,random,weightedShuffleFile,reverseSearch)
-
-    val slices = collection.mutable.ArrayBuffer[(Instant,Instant)]()
-    (0 until indicesToBuild).foreach(_ => {
-      val timeSlice = timeSliceChooser.getNextTimeSlice()
-      slices += timeSlice
-    })
-    if (!weightedShuffleFile.exists() && timeSliceChoiceMethod == TimeSliceChoiceMethod.DYNAMIC_WEIGHTED_RANDOM) {
-      timeSliceChooser.asInstanceOf[DynamicWeightedRandomTimeSliceChooser].exportAsFile(weightedShuffleFile)
-    }
-    logger.debug(s"Running Index Build for ${historiesEnriched.histories.size} attributes with time slices: $slices")
-    var buildTimes = collection.mutable.ArrayBuffer[Double]()
-    //concurrent index building to speed up index construction:
-    val handler = new ParallelExecutionHandler(slices.size)
-    val futures = slices.map{case (begin,end) => {
-      handler.addAsFuture({
-        val (timeSliceIndex, timeSliceIndexBuild) = TimeUtil.executionTimeInMS(getIndexForTimeSlice(historiesEnriched, begin, end))
-        buildTimes += timeSliceIndexBuild
-        ((begin, end), timeSliceIndex)
-      })
-    }}
-    handler.awaitTermination()
-    val results = futures.map(f => Await.result(f,scala.concurrent.duration.Duration.MinusInf))
-    val indexMap = collection.mutable.TreeMap[(Instant,Instant),BloomfilterIndex]() ++ results
-    (indexMap,buildTimes)
-  }
-
-
-
-
-  def buildMultiIndexStructure(historiesEnriched: ColumnHistoryStorage,numTimeSliceIndices:Int) = {
-    val (indexEntireValueset,requiredValuesIndexBuildTime) = TimeUtil.executionTimeInMS(getRequiredValuesetIndex(historiesEnriched))
-    val (timeSliceIndices, timeSliceIndexBuildTimes) = buildTimeSliceIndices(historiesEnriched, numTimeSliceIndices)
-    val timeSliceIndexStructure = new MultiTimeSliceIndexStructure(timeSliceIndices, timeSliceIndexBuildTimes)
-    new MultiLevelIndexStructure(indexEntireValueset,timeSliceIndexStructure,requiredValuesIndexBuildTime)
   }
 
   def runDiscovery(queryIDsFile:Option[File],
@@ -186,11 +106,7 @@ class TINDSearcher(val dataManager:InputDataManager,
                    queryParameters:TINDParameters,
                    resultSerializer:StandardResultSerializer) = {
     allPairsMode = queryIDsFile.isEmpty
-    curResultSerializer = resultSerializer//new StandardResultSerializer(resultRootDir,queryFile, timeSliceChoiceMethod)
-    //time slice values index:
-    //old
-    //val sample = getRandomSampleOfInputData(historiesEnriched,sampleSize )
-
+    curResultSerializer = resultSerializer
     val queries = if(queryIDsFile.isDefined){
       val queryIDs = ColumnHistoryID
         .fromJsonObjectPerLineFile(queryIDsFile.get.getAbsolutePath)
@@ -211,11 +127,6 @@ class TINDSearcher(val dataManager:InputDataManager,
       curResultSerializer.addTotalResultStats(totalResultSTatsLine)
     })
     curResultSerializer.closeAll()
-  }
-
-
-  def getRandomSampleOfInputData(historiesEnriched: ColumnHistoryStorage,sampleSize: Int) = {
-    random.shuffle(historiesEnriched.histories.zipWithIndex).take(sampleSize)
   }
 
   def loadData() = {
@@ -332,7 +243,6 @@ class TINDSearcher(val dataManager:InputDataManager,
 
   }
 
-
   private def validate(query: EnrichedColumnHistory,queryParamters:TINDParameters, actualCandidates: ArrayBuffer[EnrichedColumnHistory],curResultSerializer: ResultSerializer) = {
     val (trueTemporalINDs, validationTime) = TimeUtil.executionTimeInMS(validateCandidates(query,queryParamters,actualCandidates))
     val truePositiveCount = trueTemporalINDs.size
@@ -359,11 +269,5 @@ class TINDSearcher(val dataManager:InputDataManager,
     TimeUtil.logRuntime(totalTime, "ms", "Total Execution Time")
   }
 
-//  def discoverAll(numTimeSliceIndices: Int,nThreads:Int) = {
-//    val (_, totalTime) = TimeUtil.executionTimeInMS {
-//      runDiscovery(None, IndexedSeq(numTimeSliceIndices),nThreads)
-//    }
-//    TimeUtil.logRuntime(totalTime, "ms", "Total Execution Time")
-//  }
 
 }

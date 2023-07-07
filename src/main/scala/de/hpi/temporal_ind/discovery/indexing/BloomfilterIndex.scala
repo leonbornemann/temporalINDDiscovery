@@ -268,16 +268,5 @@ class BloomfilterIndex(input: IndexedSeq[EnrichedColumnHistory],
     resNew
   }
 
-
-//  TimeUtil.logRuntime(timeWorker,"ms","Single Worker Execution For Value Set containment")
-//  val results = worker.getColumnToResultBitVector.asScala
-//  val pr = new PrintWriter(s"$outFile.csv")
-//  pr.println("Estimated Containment")
-//  results.foreach{case (i,bv) => {
-//    val estimated = (0 until bv.size()).map(j => if (bv.get(j)) 1 else 0).sum
-//    pr.println(estimated)
-//  }}
-//  pr.close()
-//  assert(false)
 }
 

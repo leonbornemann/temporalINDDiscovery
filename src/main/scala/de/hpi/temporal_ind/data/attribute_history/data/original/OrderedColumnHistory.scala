@@ -4,7 +4,6 @@ import de.hpi.temporal_ind.data.GLOBAL_CONFIG
 import de.hpi.temporal_ind.data.attribute_history.data.{AbstractColumnVersion, AbstractOrderedColumnHistory, ColumnHistoryID}
 import de.hpi.temporal_ind.data.column.data.original.{KryoSerializableColumnHistory, KryoSerializableColumnVersion}
 import de.hpi.temporal_ind.discovery.TINDParameters
-import de.hpi.temporal_ind.discovery.statistics_and_results.TimeSliceStats
 
 import java.io.File
 import java.time.Instant
@@ -41,17 +40,6 @@ class OrderedColumnHistory(val id: String,
 
   def toColumnHistory = {
     ColumnHistory(id , tableId , pageID, pageTitle , columnVersions = collection.mutable.ArrayBuffer() ++ history.versions.toIndexedSeq.map(_._2.asInstanceOf[ColumnVersion]))
-  }
-
-  def extractStatsForTimeRange(timeRange:(Instant,Instant),stats:TimeSliceStats) = {
-    val begin = if(history.versions.contains(timeRange._1)) timeRange._1 else history.versions.maxBefore(timeRange._1).map(_._1).getOrElse(GLOBAL_CONFIG.earliestInstant)
-    val end = timeRange._2
-    val versionsInRange = history.versions.range(begin,end)
-    if(!versionsInRange.isEmpty){
-      stats.numHistoriesWithVersionPresent+=1
-    }
-    stats.numVersionsPresentSum += versionsInRange.size
-    stats.hashedDistinctValues.addAll(versionsInRange.flatMap(_._2.values.map(_.hashCode)))
   }
 
   def toKryoSerializableColumnHistory  = {

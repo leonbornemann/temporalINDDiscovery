@@ -1,4 +1,4 @@
-package de.hpi.temporal_ind.discovery.statistics_and_results
+package de.hpi.temporal_ind.oneshot
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.temporal_ind.data.GLOBAL_CONFIG
