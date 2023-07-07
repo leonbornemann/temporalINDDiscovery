@@ -2,7 +2,7 @@ package de.hpi.temporal_ind.discovery
 
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.temporal_ind.data.GLOBAL_CONFIG
-import de.hpi.temporal_ind.data.ind.weight_functions.ConstantWeightFunction
+import de.hpi.temporal_ind.data.ind.weight_functions.{ConstantWeightFunction, TimestampWeightFunction}
 import de.hpi.temporal_ind.discovery.indexing.TimeSliceChoiceMethod
 import de.hpi.temporal_ind.discovery.input_data.InputDataManager
 import de.hpi.temporal_ind.discovery.statistics_and_results.StandardResultSerializer
@@ -24,6 +24,7 @@ object TINDRuntimeExperiments extends App with StrictLogging{
   val sourceFileBinary = argMap("--input")
   val queryEpsilons = argMap("--epsilonQueries").split(",").map(_.toDouble)
   val queryDeltas = argMap("--deltaQueries").split(",").map(_.toLong)
+  val omega = TimestampWeightFunction.create(argMap("--w"),argMap.get("--alpha").map(_.toDouble))
   val timeSliceChoiceMethod = TimeSliceChoiceMethod.withName(argMap("--timeSliceChoice"))
   val bloomFilterSizes = argMap("--m").split(",").map(_.toInt).toIndexedSeq
   val seeds = argMap("--seed").split(",").map(_.toLong).toIndexedSeq
@@ -63,9 +64,8 @@ object TINDRuntimeExperiments extends App with StrictLogging{
             indexDeltas.foreach(indexDelta => {
               logger.debug(s"Processing deltaFactor $indexDelta")
               println("Abs Epsilon:", absQueryEpsilon)
-              val expectedOmega = new ConstantWeightFunction()
-              val queryParameters = TINDParameters(absQueryEpsilon, maxDeltaInNanos, expectedOmega)
-              val indexParameter = TINDParameters(indexEpsilon, indexDelta, expectedOmega)
+              val queryParameters = TINDParameters(absQueryEpsilon, maxDeltaInNanos, omega)
+              val indexParameter = TINDParameters(indexEpsilon, indexDelta, omega)
               for (inputSize <- inputSizes) {
                 logger.debug(s" Running inputSize $inputSize")
                 relaxedShiftedTemporalINDDiscovery.useSubsetOfData(inputSize)

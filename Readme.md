@@ -16,7 +16,8 @@ Note that TINDRuntimeExperiments accepts comma-separated lists for many of these
 * __--deltaQueries__ maximum time shift (in nanoseconds)!
 * __--epsilonIndex__ maximum epsilon that the index expects the queries to use 
 * __--deltaIndex__ maximum delta that the index expects the queries to use (Note: deltaQueries can not be set higher than this!)
-* * __--w__ weighting function, supported values: {CONSTANT,EXP_DECAY}
+* __--w__ weighting function for timestamps (used in both index and queries), supported values: {CONSTANT,EXPDECAY}
+* __--alpha__ base for the exponential decay weighting function
 * __--timeSliceChoice__ method for choosing time slices, supported values: {WEIGHTED_RANDOM,RANDOM}
 * __--m__ size of the bloom filters
 * __--k__ number of time slice indices

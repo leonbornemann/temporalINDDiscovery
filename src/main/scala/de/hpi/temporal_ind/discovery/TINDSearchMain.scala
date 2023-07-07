@@ -3,7 +3,7 @@ package de.hpi.temporal_ind.discovery
 import com.typesafe.scalalogging.StrictLogging
 import de.hpi.temporal_ind.data.GLOBAL_CONFIG
 import de.hpi.temporal_ind.data.attribute_history.data.ColumnHistoryID
-import de.hpi.temporal_ind.data.ind.weight_functions.ConstantWeightFunction
+import de.hpi.temporal_ind.data.ind.weight_functions.{ConstantWeightFunction, TimestampWeightFunction}
 import de.hpi.temporal_ind.discovery.indexing.TimeSliceChoiceMethod
 import de.hpi.temporal_ind.discovery.input_data.InputDataManager
 import de.hpi.temporal_ind.discovery.statistics_and_results.StandardResultSerializer
@@ -29,6 +29,7 @@ object TINDSearchMain extends App with StrictLogging{
   val timeSliceChoiceMethod = TimeSliceChoiceMethod.withName(argMap("--timeSliceChoice"))
   val bloomFilterSize = argMap("--m").toInt
   val seed = argMap("--seed").toLong
+  val omega = TimestampWeightFunction.create(argMap("--w"),argMap.get("--alpha").map(_.toDouble))
   val numTimeSliceIndices = argMap("--k").toInt
   val numThreads = argMap("--nThreads").toInt
   val metaDataDir = new File(argMap("--metadata"))
@@ -52,9 +53,8 @@ object TINDSearchMain extends App with StrictLogging{
     inputSize = relaxedShiftedTemporalINDDiscovery.historiesEnrichedOriginal.histories.size
   }
   ParallelExecutionHandler.initContext(numThreads)
-  val expectedOmega = new ConstantWeightFunction()
-  val queryParameters = TINDParameters(queryEpsilon, queryDelta, expectedOmega)
-  val indexParameter = TINDParameters(indexEpsilon, indexDelta, expectedOmega)
+  val queryParameters = TINDParameters(queryEpsilon, queryDelta, omega)
+  val indexParameter = TINDParameters(indexEpsilon, indexDelta, omega)
   relaxedShiftedTemporalINDDiscovery.useSubsetOfData(inputSize)
   relaxedShiftedTemporalINDDiscovery.buildIndicesWithSeed(numTimeSliceIndices, seed, bloomFilterSize, indexParameter)
   val resultDirPrefix = UUID.randomUUID().toString

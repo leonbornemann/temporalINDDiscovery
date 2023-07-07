@@ -6,7 +6,7 @@ import de.hpi.temporal_ind.util.Util
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
-class ExponentialDecayWeightFunction(a:Double, decayStepUnit:ChronoUnit) extends TimestampWeightFunction() {
+class ExponentialDecayWeightFunction(a:Double, decayStepUnit:ChronoUnit = ChronoUnit.DAYS) extends TimestampWeightFunction() {
 
   val maxTimestamp = decayStepUnit.between(GLOBAL_CONFIG.earliestInstant,GLOBAL_CONFIG.lastInstant)
 
