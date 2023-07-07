@@ -33,12 +33,13 @@ import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 
 class TINDSearcher(val dataManager:InputDataManager,
-                   val version:String,
                    val subsetValidation:Boolean,
                    val timeSliceChoiceMethod:TimeSliceChoiceMethod.Value,
                    var nThreads:Int,
                    val metaDir:File,
                    val reverseSearch:Boolean) extends StrictLogging{
+
+  val version = "0.99"
   def useSubsetOfData(inputSizeFactor: Int) = {
     assert(inputSizeFactor <= historiesEnriched.histories.size)
     this.historiesEnriched = new ColumnHistoryStorage(historiesEnrichedOriginal.histories.take(inputSizeFactor))

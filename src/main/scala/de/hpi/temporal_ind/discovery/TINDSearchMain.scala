@@ -10,87 +10,58 @@ import de.hpi.temporal_ind.discovery.statistics_and_results.StandardResultSerial
 import de.hpi.temporal_ind.util.TimeUtil
 
 import java.io.File
+import java.util.UUID
+
 
 object TINDSearchMain extends App with StrictLogging{
-
-  //0.00066 0,775743
+  val argsParsed = CommandLineParser(args)
   println(s"Called with ${args.toIndexedSeq}")
+  argsParsed.printParams()
+  val argMap = argsParsed.argMap
   GLOBAL_CONFIG.setSettingsForDataSource("wikipedia")
   println(GLOBAL_CONFIG.totalTimeInDays)
   println(GLOBAL_CONFIG.totalTimeInNanos)
-  val queryFiles = args(0).split(",").toIndexedSeq
-  val targetRootDir = args(1)
-  val sourceFileBinary = args(2)
-  val relativeEpsilons = args(3).split(",").map(_.toDouble)
-  val maxDeltasWhileIndexing = args(4).split(",").map(_.toLong)
-  val timeSliceChoiceMethod = TimeSliceChoiceMethod.withName(args(5))
-  val bloomFilterSizes = args(6).split(",").map(_.toInt).toIndexedSeq
-  val seeds = args(7).split(",").map(_.toLong).toIndexedSeq
-  val numTimeSliceIndicesToTest = args(8).split(",").map(_.toInt)
-  val numThreadss = args(9).split(",").map(_.toInt)
-  val metaDataDir = new File(args(10))
-  val indexEpsilonFactors = args(11).split(",").map(_.toInt).toIndexedSeq
-  val indexDeltaFactors = args(12).split(",").map(_.toInt).toIndexedSeq
-  val inputSizes = args(13).split(",").map(_.toInt).toIndexedSeq
-  val reverseSearch = args(14).toBoolean
+  val queryFile = argMap("--queries")
+  val targetRootDir = argMap("--result")
+  val sourceFileBinary = argMap("--input")
+  val queryEpsilon = argMap("--epsilonQueries").toDouble
+  val queryDelta = argMap("--deltaQueries").toLong
+  val timeSliceChoiceMethod = TimeSliceChoiceMethod.withName(argMap("--timeSliceChoice"))
+  val bloomFilterSize = argMap("--m").toInt
+  val seed = argMap("--seed").toLong
+  val numTimeSliceIndices = argMap("--k").toInt
+  val numThreads = argMap("--nThreads").toInt
+  val metaDataDir = new File(argMap("--metadata"))
+  val indexEpsilon = argMap("--epsilonIndex").toDouble
+  val indexDelta = argMap("--deltaIndex").toLong
+  var inputSize = argMap.get("--n").map(s => s.toInt).getOrElse(-1)
+  val reverseSearch = argMap("--reverse").toBoolean
   metaDataDir.mkdirs()
 
-  val version = "0.99"
-  val targetDir = new File(targetRootDir + s"/$version/")
-  targetDir.mkdir()
   val subsetValidation = true
-  val dataLoader = new InputDataManager(sourceFileBinary,None)
+  val dataLoader = new InputDataManager(sourceFileBinary, None)
 
   val relaxedShiftedTemporalINDDiscovery = new TINDSearcher(dataLoader,
-    version,
     subsetValidation,
     timeSliceChoiceMethod,
-    numThreadss(0),
+    numThreads,
     metaDataDir,
     reverseSearch)
   relaxedShiftedTemporalINDDiscovery.initData()
-  ParallelExecutionHandler.initContext(numThreadss.max)
-  for(bloomFilterSize <- bloomFilterSizes){
-    logger.debug(s"Processing bloomFilterSize $bloomFilterSize")
-    for (seed <- seeds) {
-      logger.debug(s"Processing seed $seed")
-      for(relativeEpsilon <- relativeEpsilons){
-        logger.debug(s"Processing relative Epsilon $relativeEpsilon")
-        for(maxDeltaWhileIndexing <- maxDeltasWhileIndexing){
-          logger.debug(s"Processing max Delta $maxDeltaWhileIndexing")
-          indexEpsilonFactors.foreach(epsilonFactor => {
-            logger.debug(s"Processing epsilonFactor $epsilonFactor")
-            indexDeltaFactors.foreach(deltaFactor => {
-              logger.debug(s"Processing deltaFactor $deltaFactor")
-              val absoluteExpectedEpsilon = relativeEpsilon * GLOBAL_CONFIG.totalTimeInNanos
-              val expectedOmega = new ConstantWeightFunction()
-              val maxDeltaInNanos = TimeUtil.nanosPerDay * maxDeltaWhileIndexing
-              val queryParameters = TINDParameters(absoluteExpectedEpsilon, maxDeltaInNanos, expectedOmega)
-              val indexDelta = maxDeltaInNanos * deltaFactor
-              val indexEpsilon = absoluteExpectedEpsilon * epsilonFactor
-              val indexParameter = TINDParameters(indexEpsilon, indexDelta, expectedOmega)
-              for (inputSize <- inputSizes) {
-                logger.debug(s" Running inputSize $inputSize")
-                relaxedShiftedTemporalINDDiscovery.useSubsetOfData(inputSize)
-                relaxedShiftedTemporalINDDiscovery.buildIndicesWithSeed(numTimeSliceIndicesToTest.max, seed, bloomFilterSize, indexParameter)
-                for (nThreads <- numThreadss) {
-                  logger.debug(s" Running nThreads $nThreads")
-                  val resultDirPrefix = s"${bloomFilterSize}_${seed}_${epsilonFactor}_${deltaFactor}_${nThreads}_${inputSize}_${relativeEpsilon}_$maxDeltaWhileIndexing"
-                  relaxedShiftedTemporalINDDiscovery.nThreads = nThreads
-                  ParallelExecutionHandler.initContext(nThreads)
-                  queryFiles.foreach(queryFile => {
-                    logger.debug(s"Processing queryFile $queryFile")
-                    val resultSerializer = new StandardResultSerializer(new File(targetRootDir), new File(queryFile), timeSliceChoiceMethod, Some(resultDirPrefix))
-                    relaxedShiftedTemporalINDDiscovery.tINDSearch(new File(queryFile), numTimeSliceIndicesToTest, queryParameters, resultSerializer)
-                  })
-                }
-              }
-            })
-          })
-        }
-      }
-    }
+  if (inputSize == -1) {
+    inputSize = relaxedShiftedTemporalINDDiscovery.historiesEnrichedOriginal.histories.size
   }
+  ParallelExecutionHandler.initContext(numThreads)
+  val expectedOmega = new ConstantWeightFunction()
+  val queryParameters = TINDParameters(queryEpsilon, queryDelta, expectedOmega)
+  val indexParameter = TINDParameters(indexEpsilon, indexDelta, expectedOmega)
+  relaxedShiftedTemporalINDDiscovery.useSubsetOfData(inputSize)
+  relaxedShiftedTemporalINDDiscovery.buildIndicesWithSeed(numTimeSliceIndices, seed, bloomFilterSize, indexParameter)
+  val resultDirPrefix = UUID.randomUUID().toString
+  relaxedShiftedTemporalINDDiscovery.nThreads = numThreads
+  ParallelExecutionHandler.initContext(numThreads)
+  val resultSerializer = new StandardResultSerializer(new File(targetRootDir), new File(queryFile), timeSliceChoiceMethod, Some(resultDirPrefix))
+  relaxedShiftedTemporalINDDiscovery.tINDSearch(new File(queryFile), IndexedSeq(numTimeSliceIndices), queryParameters, resultSerializer)
   ParallelExecutionHandler.service.shutdown()
 
 }

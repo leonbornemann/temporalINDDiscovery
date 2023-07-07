@@ -13,9 +13,9 @@ Note that TINDRuntimeExperiments accepts comma-separated lists for many of these
 * __--result__ the directory in which to store the results
 * __--queries__ a list of ids contained in the input set that you wish to query against the index
 * __--epsilonQueries__ For Queries: maximum absolute violation that is tolerated (the base time unit that we use is nanoseconds, so to allow a violation of one day with a constant w, epsilon needs to be set to 8.64×10¹³)
-* __--deltaQueries__ maximum time shift (in nanoseconds) - TODO!
+* __--deltaQueries__ maximum time shift (in nanoseconds)!
 * __--epsilonIndex__ maximum epsilon that the index expects the queries to use 
-* __--deltaQueries__ maximum delta that the index expects the queries to use (Note: deltaQueries can not be set higher than this!)
+* __--deltaIndex__ maximum delta that the index expects the queries to use (Note: deltaQueries can not be set higher than this!)
 * * __--w__ weighting function, supported values: {CONSTANT,EXP_DECAY}
 * __--timeSliceChoice__ method for choosing time slices, supported values: {WEIGHTED_RANDOM,RANDOM}
 * __--m__ size of the bloom filters
@@ -23,11 +23,11 @@ Note that TINDRuntimeExperiments accepts comma-separated lists for many of these
 * __--reverse__ if the flag is set, then queries will be run in reverse search, meaning the index is searched for attributes that are contained in the query
 * __--nThreads__ number of threads to use
 * __--seed__ seed to make random choices deterministic and experiments repeatable
-
+* __--metadata__ metadata directory that will store things like precomputed weights (for WEIGHTED RANDOM) to speed up index building for repeated executions
 
 
 Furthermore, there are some main classes that produce statistics that we either directly reported in the paper or used to generate plots using our corresponding [Jupyter Notebooks](https://github.com/leonbornemann/temporalINDEvaluation):
 * [BasicStatisticsPrintMain](src/main/scala/de/hpi/temporal_ind/discovery/statistics_and_results/BasicStatisticsPrintMain.scala) - produces basic statistics for Section 5.1
 * [TINDCandidateExportMain](src/main/scala/de/hpi/temporal_ind/data/attribute_history/labelling/TINDCandidateExportMain.scala) - exports an informative summary of a tIND candidate in csv for manual annotation of genuineness
-* [GenuineTINDGridSearchMain](src/main/scala/de/hpi/temporal_ind/data/attribute_history/labelling/GenuineTINDGridSearchMain.scala) - takes the output csv of the previous (with the genuineness column filled) and executes a grid search that tests all tIND variants with various parameters and exports the results to a csv to be processed by our [Jupyter Notebook](TODO) 
+* [GenuineTINDGridSearchMain](src/main/scala/de/hpi/temporal_ind/data/attribute_history/labelling/GenuineTINDGridSearchMain.scala) - takes the output csv of the previous (with the genuineness column filled) and executes a grid search that tests all tIND variants with various parameters and exports the results to a csv to be processed by our [Jupyter Notebook](https://github.com/leonbornemann/temporalINDEvaluation) 
 

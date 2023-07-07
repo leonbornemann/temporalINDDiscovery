@@ -37,7 +37,6 @@ object TINDAllPairsMain extends App with StrictLogging{
     val dataLoader = new InputDataManager(sourceFileBinary, None)
     ParallelExecutionHandler.initContext(numThreadss)
     val relaxedShiftedTemporalINDDiscovery = new TINDSearcher(dataLoader,
-      version,
       subsetValidation,
       timeSliceChoiceMethod,
       numThreadss,
