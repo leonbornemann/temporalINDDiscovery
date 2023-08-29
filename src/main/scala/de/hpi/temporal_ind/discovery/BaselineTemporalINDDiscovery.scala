@@ -117,6 +117,7 @@ class BaselineTemporalINDDiscovery(dataLoader: InputDataManager, subsetValidatio
     this.seed = seed
     this.random = new Random(seed)
     this.bloomfilterSize = bloomFilterSize
+    System.gc()
     val chosenTimestamps = random.shuffle(GLOBAL_CONFIG.ALL_DAYS).take(numIndices)
     val slices = chosenTimestamps.map(i => {
       val begin = i
