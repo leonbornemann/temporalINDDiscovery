@@ -23,7 +23,7 @@ class TINDIndexBuilder(metaDir:File,
     val (indexEntireValueset, requiredValuesIndexBuildTime) = TimeUtil.executionTimeInMS(getRequiredValuesetIndex(historiesEnriched))
     val (timeSliceIndices, timeSliceIndexBuildTimes) = buildTimeSliceIndices(historiesEnriched, numTimeSliceIndices)
     val timeSliceIndexStructure = new MultiTimeSliceIndexStructure(timeSliceIndices, timeSliceIndexBuildTimes)
-    new MultiLevelIndexStructure(indexEntireValueset, timeSliceIndexStructure, requiredValuesIndexBuildTime)
+    new MultiLevelIndexStructure(Some(indexEntireValueset), timeSliceIndexStructure, requiredValuesIndexBuildTime)
   }
 
   def buildTimeSliceIndices(historiesEnriched: ColumnHistoryStorage, indicesToBuild: Int) = {

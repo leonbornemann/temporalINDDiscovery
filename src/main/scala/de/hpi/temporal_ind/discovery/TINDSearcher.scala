@@ -24,34 +24,17 @@ import scala.util.Random
 class TINDSearcher(val dataManager:InputDataManager,
                    val subsetValidation:Boolean,
                    val timeSliceChoiceMethod:TimeSliceChoiceMethod.Value,
-                   var nThreads:Int,
+                   numThreadsToUse:Int,
                    val metaDir:File,
-                   val reverseSearch:Boolean) extends StrictLogging{
+                   val reverseSearch:Boolean) extends TINDDiscoveryAlgorithm(dataManager,reverseSearch,numThreadsToUse) with StrictLogging{
 
   val version = "0.99"
-  var allPairsMode = false
   var fullMultiIndexStructure:MultiLevelIndexStructure = null
-  var historiesEnriched:ColumnHistoryStorage = null
-  var historiesEnrichedOriginal:ColumnHistoryStorage = null
-  var dataLoadingTimeMS:Double=0.0
   var expectedQueryParameters:TINDParameters = null
   var curResultSerializer: StandardResultSerializer = null
   var seed: Long = 0
   var bloomfilterSize: Int = -1
   var random: Random = null
-
-  def useSubsetOfData(inputSizeFactor: Int) = {
-    assert(inputSizeFactor <= historiesEnriched.histories.size)
-    this.historiesEnriched = new ColumnHistoryStorage(historiesEnrichedOriginal.histories.take(inputSizeFactor))
-    // data loading time is now longer correct now, but that does not matter for the query use-case
-  }
-
-  def initData() = {
-    val (historiesEnriched: ColumnHistoryStorage, dataLoadingTimeMS: Double) = loadData()
-    this.historiesEnrichedOriginal = historiesEnriched
-    this.historiesEnriched = historiesEnriched
-    this.dataLoadingTimeMS = dataLoadingTimeMS
-  }
 
   def buildIndicesWithSeed(maxNumTimeSlicIndices:Int,seed:Long,bloomFilterSize:Int,expectedQueryParameters:TINDParameters) = {
     this.expectedQueryParameters = expectedQueryParameters
@@ -64,43 +47,6 @@ class TINDSearcher(val dataManager:InputDataManager,
     fullMultiIndexStructure = indexBuilder.buildMultiIndexStructure(historiesEnriched, maxNumTimeSlicIndices)
   }
 
-  def enrichWithHistory(histories: IndexedSeq[OrderedColumnHistory]) = {
-    new ColumnHistoryStorage(histories.map(och => new EnrichedColumnHistory(och)))
-  }
-
-  def validateCandidates(query:EnrichedColumnHistory,
-                         queryParameters:TINDParameters,
-                         candidatesRequiredValues: ArrayBuffer[EnrichedColumnHistory]):collection.IndexedSeq[EpsilonOmegaDeltaRelaxedTemporalIND[String]] = {
-    val batchSize = GLOBAL_CONFIG.PARALLEL_TIND_VALIDATION_BATCH_SIZE
-    if(candidatesRequiredValues.size<batchSize || nThreads==1 || allPairsMode){
-      val res = candidatesRequiredValues.map(refCandidate => {
-        //new TemporalShifted
-        val lhs = if(!reverseSearch) query.och else refCandidate.och
-        val rhs = if(!reverseSearch) refCandidate.och else query.och
-        new EpsilonOmegaDeltaRelaxedTemporalIND[String](lhs, rhs, queryParameters, ValidationVariant.FULL_TIME_PERIOD)
-      }).filter(_.isValid)
-      res
-    } else {
-      //do it in parallel
-      val batches = candidatesRequiredValues.grouped(5).toIndexedSeq
-      val handler = new ParallelExecutionHandler(batches.size)
-      val futures = batches.map {batch =>
-        val f = handler.addAsFuture(batch.map(refCandidate => {
-          val lhs = if (!reverseSearch) query.och else refCandidate.och
-          val rhs = if (!reverseSearch) refCandidate.och else query.och
-          new EpsilonOmegaDeltaRelaxedTemporalIND[String](lhs, rhs, queryParameters, ValidationVariant.FULL_TIME_PERIOD)
-        }).filter(_.isValid))
-        f
-      }
-      handler.awaitTermination()
-      val results = futures.flatMap(f => {
-        val res = Await.result(f,scala.concurrent.duration.Duration.MinusInf)
-        res
-      })
-      results
-    }
-  }
-
   def runDiscovery(queryIDsFile:Option[File],
                    numTimeSliceIndicesList:IndexedSeq[Int],
                    queryParameters:TINDParameters,
@@ -108,13 +54,7 @@ class TINDSearcher(val dataManager:InputDataManager,
     allPairsMode = queryIDsFile.isEmpty
     curResultSerializer = resultSerializer
     val queries = if(queryIDsFile.isDefined){
-      val queryIDs = ColumnHistoryID
-        .fromJsonObjectPerLineFile(queryIDsFile.get.getAbsolutePath)
-        .toSet
-      historiesEnrichedOriginal
-        .histories
-        .filter(h => queryIDs.contains(h.och.columnHistoryID))
-        .zipWithIndex
+      getQueries(queryIDsFile.get)
     } else {
       historiesEnriched.histories.zipWithIndex
     }
@@ -127,16 +67,6 @@ class TINDSearcher(val dataManager:InputDataManager,
       curResultSerializer.addTotalResultStats(totalResultSTatsLine)
     })
     curResultSerializer.closeAll()
-  }
-
-  def loadData() = {
-    val beforePreparation = System.nanoTime()
-    val histories = dataManager.loadData()
-    val historiesEnriched = enrichWithHistory(histories)
-    //required values index:
-    val afterPreparation = System.nanoTime()
-    val dataLoadingTimeMS = (afterPreparation - beforePreparation) / 1000000.0
-    (historiesEnriched, dataLoadingTimeMS)
   }
 
   def processSingleQuery(curResultSerializer: ResultSerializer,
@@ -243,11 +173,11 @@ class TINDSearcher(val dataManager:InputDataManager,
 
   }
 
-  private def validate(query: EnrichedColumnHistory,queryParamters:TINDParameters, actualCandidates: ArrayBuffer[EnrichedColumnHistory],curResultSerializer: ResultSerializer) = {
-    val (trueTemporalINDs, validationTime) = TimeUtil.executionTimeInMS(validateCandidates(query,queryParamters,actualCandidates))
+  private def validate(query: EnrichedColumnHistory, queryParamters: TINDParameters, actualCandidates: ArrayBuffer[EnrichedColumnHistory], curResultSerializer: ResultSerializer) = {
+    val (trueTemporalINDs, validationTime) = TimeUtil.executionTimeInMS(validateCandidates(query, queryParamters, actualCandidates))
     val truePositiveCount = trueTemporalINDs.size
     curResultSerializer.addTrueTemporalINDs(trueTemporalINDs)
-    (validationTime,truePositiveCount)
+    (validationTime, truePositiveCount)
   }
 
   def tINDSearch(queryIDsFile:File,
