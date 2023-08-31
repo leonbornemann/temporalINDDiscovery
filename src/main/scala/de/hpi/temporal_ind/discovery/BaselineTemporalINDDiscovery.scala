@@ -24,11 +24,22 @@ class BaselineTemporalINDDiscovery(dataLoader: InputDataManager, subsetValidatio
   var random: Random = null
   var multiLevelIndexStructure:MultiLevelIndexStructure = null
 
+  val completePruningFailTimes = collection.mutable.ArrayBuffer[(Double,Double,Double)]()
+
+  def notPrunable(query: EnrichedColumnHistory): Boolean = {
+    val timestamps = multiLevelIndexStructure.timeSliceIndices.timeSliceIndices.map(_._1._1).toSet
+    val timestampsWithData = timestamps.map(t => if(query.och.versionAt(t).isDelete) 0 else 1).sum
+    timestampsWithData <= (queryParameters.absoluteEpsilon / TimeUtil.nanosPerDay)
+  }
+
   def processSingleQuery(curResultSerializer: StandardResultSerializer, query: EnrichedColumnHistory, queryFileName: String, queryNumber: Int, size: Int) = {
     if (query.och.lifetimeIsBelowThreshold(queryParameters)) {
       //just skip this - it is contained in all others!
       logger.debug(s"Skipping query $queryNumber, because it is contained in all other queries")
       (0.0, 0.0, 0.0)
+    } else if (completePruningFailTimes.size==10 && notPrunable(query)) {
+      logger.debug("Skipping candidate because not prunable,")
+      (completePruningFailTimes.map(t => t._1).sum / completePruningFailTimes.size,completePruningFailTimes.map(t => t._2).sum / completePruningFailTimes.size,completePruningFailTimes.map(t => t._3).sum / completePruningFailTimes.size)
     } else {
       val candidates:BitVector[_] = multiLevelIndexStructure.timeSliceIndices.timeSliceIndices.head._2.many.allOnes.copy()
       val (curCandidates, queryTimeIndexTimeSlice) = multiLevelIndexStructure.queryTimeSliceIndices(query, queryParameters, candidates, false)
@@ -78,6 +89,9 @@ class BaselineTemporalINDDiscovery(dataLoader: InputDataManager, subsetValidatio
         false
       )
       curResultSerializer.addIndividualResultStats(individualStatLine)
+      if(notPrunable(query)){
+        completePruningFailTimes.append((queryTimeIndexTimeSlice, subsetValidationTime, validationTime))
+      }
       (queryTimeIndexTimeSlice, subsetValidationTime, validationTime)
     }
   }

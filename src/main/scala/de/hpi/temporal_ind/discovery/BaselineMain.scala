@@ -56,6 +56,7 @@ object BaselineMain extends App with StrictLogging{
             logger.debug(s" Running inputSize $inputSize")
             baselineINDDiscovery.useSubsetOfData(inputSize)
             baselineINDDiscovery.buildIndicesWithSeed(numTimestampIndicesToBuild.max, seed, bloomFilterSize, indexParameter)
+            baselineINDDiscovery.completePruningFailTimes.clear()
             for (nThreads <- numThreadss) {
               logger.debug(s" Running nThreads $nThreads")
               val resultDirPrefix = UUID.randomUUID().toString
