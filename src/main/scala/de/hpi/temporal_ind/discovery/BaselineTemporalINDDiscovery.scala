@@ -32,6 +32,7 @@ class BaselineTemporalINDDiscovery(dataLoader: InputDataManager, subsetValidatio
     timestampsWithData <= (queryParameters.absoluteEpsilon / TimeUtil.nanosPerDay)
   }
 
+
   def processSingleQuery(curResultSerializer: StandardResultSerializer, query: EnrichedColumnHistory, queryFileName: String, queryNumber: Int, size: Int) = {
     if (query.och.lifetimeIsBelowThreshold(queryParameters)) {
       //just skip this - it is contained in all others!
