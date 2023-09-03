@@ -41,7 +41,7 @@ abstract class TINDDiscoveryAlgorithm(dataManager: InputDataManager,
   }
 
   def useSubsetOfData(inputSizeFactor: Int) = {
-    assert(inputSizeFactor <= historiesEnriched.histories.size)
+    assert(inputSizeFactor <= historiesEnrichedOriginal.histories.size)
     this.historiesEnriched = new ColumnHistoryStorage(historiesEnrichedOriginal.histories.take(inputSizeFactor))
     // data loading time is now longer correct now, but that does not matter for the query use-case
   }
