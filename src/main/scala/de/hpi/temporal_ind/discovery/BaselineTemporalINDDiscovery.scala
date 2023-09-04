@@ -27,7 +27,7 @@ class BaselineTemporalINDDiscovery(dataLoader: InputDataManager, subsetValidatio
   val completePruningFailTimes = collection.mutable.ArrayBuffer[(Double,Double,Double)]()
 
   def notPrunable(query: EnrichedColumnHistory): Boolean = {
-    val timestamps = multiLevelIndexStructure.timeSliceIndices.timeSliceIndices.map(_._1._1).toSet
+    val timestamps = multiLevelIndexStructure.timeSliceIndices.timeSliceIndices.map(_._1._1).toIndexedSeq
     val timestampsWithData = timestamps.map(t => if(query.och.versionAt(t).isDelete) 0 else 1).sum
     timestampsWithData <= (queryParameters.absoluteEpsilon / TimeUtil.nanosPerDay)
   }
@@ -40,7 +40,35 @@ class BaselineTemporalINDDiscovery(dataLoader: InputDataManager, subsetValidatio
       (0.0, 0.0, 0.0)
     } else if (completePruningFailTimes.size==10 && notPrunable(query)) {
       logger.debug("Skipping candidate because not prunable,")
-      (completePruningFailTimes.map(t => t._1).sum / completePruningFailTimes.size,completePruningFailTimes.map(t => t._2).sum / completePruningFailTimes.size,completePruningFailTimes.map(t => t._3).sum / completePruningFailTimes.size)
+      val times = (completePruningFailTimes.map(t => t._1).sum / completePruningFailTimes.size,completePruningFailTimes.map(t => t._2).sum / completePruningFailTimes.size,completePruningFailTimes.map(t => t._3).sum / completePruningFailTimes.size)
+      val avgVersionsPerTimeSliceWindow = multiLevelIndexStructure
+        .timeSliceIndices
+        .timeSliceIndices
+        .keys
+        .map { case (s, e) => query.och.versionsInWindow(s, e).size }
+        .sum / multiLevelIndexStructure.timeSliceIndices.timeSliceIndices.size.toDouble
+      val individualStatLine = IndividualResultStats(queryNumber,
+        queryFileName,
+        queryParameters,
+        queryParameters,
+        seed,
+        multiLevelIndexStructure.timeSliceIndices.timeSliceIndices.size,
+        times._1,
+        times._2,
+        times._3,
+        historiesEnriched.histories.size,
+        historiesEnriched.histories.size,
+        -1,
+        avgVersionsPerTimeSliceWindow,
+        "0.99",
+        historiesEnriched.histories.size,
+        bloomfilterSize,
+        TimeSliceChoiceMethod.RANDOM,
+        historiesEnriched.histories.size,
+        false
+      )
+      curResultSerializer.addIndividualResultStats(individualStatLine)
+      times
     } else {
       val candidates:BitVector[_] = multiLevelIndexStructure.timeSliceIndices.timeSliceIndices.head._2.many.allOnes.copy()
       val (curCandidates, queryTimeIndexTimeSlice) = multiLevelIndexStructure.queryTimeSliceIndices(query, queryParameters, candidates, false)
